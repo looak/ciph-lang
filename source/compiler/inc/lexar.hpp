@@ -4,7 +4,9 @@
 #include <vector>
 #include <variant>
 #include <optional>
-#include <shared_defines.hpp>
+
+#include "lexar_defines.hpp"
+
 
 class Token
 {

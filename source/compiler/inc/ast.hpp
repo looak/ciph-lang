@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include <vector>
-#include <shared_defines.hpp>
+#include <stack>
+
+#include "lexar_defines.hpp"
 
 enum class ASTNodeType
 {
@@ -63,10 +64,11 @@ public:
 class ASTBinaryExpressionNode : public ASTExpressionNode
 {
 public:
-	ASTBinaryExpressionNode(ASTBaseNode* lhs, ASTBaseNode* rhs) :
+	ASTBinaryExpressionNode(ASTBaseNode* lhs, ASTBaseNode* rhs, OperatorType op) :
 		ASTExpressionNode(ASTNodeType::BINARY_EXPRESSION),
 		m_left(lhs),
-		m_right(rhs)
+		m_right(rhs),
+		m_operator(op)
 	{}
 	~ASTBinaryExpressionNode() override = default;
 

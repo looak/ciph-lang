@@ -20,7 +20,7 @@ private:
 	ASTExpressionNode* parseAddativeExpression();
 	ASTExpressionNode* parseMultiplicativeExpression();
 
-	ASTExpressionNode* parseBinaryOperationExpression();	
+	// ASTExpressionNode* parseBinaryOperationExpression();	
 
 	ASTExpressionNode* parsePrimaryExpression();
 

@@ -12,7 +12,7 @@ ASTBaseNode* Parser::parse()
 
 	while (token.readType() != TokenType::END_OF_FILE)
 	{
-		ASTExpressionNode* expression = parseBinaryOperationExpression();
+		ASTExpressionNode* expression = parseAddativeExpression();
 		if (expression != nullptr)
 			node->addStatement(expression);
 		token = m_lexar.popNextToken();
@@ -21,20 +21,40 @@ ASTBaseNode* Parser::parse()
 	return node;
 }
 
-//ASTExpressionNode*
+ASTExpressionNode*
+Parser::parseAddativeExpression()
+{
+	ASTExpressionNode* left = parseMultiplicativeExpression();
+	ASTExpressionNode* right = nullptr;
+
+	auto op = m_lexar.peekNextToken();
+
+	if (op.readOperator() == OperatorType::ADDITION || op.readOperator() == OperatorType::SUBTRACTION)
+	{
+		m_lexar.popNextToken();
+		right = parseAddativeExpression();		
+		return new ASTBinaryExpressionNode(left, right, op.readOperator());
+	}
+
+	return left;
+}
 
 ASTExpressionNode*
-Parser::parseBinaryOperationExpression()
+Parser::parseMultiplicativeExpression()
 {
-	ASTExpressionNode* left = parseBinaryOperationExpression();
+	ASTExpressionNode* left = parsePrimaryExpression();
 	ASTExpressionNode* right = nullptr;
 
 	auto op = m_lexar.peekNextToken();
 	
 	if (op.readOperator() == OperatorType::MULTIPLICATION || op.readOperator() == OperatorType::DIVISION)
-		right = parseBinaryOperationExpression();
+	{
+		m_lexar.popNextToken();
+		right = parseAddativeExpression();
+		return new ASTBinaryExpressionNode(left, right, op.readOperator());
+	}
 
-	return new ASTBinaryExpressionNode(left, right);
+	return left;
 }
 
 ASTExpressionNode* 

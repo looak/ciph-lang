@@ -20,6 +20,9 @@ std::string Token::readValue() const
 
 OperatorType Token::readOperator() const
 {
+	if (m_type != TokenType::OPERATOR)
+		return OperatorType::UNKNOWN;
+		
 	return std::get<OperatorType>(m_value);
 }
 

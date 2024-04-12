@@ -4,65 +4,24 @@
 #include <vector>
 #include <map>
 
-enum class TokenType {
-    // literals
-	NUMBER,     
-    IDENTIFIER,
+#ifdef SHARED_LIB_EXPORTS
+#define SHARED_API __declspec(dllexport)
+#else
+#define SHARED_API __declspec(dllimport)
+#endif
 
-	// keywords
-	VAR,
+enum class Instructions : uint8_t {
+	UNKNOWN = 0x0,
+	// stack
+	PUSH = 0x1,
+	POP,
 
-	/*
-    STRING,
-    CHARACTER,
-    BOOLEAN,*/
-
-	// scope and operators
-    OPERATOR,
-	OPEN_PAREN,
-	CLOSE_PAREN,
-	OPEN_BRACE,
-	CLOSE_BRACE,
-	OPEN_BRACKET,
-	CLOSE_BRACKET,
-
-	END_OF_FILE,
-    UNKNOWN
+	// arithmetic
+	ADD,
+	SUB,
+	MUL,
+	DIV,
+	MOD
 };
 
-enum class OperatorType {
-	ADDITION,
-	SUBTRACTION,
-	MULTIPLICATION,
-	DIVISION,
-	MODULUS,
-	EQUAL,
-	NOT,
-	LESS,
-	GREATER,
-	AND,
-	OR,
-	XOR,
-	NOT_EQUAL,
-	LESS_EQUAL,
-	GREATER_EQUAL,
-	AND_AND,
-	OR_OR,
-	LEFT_SHIFT,
-	RIGHT_SHIFT,
-	ASSIGNMENT,
-	ADDITION_ASSIGNMENT,
-	SUBTRACTION_ASSIGNMENT,
-	MULTIPLICATION_ASSIGNMENT,
-	DIVISION_ASSIGNMENT,
-	MODULUS_ASSIGNMENT,
-	LEFT_SHIFT_ASSIGNMENT,
-	RIGHT_SHIFT_ASSIGNMENT,
-	AND_ASSIGNMENT,
-	OR_ASSIGNMENT,
-	XOR_ASSIGNMENT,
-	INCREMENT,
-	DECREMENT,
-	UNKNOWN
-};
-
+SHARED_API std::string libName();

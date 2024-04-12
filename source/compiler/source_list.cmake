@@ -3,6 +3,7 @@ set(COMPILER_INC_DIR ${CMAKE_CURRENT_LIST_DIR}/inc)
 
 set(COMPILER_SRC 
     ${COMPILER_SRC}
+    ${COMPILER_SRC_DIR}/code_generator.cpp
     ${COMPILER_SRC_DIR}/lexar.cpp
     ${COMPILER_SRC_DIR}/parser.cpp
 )
@@ -10,6 +11,7 @@ set(COMPILER_SRC
 set(COMPILER_INC 
     ${COMPILER_INC}
     ${COMPILER_INC_DIR}/ast.hpp
+    ${COMPILER_INC_DIR}/code_generator.hpp
     ${COMPILER_INC_DIR}/lexar.hpp
     ${COMPILER_INC_DIR}/lexar_defines.hpp
     ${COMPILER_INC_DIR}/parser.hpp

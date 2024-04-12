@@ -1,5 +1,69 @@
 #pragma once
-#include <shared_defines.hpp>
+
+#include <map>
+
+enum class TokenType {
+    // literals
+	NUMBER,     
+    IDENTIFIER,
+
+	// keywords
+	VAR,
+
+	/*
+    STRING,
+    CHARACTER,
+    BOOLEAN,*/
+
+	// scope and operators
+    OPERATOR,
+	OPEN_PAREN,
+	CLOSE_PAREN,
+	OPEN_BRACE,
+	CLOSE_BRACE,
+	OPEN_BRACKET,
+	CLOSE_BRACKET,
+
+	END_OF_FILE,
+    UNKNOWN
+};
+
+enum class OperatorType : uint8_t {
+	ADDITION,
+	SUBTRACTION,
+	MULTIPLICATION,
+	DIVISION,
+	MODULUS,
+	EQUAL,
+	NOT,
+	LESS,
+	GREATER,
+	AND,
+	OR,
+	XOR,
+	NOT_EQUAL,
+	LESS_EQUAL,
+	GREATER_EQUAL,
+	AND_AND,
+	OR_OR,
+	LEFT_SHIFT,
+	RIGHT_SHIFT,
+	ASSIGNMENT,
+	ADDITION_ASSIGNMENT,
+	SUBTRACTION_ASSIGNMENT,
+	MULTIPLICATION_ASSIGNMENT,
+	DIVISION_ASSIGNMENT,
+	MODULUS_ASSIGNMENT,
+	LEFT_SHIFT_ASSIGNMENT,
+	RIGHT_SHIFT_ASSIGNMENT,
+	AND_ASSIGNMENT,
+	OR_ASSIGNMENT,
+	XOR_ASSIGNMENT,
+	INCREMENT,
+	DECREMENT,
+	UNKNOWN
+};
+
 
 typedef std::vector<std::pair<char, std::vector<std::pair<char, OperatorType>>>> OperatorMap;
 static OperatorMap
