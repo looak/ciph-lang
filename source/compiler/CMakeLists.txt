@@ -2,7 +2,7 @@ set(PROJECT_NAME ciph-compiler_exe)
 
 # ---- dependencies ----
 
-find_package(fmt REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 include(../shared/source_list.cmake)
 
@@ -19,8 +19,8 @@ add_executable(${PROJECT_NAME} ${COMPILER_ALL_SRC})
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE  
-  ${SHARED_LIB}
   fmt::fmt
+  ${SHARED_LIB}
 )
 
 target_include_directories(${PROJECT_NAME} 

@@ -13,11 +13,20 @@ typedef void (*handler)(ExecutionContext& context);
 
 void push_handler(ExecutionContext& context);
 void add_handler(ExecutionContext& context);
+void sub_handler(ExecutionContext& context);
+void mul_handler(ExecutionContext& context);
+void div_handler(ExecutionContext& context);
 
 
 static handler set[] = {
+	nullptr, // 0
 	&push_handler,
-	&add_handler
+	nullptr, // pop_handler
+	&add_handler,
+	&sub_handler,
+	&mul_handler,
+	&div_handler
+
 };
 
 

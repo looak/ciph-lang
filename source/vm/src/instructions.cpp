@@ -1,6 +1,8 @@
 #include "instructions.hpp"
 
-void instruction::add_handler(ExecutionContext& context)
+#include <functional>
+
+void binary_expression(ExecutionContext& context, std::function<int32_t(int32_t, int32_t)> op)
 {
     auto& stack = context.stack;
 
@@ -12,13 +14,41 @@ void instruction::add_handler(ExecutionContext& context)
     stack.pop();
     context.sp--;
 
-    stack.push(a + b);
+    stack.push(op(a, b));
+    context.sp++;
+}
+
+void instruction::add_handler(ExecutionContext& context)
+{
+    binary_expression(context, [](int32_t a, int32_t b) { return a + b; });
+}
+
+void instruction::sub_handler(ExecutionContext& context)
+{
+    binary_expression(context, [](int32_t a, int32_t b) { return a - b; });
+}
+
+void instruction::mul_handler(ExecutionContext& context)
+{
+    binary_expression(context, [](int32_t a, int32_t b) { return a * b; });
+}
+
+void instruction::div_handler(ExecutionContext& context)
+{
+    binary_expression(context, [](int32_t a, int32_t b) { return a / b; });
 }
 
 void instruction::push_handler(ExecutionContext& context)
 {
     auto& stack = context.stack;
-    context.pc++;
-    stack.push(context.bytecode[context.pc]);
+    //context.pc++;
+    // rebuild the integer from the 4 bytes
+    int32_t value = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        value = (value << 8) | context.bytecode[++context.pc];      
+    }    
+
+    stack.push(value);
     context.sp++;
 }

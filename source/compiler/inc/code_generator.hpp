@@ -4,8 +4,10 @@
 #include <cstdint>
 #include <string>
 
+class ASTBaseNode;
 class ASTProgramNode;
 class ASTBinaryExpressionNode;
+class ASTNumericLiteralNode;
 
 class CodeGenerator
 {
@@ -18,7 +20,10 @@ public:
     std::string outputBytecode();
 
 private:
+    void generateOperator(const ASTBinaryExpressionNode* node);
+    void generateExpression(const ASTBaseNode* node);
     void generateBinaryExpression(const ASTBinaryExpressionNode* node);
+    void generateNumericLiteral(const ASTNumericLiteralNode* node);
 
     const ASTProgramNode* m_program;
 

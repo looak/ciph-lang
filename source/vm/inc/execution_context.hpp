@@ -22,6 +22,6 @@ public:
 	uint32_t pc = 0;
 	uint32_t sp = 0;
 
-	std::vector<int32_t> bytecode;
+	uint8_t* bytecode;
 	std::stack<int32_t> stack;
 };

@@ -15,6 +15,8 @@ set(GTest_LIBRARIES
     GTest::gmock
     GTest::gmock_main)
 
+find_package(fmt CONFIG REQUIRED)
+
 # ---- Build Compiler as a library ----
 
 include(../source/compiler/source_list.cmake)
@@ -23,6 +25,8 @@ set(COMPILER_LIB ciph-compiler_lib)
 add_library(${COMPILER_LIB} OBJECT)
 
 target_compile_features(${COMPILER_LIB} PUBLIC cxx_std_20)
+
+target_link_libraries(${COMPILER_LIB} PRIVATE fmt::fmt)
 
 target_sources(${COMPILER_LIB} 
     PRIVATE 
@@ -34,8 +38,7 @@ target_sources(${COMPILER_LIB}
 target_include_directories(${COMPILER_LIB} 
     PUBLIC
     ${COMPILER_INC_DIR}
-    ../source/shared/inc
-    )
+    ../source/shared/inc)
 
 # ---- Build VM as a library ----
 
@@ -68,7 +71,7 @@ add_executable(compiler_tests ${COMPILER_TEST_SRC})
 target_link_libraries(
     compiler_tests PRIVATE
     ${COMPILER_LIB}
-    ${GTest_LIBRARIES}
+    ${GTest_LIBRARIES}    
 )
 
 target_include_directories(compiler_tests PUBLIC ${COMPILER_INC_DIR})
