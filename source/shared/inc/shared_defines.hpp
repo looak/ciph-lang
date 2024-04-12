@@ -2,16 +2,10 @@
 
 #include <string>
 #include <vector>
-#include <map>
-
-#ifdef SHARED_LIB_EXPORTS
-#define SHARED_API __declspec(dllexport)
-#else
-#define SHARED_API __declspec(dllimport)
-#endif
+#include <unordered_map>
 
 enum class Instructions : uint8_t {
-	UNKNOWN = 0x0,
+	NOP = 0x0,
 	// stack
 	PUSH = 0x1,
 	POP,
@@ -24,4 +18,13 @@ enum class Instructions : uint8_t {
 	MOD
 };
 
-SHARED_API std::string libName();
+const std::unordered_map<Instructions, std::string> s_instructionMnemonics = {
+	{Instructions::NOP, "NOP"},
+	{Instructions::PUSH, "PUSH"},
+	{Instructions::POP, "POP"},
+	{Instructions::ADD, "ADD"},
+	{Instructions::SUB, "SUB"},
+	{Instructions::MUL, "MUL"},
+	{Instructions::DIV, "DIV"},
+	{Instructions::MOD, "MOD"}
+};

@@ -5,6 +5,6 @@
 int
 main()
 { 
-  fmt::print("Hello, world!\n{}", libName());  
+  fmt::print("Hello, World!\n");
   return 0;
 }

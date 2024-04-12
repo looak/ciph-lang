@@ -17,6 +17,21 @@ set(GTest_LIBRARIES
 
 find_package(fmt CONFIG REQUIRED)
 
+# ---- Build Shared library ----
+include (../source/shared/source_list.cmake)
+
+set(SHARED_LIB ciph-shared_lib-for-tests)
+add_library(${SHARED_LIB} STATIC ${SHARED_SRC_ALL})
+
+target_compile_features(${SHARED_LIB} PUBLIC cxx_std_20)
+
+target_include_directories(${SHARED_LIB} 
+    PUBLIC
+    ${SHARED_INC_DIR}
+)
+
+target_link_libraries(${SHARED_LIB} PRIVATE fmt::fmt)
+
 # ---- Build Compiler as a library ----
 
 include(../source/compiler/source_list.cmake)
@@ -26,14 +41,15 @@ add_library(${COMPILER_LIB} OBJECT)
 
 target_compile_features(${COMPILER_LIB} PUBLIC cxx_std_20)
 
-target_link_libraries(${COMPILER_LIB} PRIVATE fmt::fmt)
 
 target_sources(${COMPILER_LIB} 
-    PRIVATE 
-        ${COMPILER_SRC} 
-    PUBLIC 
-        ${COMPILER_INC}
+PRIVATE 
+${COMPILER_SRC} 
+PUBLIC 
+${COMPILER_INC}
 )
+
+target_link_libraries(${COMPILER_LIB} PRIVATE ciph-shared_lib-for-tests fmt::fmt)
 
 target_include_directories(${COMPILER_LIB} 
     PUBLIC
