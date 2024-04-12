@@ -1,9 +1,16 @@
 #include "code_generator.hpp"
 
 #include <fmt/core.h>
+
+#include <disassembler.hpp>
 #include <shared_defines.hpp>
 #include "ast.hpp"
 
+std::string CodeGenerator::disassemble() const
+{
+    Disassembler disassembler(&m_bytecode[0], m_bytecode.size());
+    return disassembler.disassemble();
+}
 
 void CodeGenerator::generateCode()
 {    
@@ -50,22 +57,22 @@ void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node)
     {
         case OperatorType::ADDITION:
         {
-            m_bytecode.push(static_cast<uint8_t>(Instructions::ADD));
+            m_bytecode.push_back(static_cast<uint8_t>(Instructions::ADD));
             break;
         }
         case OperatorType::SUBTRACTION:
         {
-            m_bytecode.push(static_cast<uint8_t>(Instructions::ADD));
+            m_bytecode.push_back(static_cast<uint8_t>(Instructions::ADD));
             break;
         }
         case OperatorType::MULTIPLICATION:
         {
-            m_bytecode.push(static_cast<uint8_t>(Instructions::MUL));
+            m_bytecode.push_back(static_cast<uint8_t>(Instructions::MUL));
             break;
         }
         case OperatorType::DIVISION:
         {
-            m_bytecode.push(static_cast<uint8_t>(Instructions::DIV));
+            m_bytecode.push_back(static_cast<uint8_t>(Instructions::DIV));
             break;
         }
         default:
@@ -80,24 +87,24 @@ void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node)
 void CodeGenerator::generateNumericLiteral(const ASTNumericLiteralNode* node)
 {
     // instruction
-    m_bytecode.push(static_cast<uint8_t>(Instructions::PUSH));
+    m_bytecode.push_back(static_cast<uint8_t>(Instructions::PUSH));
     // 4 byte integer
     int32_t value = node->readValue();
-    m_bytecode.push(static_cast<uint8_t>((value >> 24) & 0xFF));
-    m_bytecode.push(static_cast<uint8_t>((value >> 16) & 0xFF));
-    m_bytecode.push(static_cast<uint8_t>((value >> 8) & 0xFF));
-    m_bytecode.push(static_cast<uint8_t>(value & 0xFF));
+    m_bytecode.push_back(static_cast<uint8_t>((value >> 24) & 0xFF));
+    m_bytecode.push_back(static_cast<uint8_t>((value >> 16) & 0xFF));
+    m_bytecode.push_back(static_cast<uint8_t>((value >> 8) & 0xFF));
+    m_bytecode.push_back(static_cast<uint8_t>(value & 0xFF));
 }
 
 std::string CodeGenerator::outputBytecode()
 {    
-    std::string output;
-    while (!m_bytecode.empty()) {
-        output += fmt::format("{:02X} ", m_bytecode.front());
-        m_bytecode.pop();
+    std::string result{};
+
+    for (auto byte : m_bytecode) {
+        result += fmt::format("{:02X} ", byte);
     }
 
     // cache the result
-    m_resultBytecode = output;
-    return output;
+    m_resultBytecode = result;
+    return result;
 }

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <fmt/core.h>
 
 #include "ast.hpp"
 #include "code_generator.hpp"
@@ -89,5 +90,8 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_PaarenthasesBeforeMu
 
     // validate
     std::string expected = "01 00 00 00 02 01 00 00 00 02 01 00 00 00 03 03 05 ";
-    EXPECT_EQ(expected, actual);    
+    EXPECT_EQ(expected, actual);
+
+    fmt::print("Disassembled: \n{}\n", generator.disassemble());
+    
 }

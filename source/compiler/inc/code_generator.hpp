@@ -1,13 +1,13 @@
 #pragma once
 
-#include <queue>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 class ASTBaseNode;
-class ASTProgramNode;
 class ASTBinaryExpressionNode;
 class ASTNumericLiteralNode;
+class ASTProgramNode;
 
 class CodeGenerator
 {
@@ -29,6 +29,6 @@ private:
 
     const ASTProgramNode* m_program;
 
-    std::queue<uint8_t> m_bytecode;
+    std::vector<uint8_t> m_bytecode;
     std::string m_resultBytecode;
 };

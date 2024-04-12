@@ -49,7 +49,7 @@ TEST(InstructionsTest, BinaryExpressionHandlersTests)
         std::make_tuple(2569,      33995, Instructions::MUL, 87333155),
         std::make_tuple(313195,    47806,  Instructions::SUB, 265389),
         std::make_tuple(-1,        1,      Instructions::ADD, 0),
-        std::make_tuple(6551447,   3692,   Instructions::DIV, 177)
+        std::make_tuple(6551447,   3692,   Instructions::DIV, 1774)
     };
 
     for (auto& test : tests)

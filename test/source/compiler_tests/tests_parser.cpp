@@ -61,8 +61,8 @@ TEST(ParserTest, OrderOfOperations_ParenthaseseBeforeMul)
 	auto mulExpression = static_cast<const ASTBinaryExpressionNode*>(result->readStatements()[0]);
 	EXPECT_EQ(mulExpression->readOperator() , OperatorType::MULTIPLICATION);
 
-	auto left = mulExpression->readLeft();
-	EXPECT_EQ(left->readType(), ASTNodeType::BINARY_EXPRESSION);
-	auto addExpression = static_cast<const ASTBinaryExpressionNode*>(left);
+	auto right = mulExpression->readRight();
+	EXPECT_EQ(right->readType(), ASTNodeType::BINARY_EXPRESSION);
+	auto addExpression = static_cast<const ASTBinaryExpressionNode*>(right);
 	EXPECT_EQ(addExpression->readOperator() , OperatorType::ADDITION);
 }
