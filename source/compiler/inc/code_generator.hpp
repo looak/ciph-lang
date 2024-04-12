@@ -17,7 +17,9 @@ public:
 
 	void generateCode();
 
+
     std::string outputBytecode();
+    std::string disassemble() const;
 
 private:
     void generateOperator(const ASTBinaryExpressionNode* node);

@@ -43,6 +43,15 @@ Lexar::Lexar(const std::string& input) :
 {
 }
 
+bool Lexar::expectNextToken(TokenType type)
+{
+	Token token = popNextToken();
+	if (token.readType() != type)
+		return false;
+
+	return true;
+}
+
 Token Lexar::peekNextToken()
 {
 	if (m_peek.hasValue())

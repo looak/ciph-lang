@@ -3,6 +3,7 @@
 #include "ast.hpp"
 #include "code_generator.hpp"
 #include "lexar_defines.hpp"
+#include "parser.hpp"
 
 class CodeGeneratorTestFixture : public ::testing::Test
 {
@@ -56,4 +57,37 @@ TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
     std::string actual = generator.outputBytecode();
 
     EXPECT_EQ(expected, actual);
+}
+
+TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_MulBeforeAdd)
+{
+    // setup    
+    std::string code("2 * 2 + 3");
+    //std::string code("(1 + 2 * 3 + 2) / 3");
+    Parser parser(code);
+    CodeGenerator generator(static_cast<ASTProgramNode*>(parser.parse()));
+
+    // do
+    generator.generateCode();
+    std::string actual = generator.outputBytecode();
+
+    // validate
+    std::string expected = "01 00 00 00 02 01 00 00 00 02 05 01 00 00 00 03 03 ";
+    EXPECT_EQ(expected, actual);    
+}
+
+TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_PaarenthasesBeforeMul)
+{
+    // setup    
+    std::string code("2 * (2 + 3)");    
+    Parser parser(code);
+    CodeGenerator generator(static_cast<ASTProgramNode*>(parser.parse()));
+
+    // do
+    generator.generateCode();
+    std::string actual = generator.outputBytecode();
+
+    // validate
+    std::string expected = "01 00 00 00 02 01 00 00 00 02 01 00 00 00 03 03 05 ";
+    EXPECT_EQ(expected, actual);    
 }

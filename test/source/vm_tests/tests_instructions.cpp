@@ -40,22 +40,21 @@ int BinaryExpressionHandlerTest(int a, int b, Instructions instruction)
 
 TEST(InstructionsTest, BinaryExpressionHandlersTests)
 {
-    std::vector<std::tuple<int, int, Instructions, int>> tests = {
-        {7, 3, Instructions::ADD, 10},
-        {9, 5, Instructions::SUB, 4},
-        {3, 5, Instructions::MUL, 15},
-        {9, 3, Instructions::DIV, 3},
+    std::vector<std::tuple<int, int, Instructions, int>> tests = {        
+        std::make_tuple(7, 3, Instructions::ADD, 10),
+        std::make_tuple(9, 5, Instructions::SUB, 4),
+        std::make_tuple(3, 5, Instructions::MUL, 15),
+        std::make_tuple(9, 3, Instructions::DIV, 3),
         // larger numbers
-        {2569,      962222, Instructions::MUL, 2471948318},
-        {313195,    47806,  Instructions::SUB, 265389},
-        {-1,        1,      Instructions::ADD, 0},
-        {6551447,   3692,   Instructions::DIV, 1774}
+        std::make_tuple(2569,      33995, Instructions::MUL, 87333155),
+        std::make_tuple(313195,    47806,  Instructions::SUB, 265389),
+        std::make_tuple(-1,        1,      Instructions::ADD, 0),
+        std::make_tuple(6551447,   3692,   Instructions::DIV, 177)
     };
 
     for (auto& test : tests)
-    {
-        // this is not correct, something is wrong where I have to flip a & b.
-        auto [b, a, instruction, expected] = test;
+    {        
+        auto [a, b, instruction, expected] = test;
         int result = BinaryExpressionHandlerTest(a, b, instruction);
         EXPECT_EQ(result, expected);
     }
@@ -67,7 +66,7 @@ TEST(InstructionsTest, SubHandler)
 	ExecutionContext context;
     context.bytecode = new uint8_t[11];
 	helper_push(context, offset, 10);
-    helper_push(context, offset, 20);
+    helper_push(context, ++offset, 20);
 	context.bytecode[++offset] = +Instructions::SUB;
 
     for (int i = 0; i < 3; i++)

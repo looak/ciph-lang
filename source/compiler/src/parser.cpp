@@ -1,6 +1,8 @@
 #include "parser.hpp"
 #include "ast.hpp"
 
+#include <fmt/core.h>
+
 Parser::Parser(std::string& input) : m_lexar(input)
 {
 }
@@ -32,7 +34,7 @@ Parser::parseAddativeExpression()
 	if (op.readOperator() == OperatorType::ADDITION || op.readOperator() == OperatorType::SUBTRACTION)
 	{
 		m_lexar.popNextToken();
-		right = parseAddativeExpression();		
+		right = parseMultiplicativeExpression();		
 		return new ASTBinaryExpressionNode(left, right, op.readOperator());
 	}
 
@@ -50,7 +52,7 @@ Parser::parseMultiplicativeExpression()
 	if (op.readOperator() == OperatorType::MULTIPLICATION || op.readOperator() == OperatorType::DIVISION)
 	{
 		m_lexar.popNextToken();
-		right = parseAddativeExpression();
+		right = parsePrimaryExpression();
 		return new ASTBinaryExpressionNode(left, right, op.readOperator());
 	}
 
@@ -69,8 +71,17 @@ Parser::parsePrimaryExpression()
 			return new ASTNumericLiteralNode(std::stoi(token.readValue()));
 		case TokenType::IDENTIFIER:
 			return new ASTIdentifierNode(token.readValue());
-		/*case TokenType::VAR:
-			return new ASTExpressionNode(ASTNodeType::VAR);*/
+		case TokenType::OPEN_PAREN:
+		{
+			m_lexar.popNextToken();
+			ASTExpressionNode* expression = parseAddativeExpression();
+			if (m_lexar.expectNextToken(TokenType::CLOSE_PAREN) == false)
+			{
+				fmt::print("Expected closing parenthesis\n");
+				return nullptr;	
+			}
+			return expression;
+		}
 		default:
 			return nullptr;
 	}

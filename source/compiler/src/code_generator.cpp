@@ -9,26 +9,7 @@ void CodeGenerator::generateCode()
 {    
     for (ASTBaseNode* node : m_program->readStatements())
     {       
-        switch (node->readType())
-        {
-            case ASTNodeType::BINARY_EXPRESSION:
-            {
-                ASTBinaryExpressionNode* binaryNode = static_cast<ASTBinaryExpressionNode*>(node);
-                generateBinaryExpression(binaryNode);
-                break;
-            }
-            case ASTNodeType::NUMERIC_LITERAL:
-            {
-                const auto* numericNode = static_cast<ASTNumericLiteralNode*>(node);
-                generateNumericLiteral(numericNode);
-                break;
-            }
-            default:
-            {
-                // fmt::print("Unknown node type\n");
-                break;
-            }
-        }
+        generateExpression(node);
     }
 }
 
@@ -57,28 +38,8 @@ void CodeGenerator::generateExpression(const ASTBaseNode* node)
 }
 
 void CodeGenerator::generateBinaryExpression(const ASTBinaryExpressionNode* node)
-{    
-    switch (node->readLeft()->readType())
-    {
-        case ASTNodeType::NUMERIC_LITERAL:
-        {
-            const auto* left = static_cast<const ASTNumericLiteralNode*>(node->readLeft());
-            generateNumericLiteral(left);
-            break;
-        }
-        case ASTNodeType::BINARY_EXPRESSION:
-        {
-            const auto* left = static_cast<const ASTBinaryExpressionNode*>(node->readLeft());
-            generateBinaryExpression(left);
-            break;
-        }
-        default:
-        {
-            fmt::print("Unknown node type\n");
-            break;
-        }
-    }
-
+{         
+    generateExpression(node->readLeft());
     generateExpression(node->readRight());
     generateOperator(node);
 }

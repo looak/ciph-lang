@@ -6,11 +6,12 @@ void binary_expression(ExecutionContext& context, std::function<int32_t(int32_t,
 {
     auto& stack = context.stack;
 
-    auto a = stack.top();
+    // b will be the top of the stack
+    auto b = stack.top();
     stack.pop();
     context.sp--;
 
-    auto b = stack.top();
+    auto a = stack.top();
     stack.pop();
     context.sp--;
 
@@ -44,8 +45,11 @@ void instruction::push_handler(ExecutionContext& context)
     //context.pc++;
     // rebuild the integer from the 4 bytes
     int32_t value = 0;
-    for (int i = 0; i < 4; i++)
+    //for (int i = 0; i < 4; i++)
     {
+        value = (value << 8) | context.bytecode[++context.pc];      
+        value = (value << 8) | context.bytecode[++context.pc];      
+        value = (value << 8) | context.bytecode[++context.pc];      
         value = (value << 8) | context.bytecode[++context.pc];      
     }    
 

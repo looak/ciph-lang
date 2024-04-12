@@ -3,10 +3,12 @@ set(SHARED_INC_DIR ${CMAKE_CURRENT_LIST_DIR}/inc)
 
 set(SHARED_SRC ${SHARED_SRC}
 ${SHARED_SRC_DIR}/shared_lib.cpp
+${SHARED_SRC_DIR}/disassembler.cpp
 )
 
 set(SHARED_INC ${SHARED_INC}
 ${SHARED_INC_DIR}/shared_defines.hpp
+${SHARED_INC_DIR}/disassembler.hpp
 )
 
 set(SHARED_SRC_ALL ${SHARED_SRC_ALL} ${SHARED_INC} ${SHARED_SRC})
