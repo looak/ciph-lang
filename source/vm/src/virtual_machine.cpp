@@ -12,13 +12,12 @@ int32_t VirtualMachine::execute()
     context.bytecode = m_program;
     context.pc = 0;
     context.sp = 0;
+    context.return_value = 1; // error
+    context.program_size = m_size;
 
     run(context);
 
-    if (context.stack.empty())
-        return 0;
-        
-    return context.stack.top();
+    return context.return_value;
 }
 
 void VirtualMachine::run(ExecutionContext& context)

@@ -15,7 +15,10 @@ enum class Instructions : uint8_t {
 	SUB,
 	MUL,
 	DIV,
-	MOD
+	MOD,
+
+	// control flow
+	RET,
 };
 
 const std::unordered_map<Instructions, std::string> s_instructionMnemonics = {
@@ -26,5 +29,6 @@ const std::unordered_map<Instructions, std::string> s_instructionMnemonics = {
 	{Instructions::SUB, "SUB"},
 	{Instructions::MUL, "MUL"},
 	{Instructions::DIV, "DIV"},
-	{Instructions::MOD, "MOD"}
+	{Instructions::MOD, "MOD"},
+	{Instructions::RET, "RET"}
 };

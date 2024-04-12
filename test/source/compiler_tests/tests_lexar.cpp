@@ -111,7 +111,8 @@ TEST(LexarTest, SimpleAssignmentExpression)
 TEST(LexarTest, KeywordsIdentification)
 {
 	std::vector<std::pair<std::string, TokenType>> keywordsToTest = {
-		{"var", TokenType::VAR},
+		{"let", TokenType::LET},
+		{"return", TokenType::RETURN}
 		/*{"if", TokenType::IF},
 		{"else", TokenType::ELSE},
 		{"while", TokenType::WHILE},

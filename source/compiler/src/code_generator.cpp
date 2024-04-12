@@ -14,9 +14,28 @@ std::string CodeGenerator::disassemble() const
 
 void CodeGenerator::generateCode()
 {    
-    for (ASTBaseNode* node : m_program->readStatements())
-    {       
-        generateExpression(node);
+    generateProgram(m_program);
+}
+
+void CodeGenerator::generateProgram(const ASTProgramNode* node)
+{
+    for (ASTBaseNode* statement : node->readStatements())
+    {
+        switch (statement->readType())
+        {
+            case ASTNodeType::RETURN:
+            {
+                const auto* returnNode = static_cast<const ASTReturnNode*>(statement);
+                generateReturnStatement(returnNode);
+                break;
+            }
+            default:
+            {
+                generateExpression(statement);
+                break;
+            }
+        }
+        
     }
 }
 
@@ -49,6 +68,12 @@ void CodeGenerator::generateBinaryExpression(const ASTBinaryExpressionNode* node
     generateExpression(node->readLeft());
     generateExpression(node->readRight());
     generateOperator(node);
+}
+
+void CodeGenerator::generateReturnStatement(const ASTReturnNode* node)
+{
+    generateExpression(node->readExpression());
+    m_bytecode.push_back(static_cast<uint8_t>(Instructions::RET));
 }
 
 void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node)

@@ -16,6 +16,7 @@ void add_handler(ExecutionContext& context);
 void sub_handler(ExecutionContext& context);
 void mul_handler(ExecutionContext& context);
 void div_handler(ExecutionContext& context);
+void return_handler(ExecutionContext& context);
 
 
 static handler set[] = {
@@ -25,8 +26,9 @@ static handler set[] = {
 	&add_handler,
 	&sub_handler,
 	&mul_handler,
-	&div_handler
-
+	&div_handler,
+	nullptr, // mod handler
+	&return_handler
 };
 
 

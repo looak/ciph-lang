@@ -92,6 +92,23 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_PaarenthasesBeforeMu
     std::string expected = "01 00 00 00 02 01 00 00 00 02 01 00 00 00 03 03 05 ";
     EXPECT_EQ(expected, actual);
 
-    fmt::print("Disassembled: \n{}\n", generator.disassemble());
-    
+    fmt::print("Disassembled: \n{}\n", generator.disassemble());    
+}
+
+TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression)
+{
+    // setup    
+    std::string code("return 2 * (2 + 3)");
+    Parser parser(code);
+    CodeGenerator generator(static_cast<ASTProgramNode*>(parser.parse()));
+
+    // do
+    generator.generateCode();
+    std::string actual = generator.outputBytecode();
+
+    // validate
+    std::string expected = "01 00 00 00 02 01 00 00 00 02 01 00 00 00 03 03 05 08 ";
+    EXPECT_EQ(expected, actual);
+
+    fmt::print("Disassembled: \n{}\n", generator.disassemble());    
 }

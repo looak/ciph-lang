@@ -8,7 +8,8 @@ enum class TokenType {
     IDENTIFIER,
 
 	// keywords
-	VAR,
+	LET,
+	RETURN,
 
 	/*
     STRING,
@@ -82,7 +83,8 @@ generateOperatorMap()
 
 static OperatorMap s_operators = generateOperatorMap();
 static std::map<std::string, TokenType> s_keywords = {
-	{"var", TokenType::VAR}/*,
+	{"let", TokenType::LET},
+	{"return", TokenType::RETURN}/*,
 	{"if", TokenType::IF},
 	{"else", TokenType::ELSE},
 	{"while", TokenType::WHILE},

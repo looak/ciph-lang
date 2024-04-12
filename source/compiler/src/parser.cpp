@@ -9,18 +9,55 @@ Parser::Parser(std::string& input) : m_lexar(input)
 
 ASTBaseNode* Parser::parse()
 {
-	ASTProgramNode* node = new ASTProgramNode();
+	return parseProgram();
+}
+
+ASTProgramNode*
+Parser::parseProgram()
+{
+	ASTProgramNode* program = new ASTProgramNode();
 	auto token = m_lexar.peekNextToken();
 
 	while (token.readType() != TokenType::END_OF_FILE)
 	{
-		ASTExpressionNode* expression = parseAddativeExpression();
-		if (expression != nullptr)
-			node->addStatement(expression);
+		auto stmnt = parseStatement();
+		if (stmnt != nullptr)
+			program->addStatement(stmnt);
 		token = m_lexar.popNextToken();
 	}
+	return program;
+}
 
-	return node;
+ASTBaseNode*
+Parser::parseStatement()
+{
+	auto token = m_lexar.peekNextToken();
+	switch (token.readType())
+	{
+		case TokenType::RETURN:
+			return parseReturnStatement();
+		default:
+			return parseAddativeExpression();
+	}
+}
+
+ASTReturnNode*
+Parser::parseReturnStatement()
+{	
+	m_lexar.popNextToken();
+	auto token = m_lexar.peekNextToken();
+	ASTExpressionNode* expression = nullptr;
+	if (token.readType() == TokenType::END_OF_FILE)
+	{
+		// return 0 as default;
+		expression = new ASTNumericLiteralNode(0);
+	}
+	else
+	{
+		expression = parseAddativeExpression();
+	}
+
+	return new ASTReturnNode(expression);
 }
 
 ASTExpressionNode*

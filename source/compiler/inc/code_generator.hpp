@@ -8,6 +8,7 @@ class ASTBaseNode;
 class ASTBinaryExpressionNode;
 class ASTNumericLiteralNode;
 class ASTProgramNode;
+class ASTReturnNode;
 
 class CodeGenerator
 {
@@ -22,6 +23,8 @@ public:
     std::string disassemble() const;
 
 private:
+    void generateProgram(const ASTProgramNode* node);
+    void generateReturnStatement(const ASTReturnNode* node);
     void generateOperator(const ASTBinaryExpressionNode* node);
     void generateExpression(const ASTBaseNode* node);
     void generateBinaryExpression(const ASTBinaryExpressionNode* node);

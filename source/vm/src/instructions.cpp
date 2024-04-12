@@ -56,3 +56,15 @@ void instruction::push_handler(ExecutionContext& context)
     stack.push(value);
     context.sp++;
 }
+
+void instruction::return_handler(ExecutionContext& context)
+{
+    context.return_value = context.stack.top();
+    context.stack.pop();
+    context.sp--;
+    context.pc = static_cast<uint32_t>(context.program_size); // end the program
+    
+    // Clear the stack
+    std::stack<int32_t>().swap(context.stack);
+    context.sp = 0;
+}

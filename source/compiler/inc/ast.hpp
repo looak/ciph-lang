@@ -13,7 +13,8 @@ enum class ASTNodeType
 	IDENTIFIER,
 
 	// keywords
-	VAR,
+	LET,
+	RETURN,
 
 	/*
 	STRING,
@@ -107,5 +108,18 @@ public:
 	[[nodiscard]] const std::string& readName() const { return m_name; }
 private:
 	std::string m_name;
+};
+
+class ASTReturnNode : public ASTBaseNode
+{
+public:
+	explicit ASTReturnNode(ASTBaseNode* expression) : ASTBaseNode(ASTNodeType::RETURN), m_expression(expression) {}
+	~ASTReturnNode() override = default;
+
+	[[nodiscard]] ASTBaseNode* editExpression() { return m_expression; }
+	[[nodiscard]] const ASTBaseNode* readExpression() const { return m_expression; }
+
+private:
+	ASTBaseNode* m_expression;
 };
 
