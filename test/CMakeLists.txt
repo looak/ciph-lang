@@ -78,8 +78,8 @@ target_include_directories(compiler_tests PUBLIC ${COMPILER_INC_DIR})
 
 target_compile_features(compiler_tests PRIVATE cxx_std_20)
 
-set(compiler_test_args --gtest_filter=*)
-gtest_add_tests(compiler_tests ${compiler_test_args} AUTO)
+gtest_discover_tests(compiler_tests)
+add_dependencies(compiler_tests ${GTest_LIBRARIES})
 
 # ---- VM Tests ----
 
@@ -97,8 +97,8 @@ target_include_directories(vm_tests PUBLIC ${VM_INC_DIR})
 
 target_compile_features(vm_tests PRIVATE cxx_std_20)
 
-set(test_args --gtest_filter=*)
-gtest_add_tests(vm_tests ${test_args} AUTO)
+gtest_discover_tests(vm_tests)
+add_dependencies(compiler_tests ${GTest_LIBRARIES})
 
 # ---- End-of-file commands ----
 
