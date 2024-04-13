@@ -133,3 +133,11 @@ std::string CodeGenerator::outputBytecode()
     m_resultBytecode = result;
     return result;
 }
+
+const std::pair<uint8_t*, size_t>
+CodeGenerator::readRawBytecode() const
+{
+    uint8_t* result = new uint8_t[m_bytecode.size()];
+    std::copy(m_bytecode.begin(), m_bytecode.end(), result);
+    return {result, m_bytecode.size()};
+}

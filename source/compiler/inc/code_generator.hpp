@@ -18,7 +18,7 @@ public:
 
 	void generateCode();
 
-
+    const std::pair<uint8_t*, size_t> readRawBytecode() const;
     std::string outputBytecode();
     std::string disassemble() const;
 

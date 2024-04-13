@@ -12,14 +12,14 @@ class ASTReturnNode;
 class Parser
 {
 public:
-	explicit Parser(std::string& input);
+	explicit Parser(const std::string& input);
 	~Parser() = default;
 
 	ASTBaseNode* parse();
+	ASTProgramNode* parseProgram();
 
 
 private:
-	ASTProgramNode* parseProgram();
 	ASTBaseNode* parseStatement();
 	ASTReturnNode* parseReturnStatement();
 	ASTExpressionNode* parseAddativeExpression();

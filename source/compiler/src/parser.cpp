@@ -3,7 +3,7 @@
 
 #include <fmt/core.h>
 
-Parser::Parser(std::string& input) : m_lexar(input)
+Parser::Parser(const std::string& input) : m_lexar(input)
 {
 }
 
