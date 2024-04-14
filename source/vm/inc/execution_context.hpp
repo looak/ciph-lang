@@ -26,5 +26,5 @@ public:
 	int32_t return_value = 0;
 
 	uint8_t* bytecode;
-	std::stack<int32_t> stack;
+	std::vector<int32_t> stack;
 };

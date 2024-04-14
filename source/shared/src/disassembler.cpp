@@ -9,7 +9,9 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
     switch (i)
     {
         case Instructions::PUSH:
+        case Instructions::PEEK:
             result += dissassembleNumericLiteral(program_count);
+        
             //program_count++;
     }
     return result += "\n";

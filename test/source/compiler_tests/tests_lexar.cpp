@@ -7,7 +7,7 @@ TEST(LexarTest, PrimitiveTokens)
     Lexar lx("12345");
     
     // do
-    auto token = lx.popNextToken();
+    auto token = lx.pop();
 
     // validate
     EXPECT_EQ(token.readValue(), "12345");
@@ -27,7 +27,7 @@ OperatorTester(std::string input, OperatorType type)
 	Lexar lx(input);
 
 	// do
-	auto token = lx.popNextToken();
+	auto token = lx.pop();
 
 	// validate
 	return isOperator(token, type);
@@ -58,9 +58,9 @@ TEST(LexarTest, SimpleAddExpression)
 	Lexar lx("1 +2");
 
 	// do
-	auto token1 = lx.popNextToken();
-	auto token2 = lx.popNextToken();
-	auto token3 = lx.popNextToken();
+	auto token1 = lx.pop();
+	auto token2 = lx.pop();
+	auto token3 = lx.pop();
 
 	// validate
 	EXPECT_EQ(token1.readValue(), "1");
@@ -79,7 +79,7 @@ TEST(LexarTest, SimpleAssignmentExpression)
 	std::vector<Token> tokens;
 	bool eofOrError = false;
 	do {
-		auto token = lx.popNextToken();
+		auto token = lx.pop();
 		tokens.push_back(token);
 		if (token.readType() == TokenType::END_OF_FILE)
 			eofOrError = true;
@@ -127,7 +127,7 @@ TEST(LexarTest, KeywordsIdentification)
 	for (auto& kw : keywordsToTest)
 	{
 		Lexar lx(kw.first);
-		auto token = lx.popNextToken();
+		auto token = lx.pop();
 		EXPECT_EQ(token.readType(), kw.second);
 	}
 }
@@ -135,7 +135,23 @@ TEST(LexarTest, KeywordsIdentification)
 TEST(LexarTest, IdentifierLiteral)
 {
 	Lexar lx("myVar");
-	auto token = lx.popNextToken();
+	auto token = lx.pop();
 	EXPECT_EQ(token.readValue(), "myVar");
 	EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+}
+
+TEST(LexarTest, LetExpression)
+{
+	Lexar lx("let x = 5");
+	auto token = lx.pop();
+	EXPECT_EQ(token.readValue(), "let");
+	EXPECT_EQ(token.readType(), TokenType::LET);
+	token = lx.pop();
+	EXPECT_EQ(token.readValue(), "x");
+	EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+	EXPECT_TRUE(isOperator(lx.pop(), OperatorType::ASSIGNMENT));
+	
+	token = lx.pop();
+	EXPECT_EQ(token.readValue(), "5");
+	EXPECT_EQ(token.readType(), TokenType::NUMBER);
 }

@@ -24,7 +24,8 @@ void VirtualMachine::run(ExecutionContext& context)
 {
     while (context.pc < m_size)
     {
-        instruction::set[context.bytecode[context.pc]](context);
+        auto instruction = static_cast<Instructions>(context.bytecode[context.pc]);
+        instruction::handlers[instruction](context);
         context.pc++;
     }
 }

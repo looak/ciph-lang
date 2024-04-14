@@ -127,3 +127,44 @@ TEST(ParserTest, ReturnStatement_NumericNodeExpression)
 	
 	EXPECT_EQ(returnNode->readExpression()->readType(), ASTNodeType::BINARY_EXPRESSION);	
 }
+
+TEST(ParserTest, LetStatement)
+{
+	// setup
+	std::string code("let x = 5");
+	Parser parser(code);
+
+	// do - we know the node type returned is a program	
+	ASTProgramNode* result = static_cast<ASTProgramNode*>(parser.parse());
+
+	// validate
+	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
+
+	EXPECT_EQ(result->readStatements().size(), 1);
+	EXPECT_EQ(result->readStatements()[0]->readType(), ASTNodeType::LET);
+	auto letNode = static_cast<const ASTLetNode*>(result->readStatements()[0]);
+	EXPECT_EQ(letNode->readExpression()->readType(), ASTNodeType::NUMERIC_LITERAL);
+	EXPECT_EQ(letNode->readIdentifier(), "x");
+}
+
+TEST(ParserTest, LetStatement_Expression)
+{
+	// setup
+	std::string code("let x = 5 + 5");
+	Parser parser(code);
+
+	// do - we know the node type returned is a program	
+	ASTProgramNode* result = static_cast<ASTProgramNode*>(parser.parse());
+
+	// validate
+	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
+
+	EXPECT_EQ(result->readStatements().size(), 1);
+	EXPECT_EQ(result->readStatements()[0]->readType(), ASTNodeType::LET);
+	auto letNode = static_cast<const ASTLetNode*>(result->readStatements()[0]);
+	EXPECT_EQ(letNode->readExpression()->readType(), ASTNodeType::BINARY_EXPRESSION);
+	EXPECT_EQ(letNode->readIdentifier(), "x");
+
+	auto binaryExpression = static_cast<const ASTBinaryExpressionNode*>(letNode->readExpression());
+	EXPECT_EQ(binaryExpression->readOperator(), OperatorType::ADDITION);	
+}

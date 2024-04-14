@@ -1,13 +1,18 @@
 #include <gtest/gtest.h>
 #include <instructions.hpp>
 
-void helper_push(ExecutionContext& context, int& offset, int value)
+void write_value(ExecutionContext& context, int& offset, int value)
 {
-    context.bytecode[offset] = +Instructions::PUSH;    
     context.bytecode[++offset] = static_cast<uint8_t>((value >> 24) & 0xFF);    
     context.bytecode[++offset] = static_cast<uint8_t>((value >> 16) & 0xFF);
     context.bytecode[++offset] = static_cast<uint8_t>((value >> 8) & 0xFF);
     context.bytecode[++offset] = static_cast<uint8_t>(value & 0xFF);
+}
+
+void helper_push(ExecutionContext& context, int& offset, int value)
+{
+    context.bytecode[offset] = +Instructions::PUSH;
+    write_value(context, offset, value);    
 }
 
 TEST(InstructionsTest, PushHandler)
@@ -16,8 +21,9 @@ TEST(InstructionsTest, PushHandler)
     ExecutionContext context;
     context.bytecode = new uint8_t[5];
     helper_push(context, offset, 10);    
-    instruction::set[context.bytecode[context.pc]](context);
-	EXPECT_EQ(context.stack.top(), 10);
+    auto instruction = static_cast<Instructions>(context.bytecode[context.pc]);
+    instruction::handlers[instruction](context);
+	EXPECT_EQ(context.stack.back(), 10);
 }
 
 int BinaryExpressionHandlerTest(int a, int b, Instructions instruction)
@@ -31,11 +37,12 @@ int BinaryExpressionHandlerTest(int a, int b, Instructions instruction)
 
     for (int i = 0; i < 3; i++)
     {
-		instruction::set[context.bytecode[context.pc]](context);
+        auto instr = static_cast<Instructions>(context.bytecode[context.pc]);
+		instruction::handlers[instr](context);
         context.pc++;
 	}
 	
-	return context.stack.top();
+	return context.stack.back();
 }
 
 TEST(InstructionsTest, BinaryExpressionHandlersTests)
@@ -71,9 +78,25 @@ TEST(InstructionsTest, SubHandler)
 
     for (int i = 0; i < 3; i++)
     {
-		instruction::set[context.bytecode[context.pc]](context);
+        auto instruction = static_cast<Instructions>(context.bytecode[context.pc]);
+		instruction::handlers[instruction](context);
         context.pc++;
 	}
 	
-	EXPECT_EQ(context.stack.top(), -10);
+	EXPECT_EQ(context.stack.back(), -10);
+}
+
+TEST(InstructionsTest, PeekHandler)
+{
+    int offset = 0;
+    ExecutionContext context;
+    context.bytecode = new uint8_t[4];
+    write_value(context, offset, 1);
+    context.stack.push_back(10);
+    context.stack.push_back(20);
+    context.stack.push_back(30);
+
+    instruction::peek_handler(context);
+    EXPECT_EQ(context.stack.back(), 20);
+    EXPECT_EQ(context.stack.size(), 4);
 }

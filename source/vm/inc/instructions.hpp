@@ -1,6 +1,7 @@
 #pragma once
 
 #include <shared_defines.hpp>
+#include <unordered_map>
 
 #include "execution_context.hpp"
 
@@ -17,18 +18,17 @@ void sub_handler(ExecutionContext& context);
 void mul_handler(ExecutionContext& context);
 void div_handler(ExecutionContext& context);
 void return_handler(ExecutionContext& context);
+void peek_handler(ExecutionContext& context);
 
 
-static handler set[] = {
-	nullptr, // 0
-	&push_handler,
-	nullptr, // pop_handler
-	&add_handler,
-	&sub_handler,
-	&mul_handler,
-	&div_handler,
-	nullptr, // mod handler
-	&return_handler
+static std::unordered_map<Instructions, handler> handlers = {
+	{Instructions::PUSH, &push_handler},
+	{Instructions::PEEK, &peek_handler},
+	{Instructions::ADD, &add_handler},
+	{Instructions::SUB, &sub_handler},
+	{Instructions::MUL, &mul_handler},
+	{Instructions::DIV, &div_handler},
+	{Instructions::RET, &return_handler}
 };
 
 

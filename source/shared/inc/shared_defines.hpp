@@ -9,6 +9,7 @@ enum class Instructions : uint8_t {
 	// stack
 	PUSH = 0x1,
 	POP,
+	PEEK,
 
 	// arithmetic
 	ADD,
@@ -25,6 +26,7 @@ const std::unordered_map<Instructions, std::string> s_instructionMnemonics = {
 	{Instructions::NOP, "NOP"},
 	{Instructions::PUSH, "PUSH"},
 	{Instructions::POP, "POP"},
+	{Instructions::PEEK, "PEEK"},
 	{Instructions::ADD, "ADD"},
 	{Instructions::SUB, "SUB"},
 	{Instructions::MUL, "MUL"},

@@ -43,25 +43,36 @@ Lexar::Lexar(const std::string& input) :
 {
 }
 
-bool Lexar::expectNextToken(TokenType type)
+bool Lexar::popOperator(OperatorType op)
 {
-	Token token = popNextToken();
+	Token token = pop();
+	if (token.readType() != TokenType::OPERATOR)
+		return false;
+	if (token.readOperator() != op)
+		return false;
+
+	return true;
+}
+
+bool Lexar::expect(TokenType type)
+{
+	Token token = pop();
 	if (token.readType() != type)
 		return false;
 
 	return true;
 }
 
-Token Lexar::peekNextToken()
+Token Lexar::peek()
 {
 	if (m_peek.hasValue())
 		return m_peek;
 
-	m_peek = popNextToken();
+	m_peek = pop();
     return m_peek;
 }
 
-Token Lexar::popNextToken()
+Token Lexar::pop()
 {
 	if (m_peek.hasValue())
 	{
@@ -133,8 +144,7 @@ Token Lexar::popNextToken()
 }
 
 char Lexar::popNextChar()
-{
-    skipWhiteSpaces();
+{    
 	return m_input[m_position++];
 }
 

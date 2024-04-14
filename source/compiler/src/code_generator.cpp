@@ -29,13 +29,18 @@ void CodeGenerator::generateProgram(const ASTProgramNode* node)
                 generateReturnStatement(returnNode);
                 break;
             }
+            case ASTNodeType::LET:
+            {
+                const auto* letNode = static_cast<const ASTLetNode*>(statement);
+                generateLetStatement(letNode);
+                break;
+            }
             default:
             {
                 generateExpression(statement);
                 break;
             }
         }
-        
     }
 }
 
@@ -55,6 +60,12 @@ void CodeGenerator::generateExpression(const ASTBaseNode* node)
             generateBinaryExpression(binaryNode);
             break;
         }
+        case ASTNodeType::IDENTIFIER:
+        {
+            const auto* identifierNode = static_cast<const ASTIdentifierNode*>(node);
+            generateIdentifier(identifierNode);
+            break;
+        }
         default:
         {
             fmt::print("Unknown node type\n");
@@ -68,12 +79,39 @@ void CodeGenerator::generateBinaryExpression(const ASTBinaryExpressionNode* node
     generateExpression(node->readLeft());
     generateExpression(node->readRight());
     generateOperator(node);
+    m_stackSize--; // reduce by 2 add 1
 }
 
 void CodeGenerator::generateReturnStatement(const ASTReturnNode* node)
 {
     generateExpression(node->readExpression());
     m_bytecode.push_back(static_cast<uint8_t>(Instructions::RET));
+}
+
+void CodeGenerator::generateLetStatement(const ASTLetNode* node)
+{
+    if (m_identifiers.find(node->readIdentifier()) == m_identifiers.end())
+    {
+        m_identifiers[node->readIdentifier()] = m_stackSize;
+        generateExpression(node->readExpression());
+    }
+    else
+    {
+        fmt::print("Identifier already exists\n");
+    }
+}
+
+void CodeGenerator::generateIdentifier(const ASTIdentifierNode* node)
+{
+    if (m_identifiers.find(node->readName()) != m_identifiers.end())
+    {
+        peek();
+        encode(static_cast<int32_t>(m_identifiers[node->readName()]));
+    }
+    else
+    {
+        fmt::print("Identifier not found\n");
+    }
 }
 
 void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node)
@@ -110,15 +148,11 @@ void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node)
 }
 
 void CodeGenerator::generateNumericLiteral(const ASTNumericLiteralNode* node)
-{
-    // instruction
-    m_bytecode.push_back(static_cast<uint8_t>(Instructions::PUSH));
+{    
+    push();
     // 4 byte integer
     int32_t value = node->readValue();
-    m_bytecode.push_back(static_cast<uint8_t>((value >> 24) & 0xFF));
-    m_bytecode.push_back(static_cast<uint8_t>((value >> 16) & 0xFF));
-    m_bytecode.push_back(static_cast<uint8_t>((value >> 8) & 0xFF));
-    m_bytecode.push_back(static_cast<uint8_t>(value & 0xFF));
+    encode(value);
 }
 
 std::string CodeGenerator::outputBytecode()
@@ -140,4 +174,24 @@ CodeGenerator::readRawBytecode() const
     uint8_t* result = new uint8_t[m_bytecode.size()];
     std::copy(m_bytecode.begin(), m_bytecode.end(), result);
     return {result, m_bytecode.size()};
+}
+
+void CodeGenerator::encode(int32_t value)
+{
+    m_bytecode.push_back(static_cast<uint8_t>((value >> 24) & 0xFF));
+    m_bytecode.push_back(static_cast<uint8_t>((value >> 16) & 0xFF));
+    m_bytecode.push_back(static_cast<uint8_t>((value >> 8) & 0xFF));
+    m_bytecode.push_back(static_cast<uint8_t>(value & 0xFF));
+}
+
+void CodeGenerator::peek()
+{
+    m_stackSize++;
+    m_bytecode.push_back(static_cast<uint8_t>(Instructions::PEEK));
+}
+
+void CodeGenerator::push()
+{
+    m_stackSize++;
+    m_bytecode.push_back(static_cast<uint8_t>(Instructions::PUSH)); 
 }

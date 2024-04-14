@@ -41,9 +41,10 @@ class Lexar
 	explicit Lexar(const std::string& input);
 	~Lexar() = default;
 
-	bool expectNextToken(TokenType type);
-	Token peekNextToken();
-	Token popNextToken();    
+	bool expect(TokenType type);
+	bool popOperator(OperatorType op);
+	Token peek();
+	Token pop();    
 	//std::vector<std::string> getTokens() const;
 
 private:

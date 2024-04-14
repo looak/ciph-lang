@@ -6,6 +6,8 @@
 
 class ASTBaseNode;
 class ASTExpressionNode;
+class ASTIdentifierNode;
+class ASTLetNode;
 class ASTProgramNode;
 class ASTReturnNode;
 
@@ -18,15 +20,13 @@ public:
 	ASTBaseNode* parse();
 	ASTProgramNode* parseProgram();
 
-
 private:
 	ASTBaseNode* parseStatement();
+	ASTLetNode* parseLetStatement();
 	ASTReturnNode* parseReturnStatement();
 	ASTExpressionNode* parseAddativeExpression();
 	ASTExpressionNode* parseMultiplicativeExpression();
-
-	// ASTExpressionNode* parseBinaryOperationExpression();	
-
+	ASTIdentifierNode* parseIdentifier();
 	ASTExpressionNode* parsePrimaryExpression();
 
 	Lexar m_lexar;

@@ -3,12 +3,16 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 class ASTBaseNode;
 class ASTBinaryExpressionNode;
+class ASTLetNode;
+class ASTIdentifierNode;
 class ASTNumericLiteralNode;
 class ASTProgramNode;
 class ASTReturnNode;
+
 
 class CodeGenerator
 {
@@ -24,14 +28,29 @@ public:
 
 private:
     void generateProgram(const ASTProgramNode* node);
-    void generateReturnStatement(const ASTReturnNode* node);
-    void generateOperator(const ASTBinaryExpressionNode* node);
+    
+    // expressions
     void generateExpression(const ASTBaseNode* node);
     void generateBinaryExpression(const ASTBinaryExpressionNode* node);
-    void generateNumericLiteral(const ASTNumericLiteralNode* node);
+    void generateNumericLiteral(const ASTNumericLiteralNode* node);    
+    void generateOperator(const ASTBinaryExpressionNode* node);
+    void generateIdentifier(const ASTIdentifierNode* node);
 
-    const ASTProgramNode* m_program;
+    // statements
+    void generateReturnStatement(const ASTReturnNode* node);
+    void generateLetStatement(const ASTLetNode* node);
+    
+    // helper
+    void peek();
+    void push();
+    void pop();
+    void encode(int32_t value);
+   
+    // program
+    uint32_t m_stackSize = 0;
+    std::unordered_map<std::string, uint32_t> m_identifiers = {};
 
-    std::vector<uint8_t> m_bytecode;
-    std::string m_resultBytecode;
+    const ASTProgramNode* m_program = nullptr;
+    std::vector<uint8_t> m_bytecode = {};
+    std::string m_resultBytecode = "";
 };

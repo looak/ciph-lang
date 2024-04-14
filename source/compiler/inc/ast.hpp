@@ -123,3 +123,16 @@ private:
 	ASTBaseNode* m_expression;
 };
 
+class ASTLetNode : public ASTBaseNode
+{
+public:
+	ASTLetNode(const std::string& identifier, ASTExpressionNode* expression) : ASTBaseNode(ASTNodeType::LET), m_identifier(identifier), m_expression(expression) {}
+	~ASTLetNode() override = default;
+
+	[[nodiscard]] const std::string& readIdentifier() const { return m_identifier; }
+	[[nodiscard]] const ASTExpressionNode* readExpression() const { return m_expression; }
+
+private:
+	std::string m_identifier;
+	ASTExpressionNode* m_expression;
+};
