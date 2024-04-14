@@ -87,7 +87,7 @@ void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node)
         }
         case OperatorType::SUBTRACTION:
         {
-            m_bytecode.push_back(static_cast<uint8_t>(Instructions::ADD));
+            m_bytecode.push_back(static_cast<uint8_t>(Instructions::SUB));
             break;
         }
         case OperatorType::MULTIPLICATION:

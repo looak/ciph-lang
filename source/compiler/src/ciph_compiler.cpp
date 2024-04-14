@@ -38,8 +38,11 @@ main(int argc, char* argv[])
     generator.generateCode();
     auto [bytecode, size] = generator.readRawBytecode();
     std::streamsize streamSize = static_cast<std::streamsize>(size);
-    fmt::print(file, "{}", size);
+    uint32_t size32 = static_cast<uint32_t>(size);
+    file.write(reinterpret_cast<const char*>(&size32), sizeof(uint32_t));
     file.write(reinterpret_cast<const char*>(bytecode), streamSize);
+    
+    fmt::print(file, "{}", generator.disassemble());
 
     delete[] bytecode;
 
