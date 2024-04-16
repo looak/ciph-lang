@@ -51,8 +51,8 @@ void instruction::peek_handler(ExecutionContext& context)
         offset = (offset << 8) | context.bytecode[++context.pc];      
     }
 
-    auto& stack = context.stack;
-    auto value = stack[offset];
+    std::vector<int32_t>& stack = context.stack;
+    auto value = stack[static_cast<size_t>(offset)];
     stack.push_back(value);
     context.sp++;
 }

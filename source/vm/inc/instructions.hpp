@@ -33,3 +33,7 @@ static std::unordered_map<Instructions, handler> handlers = {
 
 
 } // namespace instruction
+
+namespace instruction_impl {
+	
+} // namespace instruction_impl

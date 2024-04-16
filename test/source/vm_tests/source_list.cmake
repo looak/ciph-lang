@@ -5,5 +5,6 @@ set(VM_TEST_SRC
 
     ${VM_TEST_DIR}/tests_virtual_machine.cpp
     ${VM_TEST_DIR}/tests_instructions.cpp
+    ${VM_TEST_DIR}/tests_processing_unit.cpp
 )
 
