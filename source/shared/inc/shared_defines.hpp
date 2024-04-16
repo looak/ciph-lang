@@ -4,38 +4,9 @@
 #include <vector>
 #include <unordered_map>
 
-enum class Instructions : uint8_t {
-	NOP = 0x0,
-	// stack
-	PUSH = 0x1,
-	POP,
-	PEEK,
+namespace instruction {
 
-	// arithmetic
-	ADD,
-	SUB,
-	MUL,
-	DIV,
-	MOD,
-
-	// control flow
-	RET,
-};
-
-const std::unordered_map<Instructions, std::string> s_instructionMnemonics = {
-	{Instructions::NOP, "NOP"},
-	{Instructions::PUSH, "PUSH"},
-	{Instructions::POP, "POP"},
-	{Instructions::PEEK, "PEEK"},
-	{Instructions::ADD, "ADD"},
-	{Instructions::SUB, "SUB"},
-	{Instructions::MUL, "MUL"},
-	{Instructions::DIV, "DIV"},
-	{Instructions::MOD, "MOD"},
-	{Instructions::RET, "RET"}
-};
-
-enum class Instruction : uint8_t {
+enum class def : uint8_t {
 	PUT		=		0x01,	// Takes the memory at the location and puts it in imm register.
 	PUT_REG	=		0x04, 	// Takes value of imm and puts it in given register.
 	PUT_LIT	=		0x05,	// Move literal into imm register.
@@ -69,3 +40,36 @@ enum class Instruction : uint8_t {
 	// Other instructions
 	NOP	 	=		0x00  	// No operation instruction, program counter should just tick pass this.
 };
+
+const std::unordered_map<def, std::string> mnemonics = {
+	{def::PUT, "PUT"},
+	{def::PUT_REG, "PUT"},
+	{def::PUT_LIT, "PUT"},
+	{def::MOV, "MOV"},
+	{def::MOV_MEM, "MOV"},
+	{def::ADD, "ADD"},
+	{def::ADD_REG, "ADD"},
+	{def::SUB, "SUB"},
+	{def::SUB_REG, "SUB"},
+	{def::MUL, "MUL"},
+	{def::MUL_REG, "MUL"},
+	{def::DIV, "DIV"},
+	{def::DIV_REG, "DIV"},
+	{def::PSH, "PSH"},
+	{def::PSH_REG, "PSH"},
+	{def::PSH_LIT, "PSH"},
+	{def::PSH_MEM, "PSH"},
+	{def::POP, "POP"},
+	{def::POP_REG, "POP"},
+	{def::PEK_REG, "PEK"},
+	{def::JMP, "JMP"},
+	{def::JNZ, "JNZ"},
+	{def::RET, "RET"},
+	{def::NOP, "NOP"}	
+};
+
+} // namespace instruction
+
+inline uint8_t operator+(instruction::def i)	{
+	return static_cast<uint8_t>(i);
+}

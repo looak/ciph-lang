@@ -2,12 +2,7 @@
 
 #include <shared_defines.hpp>
 #include <unordered_map>
-
 #include "execution_context.hpp"
-
-inline uint8_t operator+(Instructions i) {
-	return static_cast<uint8_t>(i);
-}
 
 namespace instruction {
 typedef void (*handler)(ExecutionContext& context);
@@ -20,20 +15,13 @@ void div_handler(ExecutionContext& context);
 void return_handler(ExecutionContext& context);
 void peek_handler(ExecutionContext& context);
 
-
-static std::unordered_map<Instructions, handler> handlers = {
-	{Instructions::PUSH, &push_handler},
-	{Instructions::PEEK, &peek_handler},
-	{Instructions::ADD, &add_handler},
-	{Instructions::SUB, &sub_handler},
-	{Instructions::MUL, &mul_handler},
-	{Instructions::DIV, &div_handler},
-	{Instructions::RET, &return_handler}
-};
-
-
+static std::unordered_map<def, handler> handlers = {
+	{def::PSH, push_handler},
+	{def::ADD, add_handler},
+	{def::SUB, sub_handler},
+	{def::MUL, mul_handler},
+	{def::DIV, div_handler},
+	{def::RET, return_handler},
+	{def::PEK_REG, peek_handler}
+}; // handlers
 } // namespace instruction
-
-namespace instruction_impl {
-	
-} // namespace instruction_impl

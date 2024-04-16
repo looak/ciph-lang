@@ -16,15 +16,12 @@ struct StackValue
 struct ExecutionContext 
 {
 public:
-	ExecutionContext() = default;
-    ~ExecutionContext() = default;
+	ExecutionContext(size_t size, uint16_t& pc, uint16_t& sp)
+		: pc(pc), sp(sp)
+	{}
 
-	uint32_t pc = 0;
-	uint32_t sp = 0;
-
-	size_t program_size = 0;
+	uint16_t& pc;
+	uint16_t& sp;
+	
 	int32_t return_value = 0;
-
-	uint8_t* bytecode;
-	std::vector<int32_t> stack;
 };

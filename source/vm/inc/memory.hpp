@@ -5,7 +5,7 @@
 class Memory {
 public:
     Memory() {
-        m_memory = new uint8_t[0x1000]; // 4KB
+        m_memory = new uint8_t[0x1000] {0xEE}; // 4KB
         m_size = 0x1000;
         m_allocPointer = 0;
     };
@@ -15,6 +15,7 @@ public:
 
     uint16_t* allocate(uint16_t size) {
         uint16_t* ptr = reinterpret_cast<uint16_t*>(&m_memory[m_allocPointer]);
+        std::fill_n(&m_memory[m_allocPointer], size, 0x00); // fill with 0x0
         m_allocPointer += size;        
         return ptr;
     }

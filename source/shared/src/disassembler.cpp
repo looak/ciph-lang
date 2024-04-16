@@ -4,12 +4,12 @@
 
 std::string Disassembler::disassembleInstruction(size_t& program_count) const
 {
-    Instructions i = static_cast<Instructions>(m_program[program_count]);
-    std::string result = fmt::format("{} ", s_instructionMnemonics.at(i));
-    switch (i)
+    auto instr = static_cast<instruction::def>(m_program[program_count]);
+    std::string result = fmt::format("{} ", instruction::mnemonics.at(instr));
+    switch (instr)
     {
-        case Instructions::PUSH:
-        case Instructions::PEEK:
+        case instruction::def::PSH:
+        case instruction::def::PEK_REG:
             result += dissassembleNumericLiteral(program_count);
         
             //program_count++;
