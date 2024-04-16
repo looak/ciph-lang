@@ -2,11 +2,12 @@
 #include <cstdint>
 #include <algorithm>
 
+template <size_t N>
 class Memory {
 public:
     Memory() {
-        m_memory = new uint8_t[0x1000] {0xEE}; // 4KB
-        m_size = 0x1000;
+        m_memory = new uint8_t[N];
+        m_size = N;
         m_allocPointer = 0;
     };
     ~Memory() {
@@ -25,22 +26,22 @@ public:
             return 0x0;
             // out of memory
         }
-
+        if (size == 0)
+            return m_allocPointer;
+        
         std::copy(program, program + size, &m_memory[m_allocPointer]);
         uint16_t addrs = m_memory[m_allocPointer];
         m_allocPointer += size;
         return addrs;
     }
 
-    void writeByte(uint16_t address, uint8_t value);
-    void writeWord(uint16_t address, uint16_t value);
-    void writeDWord(uint16_t address, uint32_t value);
-    void writeQWord(uint16_t address, uint64_t value);
+    uint8_t* getMemory(uint16_t address) const {
+        return &m_memory[address];
+    }
 
-    uint8_t readByte(uint16_t address);
-    uint16_t readWord(uint16_t address);
-    uint32_t readDWord(uint16_t address);
-    uint64_t readQWord(uint16_t address);
+    uint8_t* getMemory() const {
+        return m_memory;
+    }
 
 private:
     uint8_t* m_memory;

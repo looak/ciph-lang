@@ -16,12 +16,12 @@ struct StackValue
 struct ExecutionContext 
 {
 public:
-	ExecutionContext(size_t size, uint16_t& pc, uint16_t& sp)
-		: pc(pc), sp(sp)
+	ExecutionContext(uint16_t* reg, uint8_t* _bytecode)
+		: registry(reg)
+		, bytecode(_bytecode)
 	{}
 
-	uint16_t& pc;
-	uint16_t& sp;
-	
-	int32_t return_value = 0;
+	uint16_t* registry;	
+	uint8_t* bytecode = nullptr;
+	int16_t return_value = 0;
 };

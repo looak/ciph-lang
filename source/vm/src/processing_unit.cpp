@@ -23,10 +23,13 @@ void ProcessingUnit::load_program(uint8_t* program, uint16_t size)
 
 void ProcessingUnit::execute()
 {
-       do {
-        auto instr = static_cast<instruction::def>(m_memory.readByte(m_registries[+Register::pc]));
-        instruction::handlers[instr](m_registries, m_memory);
-        m_registries[+Register::pc]++;
+    instruction::def instr = instruction::def::RET;
+    ExecutionContext context(m_registries, m_memory.getMemory());
+    uint16_t& pc = m_registries[+Register::pc];
+    do {
+        instr = static_cast<instruction::def>(pc);
+        instruction::handlers[instr](context);
+        pc++;
     }
-    while (instruction != Instruction::RET)
+    while (instr != instruction::def::RET);
 }

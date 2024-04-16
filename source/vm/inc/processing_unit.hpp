@@ -36,6 +36,6 @@ public:
 
 private:
     uint16_t* m_registries;
-    Memory m_memory;
+    Memory<0x1000> m_memory; // 4KB
     uint8_t* ptr = nullptr;
 };

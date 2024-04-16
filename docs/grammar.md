@@ -1,15 +1,26 @@
 $$
-\begin{align}
-[\text{program}] &\to [\text{statment}]^*\\
-[\text{statment}] &\to [\text{expression}]^*\\
-[\text{expression}] &\to
-    \begin{cases}    
-    [\text{numeric literal}] \\
-    [\text{multiplication}] \\
-    [\text{division}] \\
-    [\text{addition}] \\
-    [\text{subtraction}] \\
-        
+\begin{aligned}
+[statement] \to \begin{cases}
+        [let]^* \\
+        [return] \\
+        [expression]^* \\
+    \end{cases} \\
+    [return] \to \begin{cases}
+        [expression] \\
+        \text{numeric literal} \\
+    \end{cases} \\
+    [let] \to
+    \begin{cases}
+        [expression] \\
+        \text{numeric literal} \\
+    \end{cases} \\
+    [expression] \to \begin{cases}
+        [variable] \\
+        [multiplication] \\
+        [division] \\
+        [addition] \\
+        [subtraction] \\
+        \text{numeric literal} \\
     \end{cases}
-\end{align}
+\end{aligned}
 $$
