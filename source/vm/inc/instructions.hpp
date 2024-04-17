@@ -4,7 +4,14 @@
 #include <unordered_map>
 #include "execution_context.hpp"
 
+
 namespace instruction {
+	
+int16_t read_int16(uint8_t* bytecode, uint16_t& pc);
+void write_int16(uint8_t* bytecode, uint16_t& pc, int16_t value);
+int16_t pop_helper(ExecutionContext& context);
+void push_helper(ExecutionContext& context, int16_t value);
+
 typedef void (*handler)(ExecutionContext& context);
 
 void push_handler(ExecutionContext& context);

@@ -1,11 +1,7 @@
-// #include <gtest/gtest.h>
+#include <gtest/gtest.h>
 
-// #include <shared_defines.hpp>
-// #include "processing_unit.hpp"
-
-// uint8_t operator+(Instruction instr) {
-//     return static_cast<uint8_t>(instr);
-// }
+#include <shared_defines.hpp>
+#include "processing_unit.hpp"
 
 // TEST(ProcessingUnitTest, MustStartSomeWhere)
 // {
@@ -16,18 +12,18 @@
 //     ASSERT_TRUE(true);
 // }
 
-// TEST(ProcessingUnitTest, LoadSimpleProgram)
-// {
-//     ProcessingUnit unit;
-//     //unit.reset();
-//     uint8_t program[] = { 
-//         +Instruction::PSH, 0, 25,
-//         +Instruction::PSH, 0, 16,
-//         +Instruction::ADD,
-//         +Instruction::RET};
-//     unit.load_program(program, sizeof(program));
+TEST(ProcessingUnitTest, LoadSimpleProgram)
+{
+    ProcessingUnit unit;
+    //unit.reset();
+    uint8_t program[] = { 
+        +instruction::def::PSH_LIT, 0, 25,
+        +instruction::def::PSH_LIT, 0, 16,
+        +instruction::def::ADD,
+        +instruction::def::RET};
+    unit.load_program(program, sizeof(program));
 
-//     EXPECT_EQ(10, unit.registries()[+Register::pc]);
-//     unit.execute();
-//     ASSERT_TRUE(true);
-// }
+    EXPECT_EQ(32, unit.registries()[+Register::pc]);
+    int16_t result = unit.execute();
+    EXPECT_EQ(41, result);
+}

@@ -21,15 +21,17 @@ void ProcessingUnit::load_program(uint8_t* program, uint16_t size)
 
 }
 
-void ProcessingUnit::execute()
+int16_t ProcessingUnit::execute()
 {
     instruction::def instr = instruction::def::RET;
     ExecutionContext context(m_registries, m_memory.getMemory());
     uint16_t& pc = m_registries[+Register::pc];
-    do {
-        instr = static_cast<instruction::def>(pc);
+    do {        
+        instr = static_cast<instruction::def>(context.bytecode[pc]);
         instruction::handlers[instr](context);
         pc++;
     }
     while (instr != instruction::def::RET);
+
+    return context.return_value;
 }

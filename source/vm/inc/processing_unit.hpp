@@ -28,7 +28,7 @@ public:
     
     void load_program(uint8_t* program, uint16_t size);
 
-    void execute();
+    int16_t execute();
 
     uint16_t* registries() const {
         return m_registries;

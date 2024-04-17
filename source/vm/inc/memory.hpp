@@ -15,6 +15,7 @@ public:
     }
 
     uint16_t* allocate(uint16_t size) {
+        size *= 2;
         uint16_t* ptr = reinterpret_cast<uint16_t*>(&m_memory[m_allocPointer]);
         std::fill_n(&m_memory[m_allocPointer], size, 0x00); // fill with 0x0
         m_allocPointer += size;        
@@ -30,7 +31,7 @@ public:
             return m_allocPointer;
         
         std::copy(program, program + size, &m_memory[m_allocPointer]);
-        uint16_t addrs = m_memory[m_allocPointer];
+        uint16_t addrs = m_allocPointer;
         m_allocPointer += size;
         return addrs;
     }
