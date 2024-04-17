@@ -6,9 +6,10 @@
 
 
 namespace instruction {
-	
-int16_t read_int16(uint8_t* bytecode, uint16_t& pc);
+
+int16_t read_word(uint8_t* bytecode, uint16_t& pc);
 void write_int16(uint8_t* bytecode, uint16_t& pc, int16_t value);
+int16_t peek_helper(uint8_t* bytecode, uint16_t sp);
 int16_t pop_helper(ExecutionContext& context);
 void push_helper(ExecutionContext& context, int16_t value);
 
@@ -23,6 +24,7 @@ void mul_handler(ExecutionContext& context);
 void div_handler(ExecutionContext& context);
 void return_handler(ExecutionContext& context);
 void peek_handler(ExecutionContext& context);
+void peek_offset_handler(ExecutionContext& context);
 
 static std::unordered_map<def, handler> handlers = {
 	{def::PSH, push_handler},
@@ -32,6 +34,7 @@ static std::unordered_map<def, handler> handlers = {
 	{def::MUL, mul_handler},
 	{def::DIV, div_handler},
 	{def::RET, return_handler},
-	{def::PEK_REG, peek_handler}
+	{def::PEK_REG, peek_handler},
+	{def::PEK_OFF, peek_offset_handler}
 }; // handlers
 } // namespace instruction

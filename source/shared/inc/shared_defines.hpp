@@ -34,6 +34,7 @@ enum class def : uint8_t {
 	POP	 	=		0x30, 	// Pops top of stack to given imm register
 	POP_REG	=		0x40, 	// Pops top of stack to given register.
 	PEK_REG	=		0x50, 	// Copies top value of stack into given register
+	PEK_OFF	=		0x51, 	// Copies value of stack at offset into given register
 	
 	// Control flow instructions
 	JMP	 	=		0xC0, 	// Unconditionally jump to address.
@@ -65,6 +66,7 @@ const std::unordered_map<def, std::string> mnemonics = {
 	{def::POP, "POP"},
 	{def::POP_REG, "POP"},
 	{def::PEK_REG, "PEK"},
+	{def::PEK_OFF, "PEK"},
 	{def::JMP, "JMP"},
 	{def::JNZ, "JNZ"},
 	{def::RET, "RET"},

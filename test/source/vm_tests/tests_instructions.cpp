@@ -79,6 +79,69 @@ TEST_F(InstructionsTest, PushHandler)
 	EXPECT_EQ(value, int16_t(0xf00d));
 }
 
+TEST_F(InstructionsTest, PeekHandler_Reg)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::PEK_REG, +Register::r0,
+    };
+
+    mem.load(program, sizeof(program));
+
+    ExecutionContext context(registries, mem.getMemory());
+    
+    // run program
+    uint16_t& pc = registries[+Register::pc];
+    auto instruction = static_cast<instruction::def>(context.bytecode[pc]);    
+
+    instruction::handlers[instruction](context);
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    EXPECT_EQ(instruction, instruction::def::PEK_REG);
+    instruction::handlers[instruction](context);
+
+    int16_t value = context.registry[+Register::r0];
+    EXPECT_EQ(value, 42);
+
+    value = pop_helper(context);
+    EXPECT_EQ(value, 42);
+}
+
+TEST_F(InstructionsTest, PeekHandler_Offset)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::PSH_LIT, 0, 9,
+        +instruction::def::PSH_LIT, 0, 17,
+        +instruction::def::PSH_LIT, 0, 19,
+        +instruction::def::PEK_OFF, +Register::r0, 0x02
+    };
+
+    mem.load(program, sizeof(program));
+
+    ExecutionContext context(registries, mem.getMemory());
+    
+    // run program
+    uint16_t& pc = registries[+Register::pc];
+    for (int i = 0; i < 4; i++)
+    {
+        auto instruction = static_cast<instruction::def>(context.bytecode[pc]);
+        instruction::handlers[instruction](context);
+        pc++;
+    }
+
+    auto instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    EXPECT_EQ(instruction, instruction::def::PEK_OFF);
+    instruction::handlers[instruction](context);
+
+    int16_t value = context.registry[+Register::r0];
+    EXPECT_EQ(value, 17);
+
+    pop_helper(context); // pop twice
+    value = pop_helper(context);
+    EXPECT_EQ(value, 17);
+}
+
 int16_t BinaryExpressionHandlerTest(int16_t a, int16_t b, instruction::def _instr, InstructionsTest* fixture)
 {
     int16_t offset = 0;
@@ -128,36 +191,3 @@ TEST_F(InstructionsTest, BinaryExpressionHandlersTests)
     }
 }
 
-// TEST(InstructionsTest, SubHandler)
-// {
-//     int offset = 0;
-// 	ExecutionContext context;
-//     context.bytecode = new uint8_t[11];
-// 	helper_push(context, offset, 10);
-//     helper_push(context, ++offset, 20);
-// 	context.bytecode[++offset] = +Instructions::SUB;
-
-//     for (int i = 0; i < 3; i++)
-//     {
-//         auto instruction = static_cast<Instructions>(context.bytecode[context.pc]);
-// 		instruction::handlers[instruction](context);
-//         context.pc++;
-// 	}
-	
-// 	EXPECT_EQ(context.stack.back(), -10);
-// }
-
-// TEST(InstructionsTest, PeekHandler)
-// {
-//     int offset = 0;
-//     ExecutionContext context;
-//     context.bytecode = new uint8_t[4];
-//     write_value(context, offset, 1);
-//     context.stack.push_back(10);
-//     context.stack.push_back(20);
-//     context.stack.push_back(30);
-
-//     instruction::peek_handler(context);
-//     EXPECT_EQ(context.stack.back(), 20);
-//     EXPECT_EQ(context.stack.size(), 4);
-// }

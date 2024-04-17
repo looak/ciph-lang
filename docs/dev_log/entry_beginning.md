@@ -15,3 +15,7 @@ Didn't take long for me to realize my misstake. I've been thinking that my instr
 PSH = 1byte (only the instruction)
 MOV_REG = 2 byte (1 byte for instruction, 1 byte for register identifiers)
 PUT_MEM = 3 byte (1 byte for instruction, 2 byte for memory address)
+
+#### new entry @2024-04-16
+Been hacking away at the new architecture, and I'm pleased to have gotten push, pop and some of the arithmetic instructions against the stack to work.
+Gonna address the peek instruction now.

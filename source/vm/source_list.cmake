@@ -5,8 +5,7 @@ set(VM_SRC
     ${VM_SRC}
     ${VM_SRC_DIR}/instructions.cpp
 
-    ${VM_SRC_DIR}/processing_unit.cpp
-    ${VM_SRC_DIR}/virtual_machine.cpp
+    ${VM_SRC_DIR}/processing_unit.cpp    
 )
 
 set(VM_INC 
@@ -14,8 +13,7 @@ set(VM_INC
     ${VM_INC_DIR}/execution_context.hpp    
     ${VM_INC_DIR}/instructions.hpp
     ${VM_INC_DIR}/memory.hpp
-    ${VM_INC_DIR}/processing_unit.hpp
-    ${VM_INC_DIR}/virtual_machine.hpp
+    ${VM_INC_DIR}/processing_unit.hpp    
 )
 
 set(VM_ALL_SRC 
