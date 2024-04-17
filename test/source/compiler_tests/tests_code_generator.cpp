@@ -19,11 +19,6 @@ public:
     ASTProgramNode m_program;
 };
 
-uint8_t operator+(Instructions instr)
-{
-    return static_cast<uint8_t>(instr);
-}
-
 bool compareBytecode(const uint8_t* expected, const uint8_t* actual, size_t size)
 {
     for (size_t i = 0; i < size; i++)
@@ -36,12 +31,10 @@ bool compareBytecode(const uint8_t* expected, const uint8_t* actual, size_t size
     return true;
 }
 
-/*
-* Expect byte code array to contain 4 bytes representing the integer 0xDEAFBEEF */
 TEST_F(CodeGeneratorTestFixture, NumericLiteral_ExpectArray)
 {
     // setup
-    ASTNumericLiteralNode* node = new ASTNumericLiteralNode(-558907665); // 0xDEAFBEEF
+    ASTNumericLiteralNode* node = new ASTNumericLiteralNode(0xbeef); 
 
     m_program.addStatement(node);
 
@@ -51,8 +44,8 @@ TEST_F(CodeGeneratorTestFixture, NumericLiteral_ExpectArray)
     generator.generateCode();
 
     // validate
-    uint8_t expectedProgram[] = { +Instructions::PUSH, 0xDE, 0xAF, 0xBE, 0xEF };
-    uint32_t expectedSize = 5;
+    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0xBE, 0xEF };
+    uint32_t expectedSize = sizeof(expectedProgram);
     
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
@@ -63,8 +56,8 @@ TEST_F(CodeGeneratorTestFixture, NumericLiteral_ExpectArray)
 TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
 {
     // setup
-    ASTNumericLiteralNode* left = new ASTNumericLiteralNode(-558907665); // 0xDEAFBEEF
-    ASTNumericLiteralNode* right = new ASTNumericLiteralNode(0xCAFEBABE); // 0xCAFEBABE
+    ASTNumericLiteralNode* left = new ASTNumericLiteralNode(0xCAFE); // 0xDEAFBEEF
+    ASTNumericLiteralNode* right = new ASTNumericLiteralNode(0xBABE); // 0xCAFEBABE
 
     ASTBinaryExpressionNode* node = new ASTBinaryExpressionNode(left, right, OperatorType::ADDITION);
 
@@ -76,11 +69,11 @@ TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
     generator.generateCode();
 
     // validate
-    uint8_t expectedProgram[] = { +Instructions::PUSH, 0xDE, 0xAF, 0xBE, 0xEF,
-                                  +Instructions::PUSH, 0xCA, 0xFE, 0xBA, 0xBE,
-                                  +Instructions::ADD };
+    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0xCA, 0xFE,
+                                  +instruction::def::PSH_LIT, 0xBA, 0xBE,
+                                  +instruction::def::ADD };
 
-    uint32_t expectedSize = 11;
+    uint32_t expectedSize = sizeof(expectedProgram);
 
     auto [actualProgram, actualSize] = generator.readRawBytecode();    
 
@@ -102,11 +95,11 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_MulBeforeAdd)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = { +Instructions::PUSH, 0, 0, 0, 2,
-                                  +Instructions::PUSH, 0, 0, 0, 2,
-                                  +Instructions::MUL,
-                                  +Instructions::PUSH, 0, 0, 0, 3,
-                                  +Instructions::ADD };
+    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
+                                  +instruction::def::PSH_LIT, 0, 2,
+                                  +instruction::def::MUL,
+                                  +instruction::def::PSH_LIT, 0, 3,
+                                  +instruction::def::ADD };
     uint32_t expectedSize = sizeof(expectedProgram);
 
     EXPECT_EQ(expectedSize, actualSize);
@@ -125,11 +118,11 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_PaarenthasesBeforeMu
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = { +Instructions::PUSH, 0, 0, 0, 2,
-                                  +Instructions::PUSH, 0, 0, 0, 2,
-                                  +Instructions::PUSH, 0, 0, 0, 3,
-                                  +Instructions::ADD,
-                                  +Instructions::MUL };
+    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
+                                  +instruction::def::PSH_LIT, 0, 2,
+                                  +instruction::def::PSH_LIT, 0, 3,
+                                  +instruction::def::ADD,
+                                  +instruction::def::MUL };
     uint32_t expectedSize = sizeof(expectedProgram);
 
     EXPECT_EQ(expectedSize, actualSize);
@@ -149,12 +142,12 @@ TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = { +Instructions::PUSH, 0, 0, 0, 2,
-                                  +Instructions::PUSH, 0, 0, 0, 2,
-                                  +Instructions::PUSH, 0, 0, 0, 3,
-                                  +Instructions::ADD,
-                                  +Instructions::MUL,
-                                  +Instructions::RET };
+    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
+                                  +instruction::def::PSH_LIT, 0, 2,
+                                  +instruction::def::PSH_LIT, 0, 3,
+                                  +instruction::def::ADD,
+                                  +instruction::def::MUL,
+                                  +instruction::def::RET };
     uint32_t expectedSize = sizeof(expectedProgram);
 
     EXPECT_EQ(expectedSize, actualSize);
@@ -175,13 +168,13 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_Expression)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = { +Instructions::PUSH, 0, 0, 0, 2,
-                                  +Instructions::PUSH, 0, 0, 0, 2,
-                                  +Instructions::PUSH, 0, 0, 0, 3,
-                                  +Instructions::ADD,
-                                  +Instructions::MUL,
-                                  +Instructions::PEEK, 0, 0, 0, 0,
-                                  +Instructions::RET };
+    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
+                                  +instruction::def::PSH_LIT, 0, 2,
+                                  +instruction::def::PSH_LIT, 0, 3,
+                                  +instruction::def::ADD,
+                                  +instruction::def::MUL,
+                                  +instruction::def::PEK_OFF, 0, 0,
+                                  +instruction::def::RET };
 
     std::string dissassembly = generator.disassemble();
 
@@ -207,15 +200,15 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_MultipleVariables)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = {   +Instructions::PUSH, 0, 0, 0, 2,
-                                    +Instructions::PUSH, 0, 0, 0, 3,
-                                    +Instructions::PEEK, 0, 0, 0, 0,
-                                    +Instructions::PEEK, 0, 0, 0, 1,
-                                    +Instructions::ADD,
-                                    +Instructions::PEEK, 0, 0, 0, 2,                                  
-                                    +Instructions::PEEK, 0, 0, 0, 1,
-                                    +Instructions::ADD,
-                                    +Instructions::RET};
+    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::PSH_LIT, 0, 3,
+                                    +instruction::def::PEK_OFF, 0, 0,
+                                    +instruction::def::PEK_OFF, 0, 1,
+                                    +instruction::def::ADD,
+                                    +instruction::def::PEK_OFF, 0, 2,                                  
+                                    +instruction::def::PEK_OFF, 0, 1,
+                                    +instruction::def::ADD,
+                                    +instruction::def::RET};
 
     std::string dissassembly = generator.disassemble();
 
@@ -241,14 +234,14 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = {   +Instructions::PUSH, 0, 0, 0, 10,
-                                    +Instructions::PUSH, 0, 0, 0, 20,                                    
-                                    +Instructions::ADD,
-                                    +Instructions::PUSH, 0, 0, 0, 3,
-                                    +Instructions::PEEK, 0, 0, 0, 0,                                  
-                                    +Instructions::PEEK, 0, 0, 0, 1,
-                                    +Instructions::DIV,
-                                    +Instructions::RET};
+    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 10,
+                                    +instruction::def::PSH_LIT, 0, 20,                                    
+                                    +instruction::def::ADD,
+                                    +instruction::def::PSH_LIT, 0, 3,
+                                    +instruction::def::PEK_OFF, 0, 0,                                  
+                                    +instruction::def::PEK_OFF, 0, 1,
+                                    +instruction::def::DIV,
+                                    +instruction::def::RET};
 
     std::string dissassembly = generator.disassemble();
 

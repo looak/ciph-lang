@@ -191,3 +191,27 @@ TEST_F(InstructionsTest, BinaryExpressionHandlersTests)
     }
 }
 
+TEST_F(InstructionsTest, PopReg_ExpectValueInReturnRegister)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 19,
+        +instruction::def::POP_REG, +Register::ret
+    };
+
+    mem.load(program, sizeof(program));
+
+    ExecutionContext context(registries, mem.getMemory());
+    
+    // tick program
+    uint16_t& pc = registries[+Register::pc];
+    auto instruction = static_cast<instruction::def>(context.bytecode[pc++]);
+    instruction::handlers[instruction](context);
+
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    EXPECT_EQ(instruction, instruction::def::POP_REG);
+    instruction::handlers[instruction](context);
+
+    int16_t value = context.registry[+Register::ret];
+    EXPECT_EQ(value, 19);
+}
+

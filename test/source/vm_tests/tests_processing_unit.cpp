@@ -10,14 +10,15 @@ uint16_t testProcessingUnit(uint8_t* program, uint16_t size)
     return unit.execute();
 }
 
-TEST(ProcessingUnitTest, LoadSimpleProgram)
+TEST(ProcessingUnitTest, LoadAndExecuteSimpleProgram_Returns42)
 {
     ProcessingUnit unit;
     //unit.reset();
     uint8_t program[] = { 
-        +instruction::def::PSH_LIT, 0, 25,
+        +instruction::def::PSH_LIT, 0, 26,
         +instruction::def::PSH_LIT, 0, 16,
         +instruction::def::ADD,
+        +instruction::def::POP_REG, +Register::ret,
         +instruction::def::RET};
     unit.load_program(program, sizeof(program));
 
@@ -40,6 +41,7 @@ TEST(ProcessingUnitTest, Variables_Expression)
         +instruction::def::PEK_OFF, 0, 0,
         +instruction::def::PEK_OFF, 0, 1,
         +instruction::def::ADD,
+        +instruction::def::POP_REG, +Register::ret,
         +instruction::def::RET
     };
 
@@ -55,6 +57,7 @@ TEST(ProcessingUnitTest, AddingTwoIntegers)
         +instruction::def::PSH_LIT, 0, 25,
         +instruction::def::PSH_LIT, 0, 16,
         +instruction::def::ADD,
+        +instruction::def::POP_REG, +Register::ret,
         +instruction::def::RET
     };
 
@@ -71,6 +74,7 @@ TEST(ProcessingUnitTest, OrderOfOperation_MulBeforeAdd)
         +instruction::def::MUL,
         +instruction::def::PSH_LIT, 0, 3,
         +instruction::def::ADD,
+        +instruction::def::POP_REG, +Register::ret,
         +instruction::def::RET
     };
     
@@ -88,6 +92,7 @@ TEST(VirtualMachineTest, OrderOfOperation_ParenthasesBeforeMul)
         +instruction::def::PSH_LIT, 0, 3,
         +instruction::def::ADD,
         +instruction::def::MUL,
+        +instruction::def::POP_REG, +Register::ret,
         +instruction::def::RET
     };
     
@@ -100,6 +105,7 @@ TEST(VirtualMachineTest, ReturnStatment_Default)
     // return 
     uint8_t program[] = {         
         +instruction::def::PSH_LIT, 0, 0,
+        +instruction::def::POP_REG, +Register::ret,
         +instruction::def::RET }; // should return 0;
     
     uint16_t result = testProcessingUnit(program, sizeof(program));
@@ -111,6 +117,7 @@ TEST(VirtualMachineTest, Return_ReturnNumericLiteral)
     // return 25
     uint8_t program[] = {
         +instruction::def::PSH_LIT, 0, 25,
+        +instruction::def::POP_REG, +Register::ret,
         +instruction::def::RET
     };
 
@@ -125,6 +132,7 @@ TEST(VirtualMachineTest, Return_Variable)
     uint8_t program[] = {
         +instruction::def::PSH_LIT, 0, 25,
         +instruction::def::PEK_OFF, 0, 0,
+        +instruction::def::POP_REG, +Register::ret,
         +instruction::def::RET
     };
 

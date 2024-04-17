@@ -90,13 +90,13 @@ private:
 class ASTNumericLiteralNode : public ASTExpressionNode
 {
 public:
-	explicit ASTNumericLiteralNode(int32_t value) : ASTExpressionNode(ASTNodeType::NUMERIC_LITERAL), m_value(value) {}
+	explicit ASTNumericLiteralNode(int16_t value) : ASTExpressionNode(ASTNodeType::NUMERIC_LITERAL), m_value(value) {}
 	~ASTNumericLiteralNode() override = default;
 
-	[[nodiscard]] int32_t readValue() const { return m_value; }
+	[[nodiscard]] int16_t readValue() const { return m_value; }
 
 private:
-	int32_t m_value;
+	int16_t m_value;
 };
 
 class ASTIdentifierNode : public ASTExpressionNode

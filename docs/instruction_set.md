@@ -61,7 +61,7 @@ Move instructions, first bit is dictating that we are using memory addresses or 
 |--|--|--|
 JMP, address | `0xC0` | Unconditionally jump to address.
 JNZ, address | `0xC1` | Jump to address if `imm` is not zero.
-RET, address | `0xC2` | Returns value in `imm` and terminates the program.
+RET, address | `0xC2` | Returns value in `ret` and terminates the program.
 
 #### Other instructions
 | *mnemonic and input* | *hex* | *description* |

@@ -44,11 +44,11 @@ private:
     void peek();
     void push();
     void pop();
-    void encode(int32_t value);
+    void encode(int16_t value);
    
     // program
-    uint32_t m_stackSize = 0;
-    std::unordered_map<std::string, uint32_t> m_identifiers = {};
+    uint16_t m_stackSize = 0;
+    std::unordered_map<std::string, uint16_t> m_identifiers = {};
 
     const ASTProgramNode* m_program = nullptr;
     std::vector<uint8_t> m_bytecode = {};

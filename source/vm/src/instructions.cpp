@@ -110,7 +110,7 @@ void instruction::push_literal_handler(ExecutionContext& context)
 
 void instruction::return_handler(ExecutionContext& context)
 {
-    context.return_value = pop_helper(context);
+    context.return_value = context.registry[+Register::ret];
     
     uint16_t& pc = context.registry[+Register::pc];
     uint16_t& fp = context.registry[+Register::fp];
@@ -131,4 +131,11 @@ void instruction::peek_offset_handler(ExecutionContext& context)
     uint16_t sp = context.registry[+Register::fp] + peek.offset;
     int16_t value = instruction::read_word(context.bytecode, sp);
     context.registry[peek.reg] = value;
+}
+
+void instruction::pop_reg_handler(ExecutionContext& context)
+{
+    uint16_t& pc = context.registry[+Register::pc];
+    uint8_t reg = context.bytecode[++pc];
+    context.registry[reg] = pop_helper(context);
 }

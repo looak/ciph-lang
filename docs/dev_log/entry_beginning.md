@@ -19,3 +19,16 @@ PUT_MEM = 3 byte (1 byte for instruction, 2 byte for memory address)
 #### new entry @2024-04-16
 Been hacking away at the new architecture, and I'm pleased to have gotten push, pop and some of the arithmetic instructions against the stack to work.
 Gonna address the peek instruction now.
+
+#### new entry @6.30pm
+VM is gone, replaced with ProcessingUnit. I will most likely bring back VM at some point. Either way, added stack peeking ability, and peeking at a offset.
+
+I know a few things aren't correct, ret reads first value on stack, peek pushes to registers and add uses stack. So one of my tests is passing by chance since both values I'm adding together are the top two of the stack. Anyway, I'll see if I work more on this today or not.
+
+#### new entry @1:30am - technically it's 17th today
+Can't get no sleep. I don't know, my mind is going places.
+
+#### new entry @3am
+almost 3am and I'm still not tired enough, I don't know. I don't feel great.
+work wise, I managed to get the compiler to compile again and updated the disassembler.
+updated everything to use 16bit ints, added a structure for the registers to make the easier to work with.

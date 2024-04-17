@@ -13,6 +13,8 @@ public:
 private:
     std::string disassembleInstruction(size_t& program_count) const;
     std::string dissassembleNumericLiteral(size_t& program_count) const;
+    std::string disassembleOffset(size_t& program_count) const;
+    std::string dissassembleReg(size_t& program_count) const;
 
     const uint8_t* m_program;
     size_t m_size;

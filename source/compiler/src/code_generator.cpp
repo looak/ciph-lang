@@ -85,7 +85,7 @@ void CodeGenerator::generateBinaryExpression(const ASTBinaryExpressionNode* node
 void CodeGenerator::generateReturnStatement(const ASTReturnNode* node)
 {
     generateExpression(node->readExpression());
-    m_bytecode.push_back(static_cast<uint8_t>(Instructions::RET));
+    m_bytecode.push_back(static_cast<uint8_t>(instruction::def::RET));
 }
 
 void CodeGenerator::generateLetStatement(const ASTLetNode* node)
@@ -106,7 +106,7 @@ void CodeGenerator::generateIdentifier(const ASTIdentifierNode* node)
     if (m_identifiers.find(node->readName()) != m_identifiers.end())
     {
         peek();
-        encode(static_cast<int32_t>(m_identifiers[node->readName()]));
+        encode(static_cast<int16_t>(m_identifiers[node->readName()]));
     }
     else
     {
@@ -120,22 +120,22 @@ void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node)
     {
         case OperatorType::ADDITION:
         {
-            m_bytecode.push_back(static_cast<uint8_t>(Instructions::ADD));
+            m_bytecode.push_back(static_cast<uint8_t>(instruction::def::ADD));
             break;
         }
         case OperatorType::SUBTRACTION:
         {
-            m_bytecode.push_back(static_cast<uint8_t>(Instructions::SUB));
+            m_bytecode.push_back(static_cast<uint8_t>(instruction::def::SUB));
             break;
         }
         case OperatorType::MULTIPLICATION:
         {
-            m_bytecode.push_back(static_cast<uint8_t>(Instructions::MUL));
+            m_bytecode.push_back(static_cast<uint8_t>(instruction::def::MUL));
             break;
         }
         case OperatorType::DIVISION:
         {
-            m_bytecode.push_back(static_cast<uint8_t>(Instructions::DIV));
+            m_bytecode.push_back(static_cast<uint8_t>(instruction::def::DIV));
             break;
         }
         default:
@@ -151,7 +151,7 @@ void CodeGenerator::generateNumericLiteral(const ASTNumericLiteralNode* node)
 {    
     push();
     // 4 byte integer
-    int32_t value = node->readValue();
+    int16_t value = node->readValue();
     encode(value);
 }
 
@@ -176,10 +176,8 @@ CodeGenerator::readRawBytecode() const
     return {result, m_bytecode.size()};
 }
 
-void CodeGenerator::encode(int32_t value)
+void CodeGenerator::encode(int16_t value)
 {
-    m_bytecode.push_back(static_cast<uint8_t>((value >> 24) & 0xFF));
-    m_bytecode.push_back(static_cast<uint8_t>((value >> 16) & 0xFF));
     m_bytecode.push_back(static_cast<uint8_t>((value >> 8) & 0xFF));
     m_bytecode.push_back(static_cast<uint8_t>(value & 0xFF));
 }
@@ -187,11 +185,11 @@ void CodeGenerator::encode(int32_t value)
 void CodeGenerator::peek()
 {
     m_stackSize++;
-    m_bytecode.push_back(static_cast<uint8_t>(Instructions::PEEK));
+    m_bytecode.push_back(static_cast<uint8_t>(instruction::def::PEK_OFF));
 }
 
 void CodeGenerator::push()
 {
     m_stackSize++;
-    m_bytecode.push_back(static_cast<uint8_t>(Instructions::PUSH)); 
+    m_bytecode.push_back(static_cast<uint8_t>(instruction::def::PSH_LIT)); 
 }

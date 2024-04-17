@@ -73,6 +73,22 @@ const std::unordered_map<def, std::string> mnemonics = {
 	{def::NOP, "NOP"}	
 };
 
+const std::unordered_map<uint8_t, std::string> regNames = {
+	{ 0x00, "imm" },
+    { 0x01, "r0" },
+    { 0x02, "r1" },
+    { 0x03, "r2" },
+    { 0x04, "r3" },
+    { 0x05, "r4" },
+    { 0x06, "r5" },
+    { 0x07, "r6" },
+    { 0x08, "ret" },
+    { 0x0A, "sp" },
+    { 0x0B, "fp" },
+    { 0x0E, "bp" },
+    { 0x0F, "pc" }
+};
+
 } // namespace instruction
 
 inline uint8_t operator+(instruction::def i)	{

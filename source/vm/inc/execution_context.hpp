@@ -1,17 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
-#include <stack>
-
-
-struct StackValue 
-{
-	union {
-        int32_t i32;
-		float f32;
-	};
-};
 
 struct ExecutionContext 
 {

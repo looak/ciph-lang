@@ -8,10 +8,20 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
     std::string result = fmt::format("{} ", instruction::mnemonics.at(instr));
     switch (instr)
     {
-        case instruction::def::PSH:
-        case instruction::def::PEK_REG:
+        case instruction::def::PSH_LIT:
             result += dissassembleNumericLiteral(program_count);
-        
+            break;
+        case instruction::def::PEK_OFF:
+            result += dissassembleReg(program_count);
+            result += " [sp + ";
+            result += disassembleOffset(program_count);
+            result += "]";
+            break;
+            
+        case instruction::def::PEK_REG:
+            result += dissassembleReg(program_count);
+            break;
+
             //program_count++;
     }
     return result += "\n";
@@ -19,13 +29,20 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
 }
 std::string Disassembler::dissassembleNumericLiteral(size_t& program_count) const
 {
-    int32_t value = 0;
+    int16_t value = 0;
     value = (value << 8) | m_program[++program_count];
     value = (value << 8) | m_program[++program_count];
-    value = (value << 8) | m_program[++program_count];
-    value = (value << 8) | m_program[++program_count];
-
     return fmt::format("{}", value);
+}
+
+std::string Disassembler::disassembleOffset(size_t& program_count) const
+{    
+    return fmt::format("{}", m_program[++program_count]);
+}
+
+std::string Disassembler::dissassembleReg(size_t& program_count) const
+{
+    return fmt::format("{}", instruction::regNames.at(m_program[++program_count]));
 }
 
 std::string Disassembler::disassemble() const

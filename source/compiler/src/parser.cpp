@@ -107,7 +107,7 @@ Parser::parsePrimaryExpression()
 	{
 		case TokenType::NUMBER:
             m_lexar.pop();
-			return new ASTNumericLiteralNode(std::stoi(token.readValue()));
+			return new ASTNumericLiteralNode(static_cast<int16_t>(std::stoi(token.readValue())));
 		case TokenType::IDENTIFIER:
 			m_lexar.pop();
 			return new ASTIdentifierNode(token.readValue());
