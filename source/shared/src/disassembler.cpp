@@ -42,7 +42,7 @@ std::string Disassembler::disassembleOffset(size_t& program_count) const
 
 std::string Disassembler::dissassembleReg(size_t& program_count) const
 {
-    return fmt::format("{}", instruction::regNames.at(m_program[++program_count]));
+    return fmt::format("{}", registers::name.at(static_cast<registers::def>(m_program[++program_count])));
 }
 
 std::string Disassembler::disassemble() const

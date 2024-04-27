@@ -34,7 +34,7 @@ bool compareBytecode(const uint8_t* expected, const uint8_t* actual, size_t size
 TEST_F(CodeGeneratorTestFixture, NumericLiteral_ExpectArray)
 {
     // setup
-    ASTNumericLiteralNode* node = new ASTNumericLiteralNode(0xbeef); 
+    ASTNumericLiteralNode* node = new ASTNumericLiteralNode(0x0eef);
 
     m_program.addStatement(node);
 
@@ -44,7 +44,7 @@ TEST_F(CodeGeneratorTestFixture, NumericLiteral_ExpectArray)
     generator.generateCode();
 
     // validate
-    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0xBE, 0xEF };
+    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0x0E, 0xEF };
     uint32_t expectedSize = sizeof(expectedProgram);
     
     auto [actualProgram, actualSize] = generator.readRawBytecode();
@@ -56,8 +56,8 @@ TEST_F(CodeGeneratorTestFixture, NumericLiteral_ExpectArray)
 TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
 {
     // setup
-    ASTNumericLiteralNode* left = new ASTNumericLiteralNode(0xCAFE); // 0xDEAFBEEF
-    ASTNumericLiteralNode* right = new ASTNumericLiteralNode(0xBABE); // 0xCAFEBABE
+    ASTNumericLiteralNode* left = new ASTNumericLiteralNode(0x0AFE);
+    ASTNumericLiteralNode* right = new ASTNumericLiteralNode(0x0ABE);
 
     ASTBinaryExpressionNode* node = new ASTBinaryExpressionNode(left, right, OperatorType::ADDITION);
 
@@ -69,8 +69,8 @@ TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
     generator.generateCode();
 
     // validate
-    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0xCA, 0xFE,
-                                  +instruction::def::PSH_LIT, 0xBA, 0xBE,
+    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0x0A, 0xFE,
+                                  +instruction::def::PSH_LIT, 0x0A, 0xBE,
                                   +instruction::def::ADD };
 
     uint32_t expectedSize = sizeof(expectedProgram);
@@ -173,7 +173,7 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_Expression)
                                   +instruction::def::PSH_LIT, 0, 3,
                                   +instruction::def::ADD,
                                   +instruction::def::MUL,
-                                  +instruction::def::PEK_OFF, 0, 0,
+                                  +instruction::def::PEK_OFF, +registers::def::ret, 0,
                                   +instruction::def::RET };
 
     std::string dissassembly = generator.disassemble();
@@ -202,11 +202,15 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_MultipleVariables)
     // validate
     uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 2,
                                     +instruction::def::PSH_LIT, 0, 3,
-                                    +instruction::def::PEK_OFF, 0, 0,
-                                    +instruction::def::PEK_OFF, 0, 1,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                                    +instruction::def::PSH,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 1,
+                                    +instruction::def::PSH,
                                     +instruction::def::ADD,
-                                    +instruction::def::PEK_OFF, 0, 2,                                  
-                                    +instruction::def::PEK_OFF, 0, 1,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 2,
+                                    +instruction::def::PSH,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 1,
+                                    +instruction::def::PSH,
                                     +instruction::def::ADD,
                                     +instruction::def::RET};
 
@@ -238,8 +242,10 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
                                     +instruction::def::PSH_LIT, 0, 20,                                    
                                     +instruction::def::ADD,
                                     +instruction::def::PSH_LIT, 0, 3,
-                                    +instruction::def::PEK_OFF, 0, 0,                                  
-                                    +instruction::def::PEK_OFF, 0, 1,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                                    +instruction::def::PSH,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 1,
+                                    +instruction::def::PSH,
                                     +instruction::def::DIV,
                                     +instruction::def::RET};
 

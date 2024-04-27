@@ -73,23 +73,47 @@ const std::unordered_map<def, std::string> mnemonics = {
 	{def::NOP, "NOP"}	
 };
 
-const std::unordered_map<uint8_t, std::string> regNames = {
-	{ 0x00, "imm" },
-    { 0x01, "r0" },
-    { 0x02, "r1" },
-    { 0x03, "r2" },
-    { 0x04, "r3" },
-    { 0x05, "r4" },
-    { 0x06, "r5" },
-    { 0x07, "r6" },
-    { 0x08, "ret" },
-    { 0x0A, "sp" },
-    { 0x0B, "fp" },
-    { 0x0E, "bp" },
-    { 0x0F, "pc" }
+} // namespace instruction
+
+namespace registers {
+enum class def : uint8_t {
+    imm = 0x00,
+    r0 = 0x01,
+    r1,
+    r2,
+    r3,
+    r4,
+    r5,
+    r6 = 0x07,
+    ret = 0x08,
+    sp = 0x0A,
+    fp = 0x0B,
+    bp = 0x0E,
+    pc = 0x0F,
+    reg_cnt = 0x10
 };
 
-} // namespace instruction
+const std::unordered_map<def, std::string> name = {
+	{ def::imm, "imm" },
+	{ def::r0, "r0" },
+	{ def::r1, "r1" },
+	{ def::r2, "r2" },
+	{ def::r3, "r3" },
+	{ def::r4, "r4" },
+	{ def::r5, "r5" },
+	{ def::r6, "r6" },
+	{ def::ret, "ret" },
+	{ def::sp, "sp" },
+	{ def::fp, "fp" },
+	{ def::bp, "bp" },
+	{ def::pc, "pc" }
+};
+
+} // namespace register
+
+inline uint8_t operator+(registers::def reg) {
+    return static_cast<uint8_t>(reg);
+}
 
 inline uint8_t operator+(instruction::def i)	{
 	return static_cast<uint8_t>(i);

@@ -32,3 +32,7 @@ Can't get no sleep. I don't know, my mind is going places.
 almost 3am and I'm still not tired enough, I don't know. I don't feel great.
 work wise, I managed to get the compiler to compile again and updated the disassembler.
 updated everything to use 16bit ints, added a structure for the registers to make the easier to work with.
+
+
+#### new entry @2024-04-18
+Fixing return, I think return will figure out if it takes the value from the stack or from the ret register depending on what is actually happening and what operations it's doing.

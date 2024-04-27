@@ -53,7 +53,7 @@ Move instructions, first bit is dictating that we are using memory addresses or 
 | POP | `0x30` | Pops top of stack to given `imm` register
 | POP, reg | `0x40` | Pops top of stack to given register.
 | PEK, reg | `0x50` | Copies top value of stack into given register |
-| PEK, reg, 8bit lit | `0x51` | Copies value of stack at offset into given register |
+| PEK, reg, 8bit lit | `0x51` | Copies value of stack at offset into given register, if reg:sp is given, value is pushed onto stack. |
 
 
 #### Control flow instructions

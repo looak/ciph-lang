@@ -1,44 +1,23 @@
 #pragma once
 #include "memory.hpp"
-
-
-enum class Register : uint8_t {
-    imm = 0x00,
-    r0 = 0x01,
-    r1,
-    r2,
-    r3,
-    r4,
-    r5,
-    r6 = 0x07,
-    ret = 0x08,
-    sp = 0x0A,
-    fp = 0x0B,
-    bp = 0x0E,
-    pc = 0x0F,
-    reg_cnt = 0x10
-};
-
-inline uint8_t operator+(Register reg) {
-    return static_cast<uint8_t>(reg);
-}
+#include "shared_defines.hpp"
 
 struct Registers {
 public:
     void set(uint16_t* mem) {
-        imm = &mem[+Register::imm];
-        r0 = &mem[+Register::r0];
-        r1 = &mem[+Register::r1];
-        r2 = &mem[+Register::r2];
-        r3 = &mem[+Register::r3];
-        r4 = &mem[+Register::r4];
-        r5 = &mem[+Register::r5];
-        r6 = &mem[+Register::r6];
-        ret = &mem[+Register::ret];
-        sp = &mem[+Register::sp];
-        fp = &mem[+Register::fp];
-        bp = &mem[+Register::bp];
-        pc = &mem[+Register::pc];
+        imm = &mem[+registers::def::imm];
+        r0 = &mem[+registers::def::r0];
+        r1 = &mem[+registers::def::r1];
+        r2 = &mem[+registers::def::r2];
+        r3 = &mem[+registers::def::r3];
+        r4 = &mem[+registers::def::r4];
+        r5 = &mem[+registers::def::r5];
+        r6 = &mem[+registers::def::r6];
+        ret = &mem[+registers::def::ret];
+        sp = &mem[+registers::def::sp];
+        fp = &mem[+registers::def::fp];
+        bp = &mem[+registers::def::bp];
+        pc = &mem[+registers::def::pc];
     }
     uint16_t* imm;
     uint16_t* r0;

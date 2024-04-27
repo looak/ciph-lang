@@ -18,11 +18,11 @@ TEST(ProcessingUnitTest, LoadAndExecuteSimpleProgram_Returns42)
         +instruction::def::PSH_LIT, 0, 26,
         +instruction::def::PSH_LIT, 0, 16,
         +instruction::def::ADD,
-        +instruction::def::POP_REG, +Register::ret,
+        +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET};
     unit.load_program(program, sizeof(program));
 
-    EXPECT_EQ(32, unit.registries()[+Register::pc]);
+    EXPECT_EQ(32, unit.registries()[+registers::def::pc]);
     int16_t result = unit.execute();
     EXPECT_EQ(41, result);
 }
@@ -41,7 +41,7 @@ TEST(ProcessingUnitTest, Variables_Expression)
         +instruction::def::PEK_OFF, 0, 0,
         +instruction::def::PEK_OFF, 0, 1,
         +instruction::def::ADD,
-        +instruction::def::POP_REG, +Register::ret,
+        +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET
     };
 
@@ -57,7 +57,7 @@ TEST(ProcessingUnitTest, AddingTwoIntegers)
         +instruction::def::PSH_LIT, 0, 25,
         +instruction::def::PSH_LIT, 0, 16,
         +instruction::def::ADD,
-        +instruction::def::POP_REG, +Register::ret,
+        +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET
     };
 
@@ -74,7 +74,7 @@ TEST(ProcessingUnitTest, OrderOfOperation_MulBeforeAdd)
         +instruction::def::MUL,
         +instruction::def::PSH_LIT, 0, 3,
         +instruction::def::ADD,
-        +instruction::def::POP_REG, +Register::ret,
+        +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET
     };
     
@@ -92,7 +92,7 @@ TEST(VirtualMachineTest, OrderOfOperation_ParenthasesBeforeMul)
         +instruction::def::PSH_LIT, 0, 3,
         +instruction::def::ADD,
         +instruction::def::MUL,
-        +instruction::def::POP_REG, +Register::ret,
+        +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET
     };
     
@@ -105,7 +105,7 @@ TEST(VirtualMachineTest, ReturnStatment_Default)
     // return 
     uint8_t program[] = {         
         +instruction::def::PSH_LIT, 0, 0,
-        +instruction::def::POP_REG, +Register::ret,
+        +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET }; // should return 0;
     
     uint16_t result = testProcessingUnit(program, sizeof(program));
@@ -117,7 +117,7 @@ TEST(VirtualMachineTest, Return_ReturnNumericLiteral)
     // return 25
     uint8_t program[] = {
         +instruction::def::PSH_LIT, 0, 25,
-        +instruction::def::POP_REG, +Register::ret,
+        +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET
     };
 
@@ -132,10 +132,34 @@ TEST(VirtualMachineTest, Return_Variable)
     uint8_t program[] = {
         +instruction::def::PSH_LIT, 0, 25,
         +instruction::def::PEK_OFF, 0, 0,
-        +instruction::def::POP_REG, +Register::ret,
+        +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET
     };
 
     uint16_t result = testProcessingUnit(program, sizeof(program));
     EXPECT_EQ(result, 25);
+}
+
+TEST(ProcessingUnitTest, LetStatement_MultipleVariables)
+{
+    // let x = 2
+    // let y = 3
+    // let z = x + y
+    // return z + y
+    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 2,
+                            +instruction::def::PSH_LIT, 0, 3,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                            +instruction::def::PSH,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 1,
+                            +instruction::def::PSH,
+                            +instruction::def::ADD,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 2,
+                            +instruction::def::PSH,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 1,
+                            +instruction::def::PSH,
+                            +instruction::def::ADD,
+                            +instruction::def::RET};
+
+    uint16_t result = testProcessingUnit(program, sizeof(program));
+    EXPECT_EQ(result, 8);
 }
