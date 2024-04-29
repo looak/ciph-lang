@@ -168,3 +168,24 @@ TEST(ParserTest, LetStatement_Expression)
 	auto binaryExpression = static_cast<const ASTBinaryExpressionNode*>(letNode->readExpression());
 	EXPECT_EQ(binaryExpression->readOperator(), OperatorType::ADDITION);	
 }
+
+TEST(ParserTest, IncStatement)
+{
+	// setup
+	std::string code(R"(let x = 5
+						x++)");
+	Parser parser(code);
+
+	// do - we know the node type returned is a program	
+	ASTProgramNode* result = static_cast<ASTProgramNode*>(parser.parse());
+
+	// validate
+	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
+
+	EXPECT_EQ(result->readStatements().size(), 2);
+	EXPECT_EQ(result->readStatements()[1]->readType(), ASTNodeType::IDENTIFIER);
+	auto identifier = static_cast<const ASTIdentifierNode*>(result->readStatements()[0]);	
+	EXPECT_EQ(identifier->readOperator()->readType(), ASTNodeType::INC_DEC_EXPRESSION);
+	auto incDecNode = static_cast<const ASTIncDecNode*>(identifier->readOperator());
+	EXPECT_EQ(incDecNode->readIsIncrement(), true);
+}

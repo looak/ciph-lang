@@ -95,11 +95,11 @@ void PrintRegisters(ProcessingUnit& pu, int x, int y)
 int main(int argc, char *argv[]) {
 
     uint8_t program[] = {    
-        +instruction::def::PSH_LIT, 0, 26,
-        +instruction::def::PSH_LIT, 0, 16,
-        +instruction::def::ADD,
-        +instruction::def::POP_REG, +registers::def::ret,
-        +instruction::def::RET};
+        +instruction::def::PSH_LIT, 0, 10,
+        +instruction::def::INC, +registers::def::sp, 0,
+        +instruction::def::PEK_OFF, +registers::def::ret, 0,
+        +instruction::def::RET
+        };
 
     ProcessingUnit pu;
     pu.load_program(program, sizeof(program));

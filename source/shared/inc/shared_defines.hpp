@@ -25,6 +25,9 @@ enum class def : uint8_t {
 	MUL_REG	=		0x0B, 	// Takes values at registers, multiplies them together and puts product into rX. If rY is unspecified uses imm as multiplier, still stores product in rX.
 	DIV	 	=		0x0C, 	// Pops divisor of the stack, then pops dividen of the stack. Puts quotient of the divison onto stack. Remainder is lost.
 	DIV_REG	=		0x0D, 	// Uses register rX as dividen and rY as divisor. Quotient is put into rX. Remainder is lost. If rY is unspecified uses imm as divisor.
+	INC		=		0x0E, // Increases the value at given register by one, if reg:sp is given, value on stack is incremented at given offset.
+ 	DEC 	=		0x0F, 	// Same as increment, just decreases the value by one.
+ 
 	
 	// Stack instructions
 	PSH	 	=		0x10, 	// Pushes data from imm register onto stack.
@@ -59,6 +62,8 @@ const std::unordered_map<def, std::string> mnemonics = {
 	{def::MUL_REG, "MUL"},
 	{def::DIV, "DIV"},
 	{def::DIV_REG, "DIV"},
+	{def::INC, "INC"},
+	{def::DEC, "DEC"},
 	{def::PSH, "PSH"},
 	{def::PSH_REG, "PSH"},
 	{def::PSH_LIT, "PSH"},

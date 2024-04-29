@@ -215,3 +215,80 @@ TEST_F(InstructionsTest, PopReg_ExpectValueInReturnRegister)
     EXPECT_EQ(value, 19);
 }
 
+TEST_F(InstructionsTest, IncHandler_RegAndStack)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::INC, +registers::def::sp, 0,
+        +instruction::def::PEK_REG, +registers::def::r0,
+        +instruction::def::INC, +registers::def::r0,
+    };
+
+    mem.load(program, sizeof(program));
+
+    ExecutionContext context(registries, mem.getMemory());
+    
+    // run program
+    uint16_t& pc = registries[+registers::def::pc];
+    auto instruction = static_cast<instruction::def>(context.bytecode[pc]);    
+
+    instruction::handlers[instruction](context);
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    EXPECT_EQ(instruction, instruction::def::INC);
+    instruction::handlers[instruction](context);
+
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    instruction::handlers[instruction](context);
+
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    instruction::handlers[instruction](context);
+    EXPECT_EQ(instruction, instruction::def::INC);
+
+    int16_t value = context.registry[+registers::def::r0];
+    EXPECT_EQ(value, 44);
+
+    value = pop_helper(context);
+    EXPECT_EQ(value, 43);
+}
+
+TEST_F(InstructionsTest, DecHandler_RegAndStack)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::DEC, +registers::def::sp, 0,
+        +instruction::def::PEK_REG, +registers::def::r0,
+        +instruction::def::DEC, +registers::def::r0,
+    };
+
+    mem.load(program, sizeof(program));
+
+    ExecutionContext context(registries, mem.getMemory());
+    
+    // run program
+    uint16_t& pc = registries[+registers::def::pc];
+    auto instruction = static_cast<instruction::def>(context.bytecode[pc]);    
+
+    instruction::handlers[instruction](context);
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    EXPECT_EQ(instruction, instruction::def::DEC);
+    instruction::handlers[instruction](context);
+
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    instruction::handlers[instruction](context);
+
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    instruction::handlers[instruction](context);
+    EXPECT_EQ(instruction, instruction::def::DEC);
+
+    int16_t value = context.registry[+registers::def::r0];
+    EXPECT_EQ(value, 40);
+
+    value = pop_helper(context);
+    EXPECT_EQ(value, 41);
+}

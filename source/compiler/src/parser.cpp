@@ -108,9 +108,8 @@ Parser::parsePrimaryExpression()
 		case TokenType::NUMBER:
             m_lexar.pop();
 			return new ASTNumericLiteralNode(static_cast<int16_t>(std::stoi(token.readValue())));
-		case TokenType::IDENTIFIER:
-			m_lexar.pop();
-			return new ASTIdentifierNode(token.readValue());
+		case TokenType::IDENTIFIER:			
+			return parseIdentifier();
 		case TokenType::OPEN_PAREN:
 		{
 			m_lexar.pop();
@@ -121,6 +120,19 @@ Parser::parsePrimaryExpression()
 				return nullptr;	
 			}
 			return expression;
+		}
+		case TokenType::OPERATOR:
+		{
+			if (token.readOperator() == OperatorType::INCREMENT)
+			{
+				m_lexar.pop();
+				return new ASTIncDecNode(true);
+			}
+			else if (token.readOperator() == OperatorType::DECREMENT)
+			{				
+				m_lexar.pop();
+				return new ASTIncDecNode(false);
+			}
 		}
 
 		default:
@@ -161,6 +173,23 @@ Parser::parseIdentifier()
 		fmt::print(stderr, "Expected identifier\n");
 		return nullptr;
 	}
+	
+	std::string name = token.readValue();
+	token = m_lexar.peek();
+	
+	if (token.readType() == TokenType::OPERATOR)
+	{
+		if (token.readOperator() == OperatorType::INCREMENT)
+		{
+			m_lexar.pop();
+			return new ASTIdentifierNode(name, new ASTIncDecNode(true));
+		}
+		else if (token.readOperator() == OperatorType::DECREMENT)
+		{
+			m_lexar.pop();
+			return new ASTIdentifierNode(name, new ASTIncDecNode(false));
+		}
+	}
 
-	return new ASTIdentifierNode(token.readValue());
+	return new ASTIdentifierNode(name, nullptr);
 }

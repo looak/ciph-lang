@@ -11,6 +11,8 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
         case instruction::def::PSH_LIT:
             result += dissassembleNumericLiteral(program_count);
             break;
+        case instruction::def::INC:
+        case instruction::def::DEC:
         case instruction::def::PEK_OFF:
             result += dissassembleReg(program_count);
             result += " [sp + ";

@@ -164,3 +164,47 @@ void instruction::pop_reg_handler(ExecutionContext& context)
     uint8_t reg = context.bytecode[++pc];
     context.registry[reg] = pop_helper(context);
 }
+
+void instruction::inc_handler(ExecutionContext& context)
+{
+    uint16_t& pc = context.registry[+registers::def::pc];
+    uint8_t reg = context.bytecode[++pc];
+
+    if (reg == +registers::def::sp)
+    {
+        uint8_t offset = context.bytecode[++pc];
+        offset *= 2;
+        offset += context.registry[+registers::def::fp] + 2;
+        uint16_t offset16 = static_cast<uint16_t>(offset);
+        int16_t value = stack_read_at_offset(context.bytecode, offset16);
+        value++;
+        write_int16(context.bytecode, offset16, value);
+        
+    }
+    else
+    {
+        context.registry[reg]++;
+    }
+
+}
+void instruction::dec_handler(ExecutionContext& context)
+{
+    uint16_t& pc = context.registry[+registers::def::pc];
+    uint8_t reg = context.bytecode[++pc];
+
+    if (reg == +registers::def::sp)
+    {
+        uint8_t offset = context.bytecode[++pc];
+        offset *= 2;
+        offset += context.registry[+registers::def::fp] + 2;
+        uint16_t offset16 = static_cast<uint16_t>(offset);
+        int16_t value = stack_read_at_offset(context.bytecode, offset16);
+        value--;
+        write_int16(context.bytecode, offset16, value);
+        
+    }
+    else
+    {
+        context.registry[reg]--;
+    }
+}

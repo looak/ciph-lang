@@ -29,6 +29,8 @@ void return_handler(ExecutionContext& context);
 void peek_handler(ExecutionContext& context);
 void peek_offset_handler(ExecutionContext& context);
 void pop_reg_handler(ExecutionContext& context);
+void inc_handler(ExecutionContext& context);
+void dec_handler(ExecutionContext& context);
 
 static std::unordered_map<def, handler> handlers = {
 	{def::PSH, push_handler},
@@ -41,6 +43,8 @@ static std::unordered_map<def, handler> handlers = {
 	{def::POP_REG, pop_reg_handler},
 	{def::PEK_REG, peek_handler},
 	{def::PEK_OFF, peek_offset_handler},
-	{def::RET, return_handler}
+	{def::RET, return_handler},
+	{def::INC, inc_handler},
+	{def::DEC, dec_handler}
 }; // handlers
 } // namespace instruction

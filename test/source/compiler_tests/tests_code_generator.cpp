@@ -257,3 +257,67 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
     EXPECT_EQ(expectedSize, actualSize);
     EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
 }
+
+// TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
+// {
+//     // setup    
+//     std::string code(R"(let x = 10 + 20
+//                         let y = 3
+//                         return x++ / y++)");
+//     Parser parser(code);
+//     CodeGenerator generator(static_cast<ASTProgramNode*>(parser.parse()));
+
+//     // do
+//     generator.generateCode();
+//     std::string actual = generator.outputBytecode();
+//     auto [actualProgram, actualSize] = generator.readRawBytecode();
+
+//     // validate
+//     uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 10,
+//                                     +instruction::def::PSH_LIT, 0, 20,                                    
+//                                     +instruction::def::ADD,
+//                                     +instruction::def::PSH_LIT, 0, 3,
+//                                     +instruction::def::PEK_OFF, +registers::def::sp, 0,
+//                                     +instruction::def::PSH,
+//                                     +instruction::def::PEK_OFF, +registers::def::sp, 1,
+//                                     +instruction::def::PSH,
+//                                     +instruction::def::DIV,
+//                                     +instruction::def::RET};
+
+//     std::string dissassembly = generator.disassemble();
+
+
+//     uint32_t expectedSize = sizeof(expectedProgram);
+
+//     EXPECT_EQ(expectedSize, actualSize);
+//     EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
+// }
+
+TEST_F(CodeGeneratorTestFixture, IncIdentifierExpression)
+{
+    // setup    
+    std::string code(R"(let x = 10
+                        x++
+                        return x)");
+    Parser parser(code);
+    CodeGenerator generator(static_cast<ASTProgramNode*>(parser.parse()));
+
+    // do
+    generator.generateCode();
+    std::string actual = generator.outputBytecode();
+    auto [actualProgram, actualSize] = generator.readRawBytecode();
+
+    // validate
+    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 10,
+                                    +instruction::def::INC, +registers::def::sp, 0,
+                                    +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                                    +instruction::def::RET};
+
+    std::string dissassembly = generator.disassemble();
+
+    uint32_t expectedSize = sizeof(expectedProgram);
+
+    EXPECT_EQ(expectedSize, actualSize);
+    EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
+}
+
