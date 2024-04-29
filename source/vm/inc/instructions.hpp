@@ -7,6 +7,7 @@
 
 namespace instruction {
 
+int16_t stack_read_at_offset(uint8_t* bytecode, uint16_t& sp);
 int16_t read_word(uint8_t* bytecode, uint16_t& pc);
 void write_int16(uint8_t* bytecode, uint16_t& pc, int16_t value);
 int16_t peek_helper(uint8_t* bytecode, uint16_t sp);

@@ -18,10 +18,10 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
             result += "]";
             break;
             
+        case instruction::def::POP_REG:
         case instruction::def::PEK_REG:
             result += dissassembleReg(program_count);
-            break;
-
+            break;            
             //program_count++;
     }
     return result += "\n";
@@ -51,8 +51,15 @@ std::string Disassembler::disassemble() const
 
     for (size_t i = 0; i < m_size; i++)
     {
-        disassembly += disassembleInstruction(i);
+        auto key = i;
+        m_disassembledInstructions.emplace(key, disassembleInstruction(i));        
+        disassembly += m_disassembledInstructions[key];
     }
 
     return disassembly;
+}
+
+std::string Disassembler::disassembleInstructionAt(size_t program_count) const
+{
+    return m_disassembledInstructions[program_count];
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "memory.hpp"
 #include "shared_defines.hpp"
+#include "execution_context.hpp"
 
 struct Registers {
 public:
@@ -41,15 +42,25 @@ public:
     void load_program(uint8_t* program, uint16_t size);
 
     int16_t execute();
+    bool step();
 
     uint16_t* registries() const {
         return m_reg_memory;
     }
 
+    uint8_t* memory() const {
+        return m_memory.getMemory();
+    }
+
+    const ExecutionContext& context() const {
+        return m_context;
+    }
 private:
     
     Registers m_registers;
     uint16_t* m_reg_memory;
+
+    ExecutionContext m_context;
     
     //uint16_t* m_registries;
 

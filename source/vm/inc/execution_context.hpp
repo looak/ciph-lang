@@ -10,6 +10,11 @@ public:
 		, bytecode(_bytecode)
 	{}
 
+	ExecutionContext()
+		: registry(nullptr)
+		, bytecode(nullptr)
+	{}
+
 	uint16_t* registry;	
 	uint8_t* bytecode = nullptr;
 	int16_t return_value = 0;

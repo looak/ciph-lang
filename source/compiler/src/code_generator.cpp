@@ -121,6 +121,7 @@ void CodeGenerator::generateIdentifier(const ASTIdentifierNode* node, registers:
         fmt::print("Identifier not found\n");
     }
 }
+
 void CodeGenerator::generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA, std::optional<registers::def> regB)
 {
 
@@ -128,6 +129,12 @@ void CodeGenerator::generateOperatorReg(const ASTBinaryExpressionNode* node, reg
 
 void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node, std::optional<registers::def> regA, std::optional<registers::def> regB)
 {
+
+    if (regA.has_value())
+    {
+        generateOperatorReg(node, regA.value(), regB);
+        return;
+    }
     switch (node->readOperator())
     {
         case OperatorType::ADDITION:

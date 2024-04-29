@@ -78,6 +78,8 @@ target_include_directories(${VM_LIB}
     ../source/shared/inc
     )
 
+target_link_libraries(${VM_LIB} PRIVATE fmt::fmt)
+
 # ---- Compiler Tests ----
 
 include(source/compiler_tests/source_list.cmake)

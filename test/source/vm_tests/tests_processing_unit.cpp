@@ -24,7 +24,7 @@ TEST(ProcessingUnitTest, LoadAndExecuteSimpleProgram_Returns42)
 
     EXPECT_EQ(32, unit.registries()[+registers::def::pc]);
     int16_t result = unit.execute();
-    EXPECT_EQ(41, result);
+    EXPECT_EQ(42, result);
 }
 
 
@@ -149,15 +149,12 @@ TEST(ProcessingUnitTest, LetStatement_MultipleVariables)
     uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 2,
                             +instruction::def::PSH_LIT, 0, 3,
                             +instruction::def::PEK_OFF, +registers::def::sp, 0,
-                            +instruction::def::PSH,
                             +instruction::def::PEK_OFF, +registers::def::sp, 1,
-                            +instruction::def::PSH,
                             +instruction::def::ADD,
                             +instruction::def::PEK_OFF, +registers::def::sp, 2,
-                            +instruction::def::PSH,
                             +instruction::def::PEK_OFF, +registers::def::sp, 1,
-                            +instruction::def::PSH,
                             +instruction::def::ADD,
+                            +instruction::def::POP_REG, +registers::def::ret,
                             +instruction::def::RET};
 
     uint16_t result = testProcessingUnit(program, sizeof(program));

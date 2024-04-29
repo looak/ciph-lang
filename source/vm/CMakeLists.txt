@@ -8,7 +8,7 @@ add_executable(${PROJECT_NAME} ${VM_ALL_SRC})
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE  
-  ${SHARED_LIB}
+  ciph-shared_lib
   fmt::fmt
 )
 

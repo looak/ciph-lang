@@ -14,10 +14,18 @@ T read(uint8_t* bytecode, uint16_t& pc)
     return *reinterpret_cast<T*>(value);    
 }
 
+int16_t instruction::stack_read_at_offset(uint8_t* bytecode, uint16_t& sp)
+{    
+    int16_t value = 0;
+    value = (value << 8) | bytecode[--sp];
+    value = (value << 8) | bytecode[--sp];
+    return value;
+}
+
 int16_t instruction::read_word(uint8_t* bytecode, uint16_t& pc)
 {
     int16_t value = 0;
-    value = (value << 8) | bytecode[++pc];
+    value = (value << 8) | bytecode[pc];
     value = (value << 8) | bytecode[++pc];
     return value;
 }
@@ -117,7 +125,7 @@ void instruction::push_reg_handler(ExecutionContext& context)
 void instruction::push_literal_handler(ExecutionContext& context)
 {
     uint16_t& programCnt = context.registry[+registers::def::pc];    
-    int16_t value = read_word(context.bytecode, programCnt);   
+    int16_t value = read_word(context.bytecode, ++programCnt);   
     instruction::push_helper(context, value);
 }
 
@@ -141,8 +149,8 @@ struct peek_offset_instrction
 void instruction::peek_offset_handler(ExecutionContext& context)
 {
     auto peek = read<peek_offset_instrction>(context.bytecode, context.registry[+registers::def::pc]);    
-    uint16_t sp = context.registry[+registers::def::fp] + peek.offset;
-    int16_t value = instruction::read_word(context.bytecode, sp);
+    uint16_t sp = context.registry[+registers::def::fp] + (peek.offset * 2) + 2;
+    int16_t value = instruction::stack_read_at_offset(context.bytecode, sp);
 
     if (peek.reg == +registers::def::sp)
         push_helper(context, value);
