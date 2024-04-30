@@ -37,14 +37,14 @@ void CodeGenerator::generateProgram(const ASTProgramNode* node)
             }
             default:
             {
-                generateExpression(statement);
+                generateExpression(statement, registers::def::sp);
                 break;
             }
         }
     }
 }
 
-void CodeGenerator::generateExpression(const ASTBaseNode* node)
+void CodeGenerator::generateExpression(const ASTBaseNode* node, registers::def reg)
 {
     switch (node->readType())
     {
@@ -57,13 +57,13 @@ void CodeGenerator::generateExpression(const ASTBaseNode* node)
         case ASTNodeType::BINARY_EXPRESSION:
         {
             const auto* binaryNode = static_cast<const ASTBinaryExpressionNode*>(node);
-            generateBinaryExpression(binaryNode);
+            generateBinaryExpression(binaryNode, reg);
             break;
         }
         case ASTNodeType::IDENTIFIER:
         {
             const auto* identifierNode = static_cast<const ASTIdentifierNode*>(node);
-            generateIdentifier(identifierNode);
+            generateIdentifier(identifierNode, reg);
             break;
         }
         default:
@@ -74,17 +74,17 @@ void CodeGenerator::generateExpression(const ASTBaseNode* node)
     }
 }
 
-void CodeGenerator::generateBinaryExpression(const ASTBinaryExpressionNode* node)
-{         
-    generateExpression(node->readLeft());
-    generateExpression(node->readRight());
-    generateOperator(node);
-    m_stackSize--; // reduce by 2 add 1
+void CodeGenerator::generateBinaryExpression(const ASTBinaryExpressionNode* node, std::optional<registers::def> reg)
+{   
+    // giving stack pointer, which indicates we're pushing the result to the stack
+    generateExpression(node->readLeft(), registers::def::sp);
+    generateExpression(node->readRight(), registers::def::sp);    
+    generateOperator(node, reg);
 }
 
 void CodeGenerator::generateReturnStatement(const ASTReturnNode* node)
 {
-    generateExpression(node->readExpression());
+    generateExpression(node->readExpression(), registers::def::ret);
     m_bytecode.push_back(static_cast<uint8_t>(instruction::def::RET));
 }
 
@@ -92,8 +92,13 @@ void CodeGenerator::generateLetStatement(const ASTLetNode* node)
 {
     if (m_identifiers.find(node->readIdentifier()) == m_identifiers.end())
     {
-        m_identifiers[node->readIdentifier()] = m_stackSize;
-        generateExpression(node->readExpression());
+        if (m_stackSize >= UINT8_MAX)
+        {
+            fmt::print("Stack overflow\n");
+            return;
+        }
+        m_identifiers.emplace(node->readIdentifier(), IdentifierContext(node->readIdentifier(), static_cast<uint8_t>(m_stackSize)));
+        generateExpression(node->readExpression(), registers::def::sp);
     }
     else
     {
@@ -101,12 +106,29 @@ void CodeGenerator::generateLetStatement(const ASTLetNode* node)
     }
 }
 
-void CodeGenerator::generateIdentifier(const ASTIdentifierNode* node)
+void CodeGenerator::generateIdentifier(const ASTIdentifierNode* node, registers::def reg)
 {
-    if (m_identifiers.find(node->readName()) != m_identifiers.end())
+    if (node->readOperator() != nullptr)
     {
-        peek();
-        encode(static_cast<int16_t>(m_identifiers[node->readName()]));
+        if (auto identifier = m_identifiers.find(node->readName()); identifier != m_identifiers.end())
+        {
+            const auto* op = static_cast<const ASTIncDecNode*>(node->readOperator());
+            instruction::def opInstruction = op->readIsIncrement() ? instruction::def::INC : instruction::def::DEC;
+            m_bytecode.push_back(static_cast<uint8_t>(opInstruction));
+            m_bytecode.push_back(+registers::def::sp);
+            m_bytecode.push_back(identifier->second.offset);
+            return;
+        }
+        else
+        {
+            fmt::print("Identifier not found\n");
+            return;
+        }    
+    }
+    if (auto identifier = m_identifiers.find(node->readName()); identifier != m_identifiers.end())
+    {
+        if (peek_offset(identifier->second.offset, reg) == false)
+            m_registers[+reg].value = std::make_optional(identifier->second);
     }
     else
     {
@@ -114,9 +136,9 @@ void CodeGenerator::generateIdentifier(const ASTIdentifierNode* node)
     }
 }
 
-void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node)
+void CodeGenerator::encodeOperator(OperatorType op)
 {
-    switch (node->readOperator())
+    switch (op)
     {
         case OperatorType::ADDITION:
         {
@@ -144,12 +166,36 @@ void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node)
             break;
         }
     }
- 
+}
+
+void CodeGenerator::generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA, std::optional<registers::def> regB)
+{
+    encodeOperator(node->readOperator());
+
+    if (regA == registers::def::ret)
+    {
+        m_bytecode.push_back(static_cast<uint8_t>(instruction::def::POP_REG));
+        m_bytecode.push_back(+registers::def::ret);
+    }
+    m_stackSize -= 2; // poped twice
+}
+
+void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node, std::optional<registers::def> regA, std::optional<registers::def> regB)
+{
+    if (regA.has_value() && regA.value() != registers::def::sp)
+    {
+        generateOperatorReg(node, regA.value(), regB);        
+    }
+    else
+    {
+        encodeOperator(node->readOperator());    
+        m_stackSize--; // poped twice & pushed once
+    }
 }
 
 void CodeGenerator::generateNumericLiteral(const ASTNumericLiteralNode* node)
 {    
-    push();
+    push(instruction::def::PSH_LIT);
     // 4 byte integer
     int16_t value = node->readValue();
     encode(value);
@@ -182,14 +228,22 @@ void CodeGenerator::encode(int16_t value)
     m_bytecode.push_back(static_cast<uint8_t>(value & 0xFF));
 }
 
-void CodeGenerator::peek()
+void CodeGenerator::encodeRegister(registers::def reg)
 {
-    m_stackSize++;
-    m_bytecode.push_back(static_cast<uint8_t>(instruction::def::PEK_OFF));
+    m_bytecode.push_back(+reg);
 }
 
-void CodeGenerator::push()
+bool CodeGenerator::peek_offset(uint8_t offset, registers::def reg)
+{
+    m_bytecode.push_back(static_cast<uint8_t>(instruction::def::PEK_OFF));
+    encodeRegister(reg); 
+    m_bytecode.push_back(offset);
+
+    return reg == registers::def::sp;
+}
+
+void CodeGenerator::push(instruction::def pushType)
 {
     m_stackSize++;
-    m_bytecode.push_back(static_cast<uint8_t>(instruction::def::PSH_LIT)); 
+    m_bytecode.push_back(static_cast<uint8_t>(pushType)); 
 }

@@ -19,14 +19,14 @@ void write_word(uint8_t* bytecode, uint16_t& pc, int16_t value)
 
 int16_t pop_helper(ExecutionContext& context)
 {
-    uint16_t& sp = context.registry[+Register::sp]; 
+    uint16_t& sp = context.registry[+registers::def::sp]; 
     auto value = pop_word(context.bytecode, sp);
     return value;
 }
 
 void push_helper(ExecutionContext& context, int16_t value)
 {
-    uint16_t& sp = context.registry[+Register::sp];
+    uint16_t& sp = context.registry[+registers::def::sp];
     write_word(context.bytecode, sp, value);
 }
 
@@ -43,16 +43,16 @@ class InstructionsTest : public ::testing::Test
 protected:
     void SetUp() override
     {
-        registries = mem.allocate(static_cast<uint16_t>(Register::reg_cnt));
+        registries = mem.allocate(static_cast<uint16_t>(registers::def::reg_cnt));
         uint16_t addrs = mem.load(nullptr, 0);
-        registries[+Register::pc] = addrs;
-        registries[+Register::bp] = addrs;
+        registries[+registers::def::pc] = addrs;
+        registries[+registers::def::bp] = addrs;
 
         // setting up an arbitrary stack location,
         // 64 bytes from the start of the memory
         uint16_t stackAddrs = static_cast<uint16_t>(addrs + 64);
-        registries[+Register::sp] = stackAddrs;
-        registries[+Register::fp] = stackAddrs;
+        registries[+registers::def::sp] = stackAddrs;
+        registries[+registers::def::fp] = stackAddrs;
     }
 public:
     Memory<0x100> mem;
@@ -69,13 +69,13 @@ TEST_F(InstructionsTest, PushHandler)
     mem.load(program, sizeof(program));
 
     ExecutionContext context(registries, mem.getMemory());
-    uint16_t pc = registries[+Register::pc];
+    uint16_t pc = registries[+registers::def::pc];
     auto instruction = static_cast<instruction::def>(context.bytecode[pc]);
 
     EXPECT_EQ(instruction, instruction::def::PSH_LIT);
 
     instruction::handlers[instruction](context);
-    int16_t value = peek_word(context.bytecode, registries[+Register::sp]);
+    int16_t value = peek_word(context.bytecode, registries[+registers::def::sp]);
 	EXPECT_EQ(value, int16_t(0xf00d));
 }
 
@@ -83,7 +83,7 @@ TEST_F(InstructionsTest, PeekHandler_Reg)
 {
     uint8_t program[] = {
         +instruction::def::PSH_LIT, 0, 42,
-        +instruction::def::PEK_REG, +Register::r0,
+        +instruction::def::PEK_REG, +registers::def::r0,
     };
 
     mem.load(program, sizeof(program));
@@ -91,7 +91,7 @@ TEST_F(InstructionsTest, PeekHandler_Reg)
     ExecutionContext context(registries, mem.getMemory());
     
     // run program
-    uint16_t& pc = registries[+Register::pc];
+    uint16_t& pc = registries[+registers::def::pc];
     auto instruction = static_cast<instruction::def>(context.bytecode[pc]);    
 
     instruction::handlers[instruction](context);
@@ -100,7 +100,7 @@ TEST_F(InstructionsTest, PeekHandler_Reg)
     EXPECT_EQ(instruction, instruction::def::PEK_REG);
     instruction::handlers[instruction](context);
 
-    int16_t value = context.registry[+Register::r0];
+    int16_t value = context.registry[+registers::def::r0];
     EXPECT_EQ(value, 42);
 
     value = pop_helper(context);
@@ -114,7 +114,7 @@ TEST_F(InstructionsTest, PeekHandler_Offset)
         +instruction::def::PSH_LIT, 0, 9,
         +instruction::def::PSH_LIT, 0, 17,
         +instruction::def::PSH_LIT, 0, 19,
-        +instruction::def::PEK_OFF, +Register::r0, 0x02
+        +instruction::def::PEK_OFF, +registers::def::r0, 0x02
     };
 
     mem.load(program, sizeof(program));
@@ -122,7 +122,7 @@ TEST_F(InstructionsTest, PeekHandler_Offset)
     ExecutionContext context(registries, mem.getMemory());
     
     // run program
-    uint16_t& pc = registries[+Register::pc];
+    uint16_t& pc = registries[+registers::def::pc];
     for (int i = 0; i < 4; i++)
     {
         auto instruction = static_cast<instruction::def>(context.bytecode[pc]);
@@ -134,7 +134,7 @@ TEST_F(InstructionsTest, PeekHandler_Offset)
     EXPECT_EQ(instruction, instruction::def::PEK_OFF);
     instruction::handlers[instruction](context);
 
-    int16_t value = context.registry[+Register::r0];
+    int16_t value = context.registry[+registers::def::r0];
     EXPECT_EQ(value, 17);
 
     pop_helper(context); // pop twice
@@ -156,7 +156,7 @@ int16_t BinaryExpressionHandlerTest(int16_t a, int16_t b, instruction::def _inst
 
     for (int i = 0; i < 3; i++)
     {
-        uint16_t& pc = context.registry[+Register::pc];
+        uint16_t& pc = context.registry[+registers::def::pc];
         auto instr = static_cast<instruction::def>(context.bytecode[pc]);
 		instruction::handlers[instr](context);
         pc++;
@@ -195,7 +195,7 @@ TEST_F(InstructionsTest, PopReg_ExpectValueInReturnRegister)
 {
     uint8_t program[] = {
         +instruction::def::PSH_LIT, 0, 19,
-        +instruction::def::POP_REG, +Register::ret
+        +instruction::def::POP_REG, +registers::def::ret
     };
 
     mem.load(program, sizeof(program));
@@ -203,15 +203,92 @@ TEST_F(InstructionsTest, PopReg_ExpectValueInReturnRegister)
     ExecutionContext context(registries, mem.getMemory());
     
     // tick program
-    uint16_t& pc = registries[+Register::pc];
-    auto instruction = static_cast<instruction::def>(context.bytecode[pc++]);
+    uint16_t& pc = registries[+registers::def::pc];
+    auto instruction = static_cast<instruction::def>(context.bytecode[pc]);
     instruction::handlers[instruction](context);
 
-    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    instruction = static_cast<instruction::def>(context.bytecode[++pc]);
     EXPECT_EQ(instruction, instruction::def::POP_REG);
     instruction::handlers[instruction](context);
 
-    int16_t value = context.registry[+Register::ret];
+    int16_t value = context.registry[+registers::def::ret];
     EXPECT_EQ(value, 19);
 }
 
+TEST_F(InstructionsTest, IncHandler_RegAndStack)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::INC, +registers::def::sp, 0,
+        +instruction::def::PEK_REG, +registers::def::r0,
+        +instruction::def::INC, +registers::def::r0,
+    };
+
+    mem.load(program, sizeof(program));
+
+    ExecutionContext context(registries, mem.getMemory());
+    
+    // run program
+    uint16_t& pc = registries[+registers::def::pc];
+    auto instruction = static_cast<instruction::def>(context.bytecode[pc]);    
+
+    instruction::handlers[instruction](context);
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    EXPECT_EQ(instruction, instruction::def::INC);
+    instruction::handlers[instruction](context);
+
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    instruction::handlers[instruction](context);
+
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    instruction::handlers[instruction](context);
+    EXPECT_EQ(instruction, instruction::def::INC);
+
+    int16_t value = context.registry[+registers::def::r0];
+    EXPECT_EQ(value, 44);
+
+    value = pop_helper(context);
+    EXPECT_EQ(value, 43);
+}
+
+TEST_F(InstructionsTest, DecHandler_RegAndStack)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::DEC, +registers::def::sp, 0,
+        +instruction::def::PEK_REG, +registers::def::r0,
+        +instruction::def::DEC, +registers::def::r0,
+    };
+
+    mem.load(program, sizeof(program));
+
+    ExecutionContext context(registries, mem.getMemory());
+    
+    // run program
+    uint16_t& pc = registries[+registers::def::pc];
+    auto instruction = static_cast<instruction::def>(context.bytecode[pc]);    
+
+    instruction::handlers[instruction](context);
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    EXPECT_EQ(instruction, instruction::def::DEC);
+    instruction::handlers[instruction](context);
+
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    instruction::handlers[instruction](context);
+
+    pc++;
+    instruction = static_cast<instruction::def>(context.bytecode[pc]);
+    instruction::handlers[instruction](context);
+    EXPECT_EQ(instruction, instruction::def::DEC);
+
+    int16_t value = context.registry[+registers::def::r0];
+    EXPECT_EQ(value, 40);
+
+    value = pop_helper(context);
+    EXPECT_EQ(value, 41);
+}

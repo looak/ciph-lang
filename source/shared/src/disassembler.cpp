@@ -11,6 +11,8 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
         case instruction::def::PSH_LIT:
             result += dissassembleNumericLiteral(program_count);
             break;
+        case instruction::def::INC:
+        case instruction::def::DEC:
         case instruction::def::PEK_OFF:
             result += dissassembleReg(program_count);
             result += " [sp + ";
@@ -18,10 +20,10 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
             result += "]";
             break;
             
+        case instruction::def::POP_REG:
         case instruction::def::PEK_REG:
             result += dissassembleReg(program_count);
-            break;
-
+            break;            
             //program_count++;
     }
     return result += "\n";
@@ -42,7 +44,7 @@ std::string Disassembler::disassembleOffset(size_t& program_count) const
 
 std::string Disassembler::dissassembleReg(size_t& program_count) const
 {
-    return fmt::format("{}", instruction::regNames.at(m_program[++program_count]));
+    return fmt::format("{}", registers::name.at(static_cast<registers::def>(m_program[++program_count])));
 }
 
 std::string Disassembler::disassemble() const
@@ -51,8 +53,15 @@ std::string Disassembler::disassemble() const
 
     for (size_t i = 0; i < m_size; i++)
     {
-        disassembly += disassembleInstruction(i);
+        auto key = i;
+        m_disassembledInstructions.emplace(key, disassembleInstruction(i));        
+        disassembly += m_disassembledInstructions[key];
     }
 
     return disassembly;
+}
+
+std::string Disassembler::disassembleInstructionAt(size_t program_count) const
+{
+    return m_disassembledInstructions[program_count];
 }

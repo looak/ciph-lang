@@ -23,6 +23,8 @@ enum class ASTNodeType
 
 	// scope and operators
 	BINARY_EXPRESSION,
+	INC_DEC_EXPRESSION,
+
 
 	END_OF_FILE,
 	UNKNOWN
@@ -87,6 +89,18 @@ private:
 	OperatorType m_operator;
 };
 
+class ASTIncDecNode : public ASTExpressionNode
+{
+public:
+	explicit ASTIncDecNode(bool isIncrement) : ASTExpressionNode(ASTNodeType::INC_DEC_EXPRESSION), m_isIncrement(isIncrement) {}
+	~ASTIncDecNode() override = default;
+
+	[[nodiscard]] bool readIsIncrement() const { return m_isIncrement; }
+
+private:
+	bool m_isIncrement;
+};
+
 class ASTNumericLiteralNode : public ASTExpressionNode
 {
 public:
@@ -102,12 +116,15 @@ private:
 class ASTIdentifierNode : public ASTExpressionNode
 {
 public:
-	explicit ASTIdentifierNode(const std::string& name) : ASTExpressionNode(ASTNodeType::IDENTIFIER), m_name(name) {}
+	ASTIdentifierNode(const std::string& name, const ASTExpressionNode* op) : ASTExpressionNode(ASTNodeType::IDENTIFIER), m_name(name), m_operator(op) {}
 	~ASTIdentifierNode() override = default;
 
-	[[nodiscard]] const std::string& readName() const { return m_name; }
+	[[nodiscard]] const std::string& readName() const { return m_name; }	
+	[[nodiscard]] const ASTExpressionNode* readOperator() const { return m_operator; }
+
 private:
 	std::string m_name;
+	const ASTExpressionNode* m_operator;
 };
 
 class ASTReturnNode : public ASTBaseNode

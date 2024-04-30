@@ -42,6 +42,8 @@ Move instructions, first bit is dictating that we are using memory addresses or 
  | MUL, rX, rY | `0x0B` | 2 bytes | Takes values at registers, multiplies them together and puts product into rX. If rY is unspecified uses `imm` as multiplier, still stores product in rX.
  DIV | `0x0C` | 1 byte | Pops divisor of the stack, then pops dividen of the stack. Puts quotient of the divison onto stack. Remainder is lost.
  DIV, rX, rY | `0x0D` | 2 bytes | Uses register rX as dividen and rY as divisor. Quotient is put into rX. Remainder is lost. If rY is unspecified uses `imm` as divisor.
+ INC, reg, 8bit lit | `0x0E` | 2 bytes | Increases the value at given register by one, if reg:sp is given, value on stack is incremented at given offset.
+ DEC, reg, 8bit lit | `0x0F` | 2 bytes | Same as increment, just decreases the value by one.
  
 #### Stack instructions
 | *mnemonic and input* | *hex* | *description* |
@@ -53,7 +55,8 @@ Move instructions, first bit is dictating that we are using memory addresses or 
 | POP | `0x30` | Pops top of stack to given `imm` register
 | POP, reg | `0x40` | Pops top of stack to given register.
 | PEK, reg | `0x50` | Copies top value of stack into given register |
-| PEK, reg, 8bit lit | `0x51` | Copies value of stack at offset into given register |
+| PEK, reg, 8bit lit | `0x51` | Copies value of stack at offset into given register, if reg:sp is given, value is pushed onto stack. |
+
 
 
 #### Control flow instructions
