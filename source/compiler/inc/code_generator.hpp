@@ -1,6 +1,7 @@
 #pragma once
 
 #include <shared_defines.hpp>
+#include "lexar_defines.hpp"
 
 #include <cstdint>
 #include <string>
@@ -56,7 +57,7 @@ private:
     // expressions
     void generateExpression(const ASTBaseNode* node);
     void generateExpression(const ASTBaseNode* node, registers::def reg);
-    void generateBinaryExpression(const ASTBinaryExpressionNode* node);
+    void generateBinaryExpression(const ASTBinaryExpressionNode* node, std::optional<registers::def> reg = std::nullopt);
     void generateNumericLiteral(const ASTNumericLiteralNode* node);    
     void generateOperator(const ASTBinaryExpressionNode* node, std::optional<registers::def> regA = std::nullopt, std::optional<registers::def> regB = std::nullopt);
     void generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA, std::optional<registers::def> regB = std::nullopt);
@@ -78,6 +79,7 @@ private:
     void pop();
     void encode(int16_t value);
     void encodeRegister(registers::def reg);
+    void encodeOperator(OperatorType op);
 
     std::array<RegisterValue, static_cast<int>(registers::def::reg_cnt)> m_registers;
    

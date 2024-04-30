@@ -184,7 +184,7 @@ TEST(ParserTest, IncStatement)
 
 	EXPECT_EQ(result->readStatements().size(), 2);
 	EXPECT_EQ(result->readStatements()[1]->readType(), ASTNodeType::IDENTIFIER);
-	auto identifier = static_cast<const ASTIdentifierNode*>(result->readStatements()[0]);	
+	auto identifier = static_cast<const ASTIdentifierNode*>(result->readStatements()[1]);	
 	EXPECT_EQ(identifier->readOperator()->readType(), ASTNodeType::INC_DEC_EXPRESSION);
 	auto incDecNode = static_cast<const ASTIncDecNode*>(identifier->readOperator());
 	EXPECT_EQ(incDecNode->readIsIncrement(), true);

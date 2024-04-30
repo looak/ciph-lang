@@ -146,7 +146,32 @@ TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression)
                                   +instruction::def::PSH_LIT, 0, 2,
                                   +instruction::def::PSH_LIT, 0, 3,
                                   +instruction::def::ADD,
-                                  +instruction::def::MUL,
+                                  +instruction::def::MUL,                                  
+                                  +instruction::def::POP_REG, +registers::def::ret,
+                                  +instruction::def::RET };
+    uint32_t expectedSize = sizeof(expectedProgram);
+
+    EXPECT_EQ(expectedSize, actualSize);
+    EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
+}
+
+TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression_Simple)
+{
+    // setup    
+    std::string code("return 2 + 3");
+    Parser parser(code);
+    CodeGenerator generator(static_cast<ASTProgramNode*>(parser.parse()));
+
+    // do
+    generator.generateCode();
+    std::string actual = generator.outputBytecode();
+    auto [actualProgram, actualSize] = generator.readRawBytecode();
+
+    // validate
+    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
+                                  +instruction::def::PSH_LIT, 0, 3,
+                                  +instruction::def::ADD,
+                                  +instruction::def::POP_REG, +registers::def::ret,
                                   +instruction::def::RET };
     uint32_t expectedSize = sizeof(expectedProgram);
 
@@ -202,16 +227,13 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_MultipleVariables)
     // validate
     uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 2,
                                     +instruction::def::PSH_LIT, 0, 3,
-                                    +instruction::def::PEK_OFF, +registers::def::sp, 0,
-                                    +instruction::def::PSH,
-                                    +instruction::def::PEK_OFF, +registers::def::sp, 1,
-                                    +instruction::def::PSH,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 0,                                    
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 1,                                    
                                     +instruction::def::ADD,
-                                    +instruction::def::PEK_OFF, +registers::def::sp, 2,
-                                    +instruction::def::PSH,
-                                    +instruction::def::PEK_OFF, +registers::def::sp, 1,
-                                    +instruction::def::PSH,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 2,                                    
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 1,                                    
                                     +instruction::def::ADD,
+                                    +instruction::def::POP_REG, +registers::def::ret,
                                     +instruction::def::RET};
 
     std::string dissassembly = generator.disassemble();
@@ -242,11 +264,10 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
                                     +instruction::def::PSH_LIT, 0, 20,                                    
                                     +instruction::def::ADD,
                                     +instruction::def::PSH_LIT, 0, 3,
-                                    +instruction::def::PEK_OFF, +registers::def::sp, 0,
-                                    +instruction::def::PSH,
-                                    +instruction::def::PEK_OFF, +registers::def::sp, 1,
-                                    +instruction::def::PSH,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 0,                                    
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 1,                                    
                                     +instruction::def::DIV,
+                                    +instruction::def::POP_REG, +registers::def::ret,
                                     +instruction::def::RET};
 
     std::string dissassembly = generator.disassemble();

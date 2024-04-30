@@ -4,6 +4,8 @@
 #include "shared_defines.hpp"
 #include "processing_unit.hpp"
 #include "disassembler.hpp"
+#include "code_generator.hpp"
+#include "parser.hpp"
 #include <iostream>
 #include <windows.h>
 
@@ -94,20 +96,27 @@ void PrintRegisters(ProcessingUnit& pu, int x, int y)
 
 int main(int argc, char *argv[]) {
 
-    uint8_t program[] = {    
-        +instruction::def::PSH_LIT, 0, 10,
-        +instruction::def::INC, +registers::def::sp, 0,
-        +instruction::def::PEK_OFF, +registers::def::ret, 0,
-        +instruction::def::RET
-        };
+    bool running = true;
+    std::string input("return 5 + 5");
+
+    std::getline(std::cin, input); // wait for user to press enter
+    if (input == "exit")
+        return 0;
+        
+    Parser parser(input);
+    auto abstract_program = parser.parse();
+    CodeGenerator code_generator(reinterpret_cast<ASTProgramNode*>(abstract_program));
+    code_generator.generateCode();
+    auto [program, psize] = code_generator.readRawBytecode();
+
+            
 
     ProcessingUnit pu;
-    pu.load_program(program, sizeof(program));
-    Disassembler disassembler(&program[0], sizeof(program));
+    pu.load_program(&program[0], psize);
+    Disassembler disassembler(&program[0], psize);
     disassembler.disassemble();
-    std::string input;
-    bool running = true;
-
+    
+    running = true;
     while (running) {
         system("cls");
 

@@ -57,7 +57,7 @@ void CodeGenerator::generateExpression(const ASTBaseNode* node, registers::def r
         case ASTNodeType::BINARY_EXPRESSION:
         {
             const auto* binaryNode = static_cast<const ASTBinaryExpressionNode*>(node);
-            generateBinaryExpression(binaryNode);
+            generateBinaryExpression(binaryNode, reg);
             break;
         }
         case ASTNodeType::IDENTIFIER:
@@ -74,12 +74,12 @@ void CodeGenerator::generateExpression(const ASTBaseNode* node, registers::def r
     }
 }
 
-void CodeGenerator::generateBinaryExpression(const ASTBinaryExpressionNode* node)
+void CodeGenerator::generateBinaryExpression(const ASTBinaryExpressionNode* node, std::optional<registers::def> reg)
 {   
     // giving stack pointer, which indicates we're pushing the result to the stack
     generateExpression(node->readLeft(), registers::def::sp);
-    generateExpression(node->readRight(), registers::def::sp);
-    generateOperator(node);
+    generateExpression(node->readRight(), registers::def::sp);    
+    generateOperator(node, reg);
 }
 
 void CodeGenerator::generateReturnStatement(const ASTReturnNode* node)
@@ -129,9 +129,6 @@ void CodeGenerator::generateIdentifier(const ASTIdentifierNode* node, registers:
     {
         if (peek_offset(identifier->second.offset, reg) == false)
             m_registers[+reg].value = std::make_optional(identifier->second);
-        else
-            push(instruction::def::PSH); // push imm onto stack.
-
     }
     else
     {
@@ -139,20 +136,9 @@ void CodeGenerator::generateIdentifier(const ASTIdentifierNode* node, registers:
     }
 }
 
-void CodeGenerator::generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA, std::optional<registers::def> regB)
+void CodeGenerator::encodeOperator(OperatorType op)
 {
-
-}
-
-void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node, std::optional<registers::def> regA, std::optional<registers::def> regB)
-{
-
-    if (regA.has_value())
-    {
-        generateOperatorReg(node, regA.value(), regB);
-        return;
-    }
-    switch (node->readOperator())
+    switch (op)
     {
         case OperatorType::ADDITION:
         {
@@ -180,9 +166,31 @@ void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node, std::o
             break;
         }
     }
-    
-    m_stackSize--; // poped twice & pushed once
- 
+}
+
+void CodeGenerator::generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA, std::optional<registers::def> regB)
+{
+    encodeOperator(node->readOperator());
+
+    if (regA == registers::def::ret)
+    {
+        m_bytecode.push_back(static_cast<uint8_t>(instruction::def::POP_REG));
+        m_bytecode.push_back(+registers::def::ret);
+    }
+    m_stackSize -= 2; // poped twice
+}
+
+void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node, std::optional<registers::def> regA, std::optional<registers::def> regB)
+{
+    if (regA.has_value() && regA.value() != registers::def::sp)
+    {
+        generateOperatorReg(node, regA.value(), regB);        
+    }
+    else
+    {
+        encodeOperator(node->readOperator());    
+        m_stackSize--; // poped twice & pushed once
+    }
 }
 
 void CodeGenerator::generateNumericLiteral(const ASTNumericLiteralNode* node)
