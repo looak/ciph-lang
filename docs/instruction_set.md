@@ -16,6 +16,11 @@ $$
         [8bits]_{memory || literal}
 $$
 
+Comparison notes;
+let x = 5 == y // compare takes precidense over assignment/let
+5 + 5 == 5 + 2 // arithmatic operation takes precidence over compare.
+y++ == 5 // arithmatic operation takes precidence over compare.
+
 
 ### List of Instructions:
 
@@ -29,14 +34,13 @@ Move instructions, first bit is dictating that we are using memory addresses or 
 |MOV, rX, rY| `0x02`| 2 bytes | Move data from register rY to register rX, if rY is unspecified moves rX into `imm` register. |
 |MOV, mem | `0x03` | 3 bytes | Move data from `imm` register into given Memory. |
 
-
 #### Basic arithmetic instructions
 
  | *mnemonic and input* | *hex* | size | *description* |
  |--|--|--|--|
  | ADD | `0x06` | 1 byte | Pops two values from the stack and adds them together. Result is pushed onto stack.
  | ADD, rX, rY | `0x07` | 2 byte | Takes values at registers, adds them together and puts result into rX. If rY is unspecified adds `imm` to rX.
- SUB | `0x08` | 1 byte | Subtracts second value on stack with first and pushes difference onto stack.
+ SUB | `0x08` | 1 byte | Subtracts second value on stack from first and pushes difference onto stack.
  SUB, rX, rY | `0x09` | 2 bytes | Subtracts rX with rY and puts difference into rX. If rY is unspecified uses `imm`.
  | MUL | `0x0A` | 1 byte | Pops two values from the stack and multiplies them together.
  | MUL, rX, rY | `0x0B` | 2 bytes | Takes values at registers, multiplies them together and puts product into rX. If rY is unspecified uses `imm` as multiplier, still stores product in rX.
@@ -57,14 +61,15 @@ Move instructions, first bit is dictating that we are using memory addresses or 
 | PEK, reg | `0x50` | Copies top value of stack into given register |
 | PEK, reg, 8bit lit | `0x51` | Copies value of stack at offset into given register, if reg:sp is given, value is pushed onto stack. |
 
-
-
 #### Control flow instructions
 | *mnemonic and input* | *hex* | *description* |
 |--|--|--|
 JMP, address | `0xC0` | Unconditionally jump to address.
 JNZ, address | `0xC1` | Jump to address if `imm` is not zero.
-RET, address | `0xC2` | Returns value in `ret` and terminates the program.
+JEQ, address | `0xC2` | Jump to address if `imm` is zero.
+JGT, address | `0xC3` | Jump to address if `imm` is positive.
+RET, address | `0xCF` | Returns value in `ret` and terminates the program.
+CMP, rX, rY | `0xCC` | Subtracts rX from rY and puts result in `imm`, if reg:sp is passed as rX we pop the compared elements from the stack
 
 #### Other instructions
 | *mnemonic and input* | *hex* | *description* |

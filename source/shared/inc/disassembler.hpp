@@ -22,6 +22,7 @@ private:
     std::string dissassembleNumericLiteral(size_t& program_count) const;
     std::string disassembleOffset(size_t& program_count) const;
     std::string dissassembleReg(size_t& program_count) const;
+    std::string disassembleInstructionWithOptionalReg(size_t& program_count) const;
 
     mutable std::map<size_t, std::string> m_disassembledInstructions;
     const uint8_t* m_program;
