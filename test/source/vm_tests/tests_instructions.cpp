@@ -292,3 +292,55 @@ TEST_F(InstructionsTest, DecHandler_RegAndStack)
     value = pop_helper(context);
     EXPECT_EQ(value, 41);
 }
+
+TEST_F(InstructionsTest, MoveHandler_RegToReg)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::POP_REG, +registers::def::r1,
+        +instruction::def::MOV, +registers::def::r0, +registers::def::r1,
+    };
+
+    mem.load(program, sizeof(program));
+
+    ExecutionContext context(registries, mem.getMemory());
+        
+    // run program
+    auto instruction = instruction::def::NOP;
+    uint16_t& pc = registries[+registers::def::pc];
+    for (int i = 0; i < 3; i++)
+    {
+        instruction = static_cast<instruction::def>(context.bytecode[pc]);
+        instruction::handlers[instruction](context);
+        pc++;
+    }
+
+    EXPECT_EQ(instruction, instruction::def::MOV);
+    int16_t value = context.registry[+registers::def::r0];
+    EXPECT_EQ(value, 42);
+}
+
+TEST_F(InstructionsTest, CompareHandler_Stack_ResultInImm)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::CMP
+    };
+
+    mem.load(program, sizeof(program));
+    ExecutionContext context(registries, mem.getMemory());
+
+    // run program
+    auto instruction = instruction::def::NOP;
+    uint16_t& pc = registries[+registers::def::pc];
+    for (int i = 0; i < 3; i++)
+    {
+        instruction = static_cast<instruction::def>(context.bytecode[pc]);
+        instruction::handlers[instruction](context);
+        pc++;
+    }
+
+    EXPECT_EQ(instruction, instruction::def::CMP);
+    EXPECT_EQ(context.registry[+registers::def::imm], 0);
+}

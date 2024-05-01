@@ -2,6 +2,7 @@
 
 #include <string>
 #include <stack>
+#include <vector>
 
 #include "lexar_defines.hpp"
 
@@ -15,6 +16,7 @@ enum class ASTNodeType
 	// keywords
 	LET,
 	RETURN,
+	WHILE,
 
 	/*
 	STRING,
@@ -24,6 +26,7 @@ enum class ASTNodeType
 	// scope and operators
 	BINARY_EXPRESSION,
 	INC_DEC_EXPRESSION,
+	COMPARISON_EXPRESSION,
 
 
 	END_OF_FILE,
@@ -42,20 +45,36 @@ private:
 	ASTNodeType m_type;
 };
 
-
-class ASTProgramNode : public ASTBaseNode
+class ASTScopeNode : public ASTBaseNode
 {
 public:
-	ASTProgramNode() : ASTBaseNode(ASTNodeType::PROGRAM) {}
-	~ASTProgramNode() final = default;
-
+	explicit ASTScopeNode(ASTNodeType type) : ASTBaseNode(type) {}
+	virtual ~ASTScopeNode() override
+	{
+		for (auto& statement : m_statements)
+		{
+			delete statement;
+		}
+	}
 	void addStatement(ASTBaseNode* statement) { m_statements.push_back(statement); }
 	const std::vector<ASTBaseNode*>& readStatements() const { return m_statements; }
 
 private:
-	
 	std::vector<ASTBaseNode*> m_statements;
 };
+
+class ASTProgramNode : public ASTScopeNode
+{
+public:
+	ASTProgramNode() : ASTScopeNode(ASTNodeType::PROGRAM) {}
+	~ASTProgramNode() final = default;
+};
+
+class ASTWhileNode : public ASTScopeNode
+{
+	ASTWhileNode() : ASTScopeNode(ASTNodeType::WHILE) {}
+	~ASTWhileNode() final = default;
+}
 
 class ASTExpressionNode : public ASTBaseNode
 {
@@ -74,6 +93,31 @@ public:
 		m_operator(op)
 	{}
 	~ASTBinaryExpressionNode() override = default;
+
+	[[nodiscard]] ASTBaseNode* editLeft() { return m_left; }
+	[[nodiscard]] ASTBaseNode* editRight() { return m_right; }
+	[[nodiscard]] OperatorType& editOperator() { return m_operator; }
+
+	[[nodiscard]] const ASTBaseNode* readLeft() const { return m_left; }
+	[[nodiscard]] const ASTBaseNode* readRight() const { return m_right; }
+	[[nodiscard]] OperatorType readOperator() const { return m_operator; }
+
+private:
+	ASTBaseNode* m_left;
+	ASTBaseNode* m_right;
+	OperatorType m_operator;
+};
+
+class ASTComparisonExpressionNode : public ASTExpressionNode
+{
+public:
+	ASTComparisonExpressionNode(ASTBaseNode* lhs, ASTBaseNode* rhs, OperatorType op) :
+		ASTExpressionNode(ASTNodeType::COMPARISON_EXPRESSION),
+		m_left(lhs),
+		m_right(rhs),
+		m_operator(op)
+	{}
+	~ASTComparisonExpressionNode() override = default;
 
 	[[nodiscard]] ASTBaseNode* editLeft() { return m_left; }
 	[[nodiscard]] ASTBaseNode* editRight() { return m_right; }

@@ -25,7 +25,7 @@ enum class def : uint8_t {
 	MUL_REG	=		0x0B, 	// Takes values at registers, multiplies them together and puts product into rX. If rY is unspecified uses imm as multiplier, still stores product in rX.
 	DIV	 	=		0x0C, 	// Pops divisor of the stack, then pops dividen of the stack. Puts quotient of the divison onto stack. Remainder is lost.
 	DIV_REG	=		0x0D, 	// Uses register rX as dividen and rY as divisor. Quotient is put into rX. Remainder is lost. If rY is unspecified uses imm as divisor.
-	INC		=		0x0E, // Increases the value at given register by one, if reg:sp is given, value on stack is incremented at given offset.
+	INC		=		0x0E, 	// Increases the value at given register by one, if reg:sp is given, value on stack is incremented at given offset.
  	DEC 	=		0x0F, 	// Same as increment, just decreases the value by one.
  
 	
@@ -41,8 +41,11 @@ enum class def : uint8_t {
 	
 	// Control flow instructions
 	JMP	 	=		0xC0, 	// Unconditionally jump to address.
-	JNZ	 	=		0xC1, 	// Jump to address if imm is not zero.
-	RET	 	=		0xC2, 	// Returns value in imm and terminates the program.
+	JNZ	 	=		0xC1, 	// Jump to address if imm is not zero.	
+	JEQ 	=		0xC2,  	// Jump to address if imm is zero.
+	JGT 	=		0xC3,  	// Jump to address if imm is positive.
+	CMP 	= 		0xCC, 	// Subtracts rX from rY and puts result in imm, if reg:sp is passed as rX we pop the compared elements from the stack
+	RET	 	=		0xCF, 	// Returns value in imm and terminates the program.
  
 	// Other instructions
 	NOP	 	=		0x00  	// No operation instruction, program counter should just tick pass this.
@@ -74,6 +77,7 @@ const std::unordered_map<def, std::string> mnemonics = {
 	{def::PEK_OFF, "PEK"},
 	{def::JMP, "JMP"},
 	{def::JNZ, "JNZ"},
+	{def::CMP, "CMP"},	
 	{def::RET, "RET"},
 	{def::NOP, "NOP"}	
 };

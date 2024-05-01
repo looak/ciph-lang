@@ -24,10 +24,12 @@ private:
 	ASTBaseNode* parseStatement();
 	ASTLetNode* parseLetStatement();
 	ASTReturnNode* parseReturnStatement();
+	ASTWhileNode* parseWhileStatement();
 	ASTExpressionNode* parseAddativeExpression();
 	ASTExpressionNode* parseMultiplicativeExpression();
 	ASTIdentifierNode* parseIdentifier();
 	ASTExpressionNode* parsePrimaryExpression();
+	ASTExpressionNode* parseComparisonExpression();
 
 	Lexar m_lexar;
 };

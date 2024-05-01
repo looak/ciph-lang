@@ -189,3 +189,56 @@ TEST(ParserTest, IncStatement)
 	auto incDecNode = static_cast<const ASTIncDecNode*>(identifier->readOperator());
 	EXPECT_EQ(incDecNode->readIsIncrement(), true);
 }
+
+TEST(ParserTest, EqualsOperator)
+{
+	// setup
+	std::string code("x == x");
+	Parser parser(code);
+
+	// do - we know the node type returned is a program	
+	ASTProgramNode* result = static_cast<ASTProgramNode*>(parser.parse());
+
+	// validate
+	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
+
+	EXPECT_EQ(result->readStatements().size(), 1);
+	EXPECT_EQ(result->readStatements()[0]->readType(), ASTNodeType::COMPARISON_EXPRESSION);
+	auto compare_expression = static_cast<const ASTComparisonExpressionNode*>(result->readStatements()[0]);	
+	EXPECT_EQ(compare_expression->readOperator(), OperatorType::EQUAL);
+}
+
+TEST(ParserTest, EqualsOperator_NotLegal)
+{
+	// setup
+	std::string code("x == x == x");
+	Parser parser(code);
+
+	// do - we know the node type returned is a program	
+	ASTProgramNode* result = static_cast<ASTProgramNode*>(parser.parse());
+
+	// validate
+	EXPECT_TRUE(false) << "This test should fail and produce a error message";
+}
+
+TEST(ParserTest, WhileStatement_Legal)
+{
+	// setup
+	std::string code(R"(let i = 0
+						while (i < 5) {
+							i++
+						}
+						return i 		)");
+	Parser parser(code);
+
+	// do - we know the node type returned is a program	
+	ASTProgramNode* result = static_cast<ASTProgramNode*>(parser.parse());
+
+	// validate
+	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
+
+	EXPECT_EQ(result->readStatements().size(), 4);
+	EXPECT_EQ(result->readStatements()[1]->readType(), ASTNodeType::WHILE);
+	auto compare_expression = static_cast<const ASTComparisonExpressionNode*>(result->readStatements()[0]);	
+	EXPECT_EQ(compare_expression->readOperator(), OperatorType::EQUAL);
+}

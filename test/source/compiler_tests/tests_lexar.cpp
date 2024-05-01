@@ -36,19 +36,47 @@ OperatorTester(std::string input, OperatorType type)
 TEST(LexarTest, IdentifyOperators)
 {
     std::vector<std::pair<std::string, OperatorType>> operatorsToTest = {
-		{"=", OperatorType::ASSIGNMENT},
-		{"==", OperatorType::EQUAL},
-		{"+", OperatorType::ADDITION},
-		{"+=", OperatorType::ADDITION_ASSIGNMENT},
-		{"++", OperatorType::INCREMENT},
-		{"-", OperatorType::SUBTRACTION},
-		{"-=", OperatorType::SUBTRACTION_ASSIGNMENT},
-		{"--", OperatorType::DECREMENT},
+		{ "=", 		OperatorType::ASSIGNMENT},
+		{ "==", 	OperatorType::EQUAL},
+		{ "!=", 	OperatorType::NOT_EQUAL},
+		{ "!", 		OperatorType::NOT},
+		{ "<", 		OperatorType::LESS_THAN},
+		{ ">", 		OperatorType::GREATER_THAN},
+		{ "<=", 	OperatorType::LESS_EQUAL},
+		{ ">=", 	OperatorType::GREATER_EQUAL},
+		{ "&&", 	OperatorType::AND_AND},
+		{ "&", 		OperatorType::AND},
+		{ "||", 	OperatorType::OR_OR},
+		{ "|", 		OperatorType::OR},
+		{ "^", 		OperatorType::XOR},
+		{ "%", 		OperatorType::MODULUS},
+		{ "%=", 	OperatorType::MODULUS_ASSIGNMENT},
+		{ "*", 		OperatorType::MULTIPLICATION},
+		{ "*=", 	OperatorType::MULTIPLICATION_ASSIGNMENT},
+		{ "/", 		OperatorType::DIVISION},
+		{ "/=", 	OperatorType::DIVISION_ASSIGNMENT},
+		{ "<<", 	OperatorType::LEFT_SHIFT},
+		//{ "<<=",	OperatorType::LEFT_SHIFT_ASSIGNMENT},
+		{ ">>", 	OperatorType::RIGHT_SHIFT},
+		//{ ">>=",	OperatorType::RIGHT_SHIFT_ASSIGNMENT},
+		{ "&", 		OperatorType::AND},
+		{ "&=", 	OperatorType::AND_ASSIGNMENT},
+		{ "|", 		OperatorType::OR},
+		{ "|=", 	OperatorType::OR_ASSIGNMENT},
+		{ "^", 		OperatorType::XOR},
+		{ "^=", 	OperatorType::XOR_ASSIGNMENT},
+		{ "++", 	OperatorType::INCREMENT},
+		{ "+", 		OperatorType::ADDITION},
+		{ "+=", 	OperatorType::ADDITION_ASSIGNMENT},
+		{ "++", 	OperatorType::INCREMENT},
+		{ "-", 		OperatorType::SUBTRACTION},
+		{ "-=", 	OperatorType::SUBTRACTION_ASSIGNMENT},
+		{ "--", 	OperatorType::DECREMENT},
 	};
 
 	for (auto& op : operatorsToTest)
 	{
-        EXPECT_TRUE(OperatorTester(op.first, op.second));
+        EXPECT_TRUE(OperatorTester(op.first, op.second)) << "Failed for operator: " << op.first;
 	}
 }
 
@@ -112,12 +140,13 @@ TEST(LexarTest, KeywordsIdentification)
 {
 	std::vector<std::pair<std::string, TokenType>> keywordsToTest = {
 		{"let", TokenType::LET},
-		{"return", TokenType::RETURN}
-		/*{"if", TokenType::IF},
-		{"else", TokenType::ELSE},
-		{"while", TokenType::WHILE},
-		{"for", TokenType::FOR},
 		{"return", TokenType::RETURN},
+		
+		{"if", TokenType::IF},
+		{"else", TokenType::ELSE},
+		{"while", TokenType::WHILE}
+		/*
+		{"for", TokenType::FOR},		
 		{"break", TokenType::BREAK},
 		{"continue", TokenType::CONTINUE},
 		{"function", TokenType::FUNCTION},
@@ -154,4 +183,27 @@ TEST(LexarTest, LetExpression)
 	token = lx.pop();
 	EXPECT_EQ(token.readValue(), "5");
 	EXPECT_EQ(token.readType(), TokenType::NUMBER);
+}
+
+TEST(LexarTest, BraceTokens)
+{
+	Lexar lx("{");
+	auto token = lx.pop();
+	EXPECT_EQ(token.readValue(), "{");
+	EXPECT_EQ(token.readType(), TokenType::OPEN_BRACE);
+
+	lx = Lexar("}");
+	token = lx.pop();
+	EXPECT_EQ(token.readValue(), "}");
+	EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
+
+	lx = Lexar("[");
+	token = lx.pop();
+	EXPECT_EQ(token.readValue(), "[");
+	EXPECT_EQ(token.readType(), TokenType::OPEN_BRACKET);
+
+	lx = Lexar("]");
+	token = lx.pop();
+	EXPECT_EQ(token.readValue(), "]");
+	EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACKET);
 }

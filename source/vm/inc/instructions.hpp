@@ -15,6 +15,8 @@ int16_t pop_helper(ExecutionContext& context);
 void push_helper(ExecutionContext& context, int16_t value);
 void push_helper_reg(ExecutionContext& context, registers::def reg);
 
+void jmp_helper(ExecutionContext& context, int16_t address);
+
 typedef void (*handler)(ExecutionContext& context);
 
 void push_handler(ExecutionContext& context);
@@ -31,6 +33,11 @@ void peek_offset_handler(ExecutionContext& context);
 void pop_reg_handler(ExecutionContext& context);
 void inc_handler(ExecutionContext& context);
 void dec_handler(ExecutionContext& context);
+void cmp_handler(ExecutionContext& context);
+void mov_handler(ExecutionContext& context);
+void jump_eq_handler(ExecutionContext& context);
+void jump_nz_handler(ExecutionContext& context);
+void jump_gt_handler(ExecutionContext& context);
 
 static std::unordered_map<def, handler> handlers = {
 	{def::PSH, push_handler},
@@ -45,6 +52,12 @@ static std::unordered_map<def, handler> handlers = {
 	{def::PEK_OFF, peek_offset_handler},
 	{def::RET, return_handler},
 	{def::INC, inc_handler},
-	{def::DEC, dec_handler}
+	{def::DEC, dec_handler},
+	{def::CMP, cmp_handler},
+	{def::MOV, mov_handler},
+	{def::JEQ, jump_eq_handler},
+	{def::JNZ, jump_nz_handler},
+	{def::JGT, jump_gt_handler}
+
 }; // handlers
 } // namespace instruction

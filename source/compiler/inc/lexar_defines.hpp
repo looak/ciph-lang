@@ -10,6 +10,9 @@ enum class TokenType {
 	// keywords
 	LET,
 	RETURN,
+	WHILE,
+	IF,
+	ELSE,
 
 	/*
     STRING,
@@ -37,8 +40,8 @@ enum class OperatorType : uint8_t {
 	MODULUS,
 	EQUAL,
 	NOT,
-	LESS,
-	GREATER,
+	LESS_THAN,
+	GREATER_THAN,
 	AND,
 	OR,
 	XOR,
@@ -72,6 +75,13 @@ generateOperatorMap()
 {
     OperatorMap map = {
         {'=', {{'\0', OperatorType::ASSIGNMENT}, {'=', OperatorType::EQUAL}}},
+		{'!', {{'\0', OperatorType::NOT}, {'=', OperatorType::NOT_EQUAL}}},
+		{'<', {{'\0', OperatorType::LESS_THAN}, {'=', OperatorType::LESS_EQUAL}, {'<', OperatorType::LEFT_SHIFT}, {'=', OperatorType::LEFT_SHIFT_ASSIGNMENT}}},
+		{'>', {{'\0', OperatorType::GREATER_THAN}, {'=', OperatorType::GREATER_EQUAL}, {'>', OperatorType::RIGHT_SHIFT}, {'=', OperatorType::RIGHT_SHIFT_ASSIGNMENT}}},
+		{'&', {{'\0', OperatorType::AND}, {'&', OperatorType::AND_AND}, {'=', OperatorType::AND_ASSIGNMENT}}},
+		{'|', {{'\0', OperatorType::OR}, {'|', OperatorType::OR_OR}, {'=', OperatorType::OR_ASSIGNMENT}}},
+		{'^', {{'\0', OperatorType::XOR}, {'=', OperatorType::XOR_ASSIGNMENT}}},
+		{'%', {{'\0', OperatorType::MODULUS}, {'=', OperatorType::MODULUS_ASSIGNMENT}}},
         {'+', {{'\0', OperatorType::ADDITION}, {'+', OperatorType::INCREMENT}, {'=', OperatorType::ADDITION_ASSIGNMENT}}},
         {'-', {{'\0', OperatorType::SUBTRACTION}, {'-', OperatorType::DECREMENT}, {'=', OperatorType::SUBTRACTION_ASSIGNMENT}}},
 		{'*', {{'\0', OperatorType::MULTIPLICATION}, {'=', OperatorType::MULTIPLICATION_ASSIGNMENT}}},

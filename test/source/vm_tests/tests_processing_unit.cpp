@@ -160,3 +160,16 @@ TEST(ProcessingUnitTest, LetStatement_MultipleVariables)
     uint16_t result = testProcessingUnit(program, sizeof(program));
     EXPECT_EQ(result, 8);
 }
+
+TEST(ProcessingUnitTest, Return_Equals)
+{
+    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 10,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                            +instruction::def::PSH_LIT, 0, 10,
+                            +instruction::def::CMP, +registers::def::sp,
+                            +instruction::def::MOV, +registers::def::ret, +registers::def::imm,
+                            +instruction::def::RET};
+
+    uint16_t result = testProcessingUnit(program, sizeof(program));
+    EXPECT_EQ(result, 0); // no difference, should probably return 1.
+}

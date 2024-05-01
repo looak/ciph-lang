@@ -32,8 +32,8 @@ int16_t instruction::read_word(uint8_t* bytecode, uint16_t& pc)
 
 void instruction::write_int16(uint8_t* bytecode, uint16_t& pc, int16_t value)
 {
-    bytecode[pc++] = value & u8(0xFF);
-    bytecode[pc++] = (value >> 8) & u8(0xFF);
+    bytecode[pc++] = static_cast<uint8_t>(value & u8(0xFF));
+    bytecode[pc++] = static_cast<uint8_t>((value >> 8) & u8(0xFF));
 }
 
 int16_t instruction::pop_helper(ExecutionContext& context)
@@ -62,7 +62,7 @@ void instruction::push_helper(ExecutionContext& context, int16_t value)
 void instruction::push_helper_reg(ExecutionContext& context, registers::def reg)
 {
     uint16_t& value = context.registry[+reg];
-    push_helper(context, value);
+    push_helper(context, i16(value));
 }
 
 /*
@@ -119,7 +119,7 @@ void instruction::push_reg_handler(ExecutionContext& context)
 {
     uint16_t& pc = context.registry[+registers::def::pc];
     uint8_t reg = context.bytecode[++pc];
-    instruction::push_helper(context, context.registry[reg]);
+    instruction::push_helper(context, i16(context.registry[reg]));
 }
 
 void instruction::push_literal_handler(ExecutionContext& context)
@@ -127,6 +127,26 @@ void instruction::push_literal_handler(ExecutionContext& context)
     uint16_t& programCnt = context.registry[+registers::def::pc];    
     int16_t value = read_word(context.bytecode, ++programCnt);   
     instruction::push_helper(context, value);
+}
+
+void instruction::cmp_handler(ExecutionContext& context)
+{
+    uint16_t& programCnt = context.registry[+registers::def::pc];
+    uint8_t reg = context.bytecode[++programCnt];
+    if (reg == +registers::def::sp)
+    {
+        int16_t b = pop_helper(context);
+        int16_t a = pop_helper(context);
+        context.registry[+registers::def::imm] = a - b;
+    }
+}
+
+void instruction::mov_handler(ExecutionContext& context)
+{
+    uint16_t& programCnt = context.registry[+registers::def::pc];
+    uint8_t regX = context.bytecode[++programCnt];
+    uint8_t regY = context.bytecode[++programCnt];
+    context.registry[regX] = context.registry[regY];
 }
 
 void instruction::return_handler(ExecutionContext& context)
@@ -207,4 +227,17 @@ void instruction::dec_handler(ExecutionContext& context)
     {
         context.registry[reg]--;
     }
+}
+
+void instruction::jump_eq_handler(ExecutionContext& context)
+{
+
+}
+void instruction::jump_nz_handler(ExecutionContext& context)
+{
+
+}
+void instruction::jump_gt_handler(ExecutionContext& context)
+{
+
 }

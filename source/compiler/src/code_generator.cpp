@@ -54,6 +54,15 @@ void CodeGenerator::generateExpression(const ASTBaseNode* node, registers::def r
             generateNumericLiteral(numericNode);
             break;
         }
+        case ASTNodeType::COMPARISON_EXPRESSION:
+        {
+            const auto* comparisonNode = static_cast<const ASTComparisonExpressionNode*>(node);
+            generateComparisonExpression(comparisonNode, registers::def::sp);
+            m_bytecode.push_back(static_cast<uint8_t>(instruction::def::MOV));
+            encodeRegister(reg);
+            encodeRegister(registers::def::imm); // result of compare is stored in imm
+            break;
+        }
         case ASTNodeType::BINARY_EXPRESSION:
         {
             const auto* binaryNode = static_cast<const ASTBinaryExpressionNode*>(node);
@@ -72,6 +81,14 @@ void CodeGenerator::generateExpression(const ASTBaseNode* node, registers::def r
             break;
         }
     }
+}
+
+void CodeGenerator::generateComparisonExpression(const ASTComparisonExpressionNode* node, registers::def regA, std::optional<registers::def> regB)
+{   
+    // giving stack pointer, which indicates we're pushing the result to the stack
+    generateExpression(node->readLeft(), registers::def::sp);
+    generateExpression(node->readRight(), registers::def::sp);    
+    generateCompareOperator(node, regA, regB);
 }
 
 void CodeGenerator::generateBinaryExpression(const ASTBinaryExpressionNode* node, std::optional<registers::def> reg)
@@ -190,6 +207,25 @@ void CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node, std::o
     {
         encodeOperator(node->readOperator());    
         m_stackSize--; // poped twice & pushed once
+    }
+}
+
+void CodeGenerator::generateCompareOperator(const ASTComparisonExpressionNode* node, registers::def regA, std::optional<registers::def> regB)
+{
+    m_bytecode.push_back(static_cast<uint8_t>(instruction::def::CMP));
+    encodeRegister(regA);
+    if (regB.has_value())
+    {
+        encodeRegister(regB.value());
+    }
+    else
+    if (regA != registers::def::sp)
+    {
+        fmt::print("Error: compare operator\n");    
+    }
+    else
+    {
+        m_stackSize -= 2; // poped twice    
     }
 }
 

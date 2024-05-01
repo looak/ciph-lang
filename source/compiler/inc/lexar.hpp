@@ -7,7 +7,6 @@
 
 #include "lexar_defines.hpp"
 
-
 class Token
 {
  public:
@@ -59,6 +58,4 @@ private:
 	std::string m_input;
 	uint32_t m_position;
 	Token m_peek;
-
 };
-

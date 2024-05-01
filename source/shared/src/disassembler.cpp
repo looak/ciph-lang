@@ -15,7 +15,7 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
         case instruction::def::DEC:
         case instruction::def::PEK_OFF:
             result += dissassembleReg(program_count);
-            result += " [sp + ";
+            result += ", [sp + ";
             result += disassembleOffset(program_count);
             result += "]";
             break;
@@ -24,7 +24,14 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
         case instruction::def::PEK_REG:
             result += dissassembleReg(program_count);
             break;            
-            //program_count++;
+        case instruction::def::MOV:
+            result += dissassembleReg(program_count);
+            result += ", " + dissassembleReg(program_count);
+            break;
+        case instruction::def::CMP:
+            disassembleInstructionWithOptionalReg(program_count);
+            break;
+
     }
     return result += "\n";
 
@@ -45,6 +52,17 @@ std::string Disassembler::disassembleOffset(size_t& program_count) const
 std::string Disassembler::dissassembleReg(size_t& program_count) const
 {
     return fmt::format("{}", registers::name.at(static_cast<registers::def>(m_program[++program_count])));
+}
+
+std::string Disassembler::disassembleInstructionWithOptionalReg(size_t& program_count) const
+{
+    auto reg = static_cast<registers::def>(m_program[++program_count]);
+    std::string result = fmt::format("{} ", registers::name.at(reg));
+    if (reg != registers::def::sp)
+    {
+        fmt::format("{}, {}", result, dissassembleReg(program_count));        
+    }
+    return result;
 }
 
 std::string Disassembler::disassemble() const

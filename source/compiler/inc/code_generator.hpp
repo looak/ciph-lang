@@ -13,6 +13,7 @@
 
 class ASTBaseNode;
 class ASTBinaryExpressionNode;
+class ASTComparisonExpressionNode;
 class ASTLetNode;
 class ASTIdentifierNode;
 class ASTNumericLiteralNode;
@@ -57,10 +58,12 @@ private:
     // expressions
     void generateExpression(const ASTBaseNode* node);
     void generateExpression(const ASTBaseNode* node, registers::def reg);
+    void generateComparisonExpression(const ASTComparisonExpressionNode* node, registers::def regA, std::optional<registers::def> regB = std::nullopt);
     void generateBinaryExpression(const ASTBinaryExpressionNode* node, std::optional<registers::def> reg = std::nullopt);
     void generateNumericLiteral(const ASTNumericLiteralNode* node);    
     void generateOperator(const ASTBinaryExpressionNode* node, std::optional<registers::def> regA = std::nullopt, std::optional<registers::def> regB = std::nullopt);
     void generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA, std::optional<registers::def> regB = std::nullopt);
+    void generateCompareOperator(const ASTComparisonExpressionNode* node, registers::def regA, std::optional<registers::def> regB = std::nullopt);
     void generateIdentifier(const ASTIdentifierNode* node, registers::def reg = registers::def::imm);
     void generateIncDec(const ASTIdentifierNode* node, bool isIncrement);
 

@@ -38,9 +38,18 @@ Parser::parseStatement()
 			return parseReturnStatement();
 		case TokenType::LET:
 			return parseLetStatement();
+		case TokenType::WHILE:
+			return parseWhileStatement();
 		default:
-			return parseAddativeExpression();
+			return parseComparisonExpression();
 	}
+}
+ASTWhileNode* 
+Parser::parseWhileStatement()
+{
+	m_lexar.pop();
+	m_lexar.expect()
+
 }
 
 ASTReturnNode*
@@ -56,10 +65,28 @@ Parser::parseReturnStatement()
 	}
 	else
 	{
-		expression = parseAddativeExpression();
+		expression = parseComparisonExpression();
 	}
 
 	return new ASTReturnNode(expression);
+}
+
+ASTExpressionNode*
+Parser::parseComparisonExpression()
+{
+	ASTExpressionNode* left = parseAddativeExpression();
+	ASTExpressionNode* right = nullptr;
+
+	auto op = m_lexar.peek();
+	if (op.readOperator() == OperatorType::EQUAL || op.readOperator() == OperatorType::NOT_EQUAL
+		|| op.readOperator() == OperatorType::LESS_THAN || op.readOperator() == OperatorType::GREATER_THAN)		
+	{
+		m_lexar.pop();
+		right = parseAddativeExpression();
+		return new ASTComparisonExpressionNode(left, right, op.readOperator());
+	}
+
+	return left;
 }
 
 ASTExpressionNode*
@@ -160,7 +187,7 @@ Parser::parseLetStatement()
 		return nullptr;
 	}
 
-	ASTExpressionNode* expression = parseAddativeExpression();
+	ASTExpressionNode* expression = parseComparisonExpression();
 	return new ASTLetNode(name, expression);
 }
 
