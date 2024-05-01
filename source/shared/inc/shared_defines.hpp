@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #define i16(x) static_cast<int16_t>(x)
+#define u16(x) static_cast<uint16_t>(x)
 #define u8(x) uint8_t(x)
 
 namespace instruction {

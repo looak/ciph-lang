@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#include <variant>
 
+#include "error_defines.hpp"
 #include "lexar.hpp"
 
 class ASTBaseNode;
@@ -11,25 +13,33 @@ class ASTLetNode;
 class ASTProgramNode;
 class ASTReturnNode;
 
-class Parser
+struct ParserError
 {
-public:
-	explicit Parser(const std::string& input);
-	~Parser() = default;
+    ErrorCode code;
+    Position position;
+    // this string is supposed to be populated when the error is created, if needed.
+    // default error messages are provided with the error code, and this will be appended to those.
+    std::string additionalInfo;
+};
 
-	ASTBaseNode* parse();
-	ASTProgramNode* parseProgram();
+class Parser {
+public:
+    explicit Parser(const std::string& input);
+    ~Parser() = default;
+
+    std::variant<ParserError, ASTBaseNode*> parse();
+    std::variant<ParserError, ASTBaseNode*> parseProgram();
 
 private:
-	ASTBaseNode* parseStatement();
-	ASTLetNode* parseLetStatement();
-	ASTReturnNode* parseReturnStatement();
-	ASTWhileNode* parseWhileStatement();
-	ASTExpressionNode* parseAddativeExpression();
-	ASTExpressionNode* parseMultiplicativeExpression();
-	ASTIdentifierNode* parseIdentifier();
-	ASTExpressionNode* parsePrimaryExpression();
-	ASTExpressionNode* parseComparisonExpression();
+    std::variant<ParserError, ASTBaseNode*> parseStatement();
+    std::variant<ParserError, ASTBaseNode*> parseLetStatement();
+    std::variant<ParserError, ASTBaseNode*> parseReturnStatement();
+    std::variant<ParserError, ASTBaseNode*> parseWhileStatement();
+    std::variant<ParserError, ASTBaseNode*> parseAddativeExpression();
+    std::variant<ParserError, ASTBaseNode*> parseMultiplicativeExpression();
+    std::variant<ParserError, ASTBaseNode*> parseIdentifier();
+    std::variant<ParserError, ASTBaseNode*> parsePrimaryExpression();
+    std::variant<ParserError, ASTBaseNode*> parseComparisonExpression();
 
-	Lexar m_lexar;
+    Lexar m_lexar;
 };
