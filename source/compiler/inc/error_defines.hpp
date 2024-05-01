@@ -26,3 +26,11 @@ const std::unordered_map<ErrorCode, std::string> error_codes_map = {
     {ErrorCode::SYNTAX_ERROR_EXPECTED_CLOSE_PARENTHESIS, "e0xe001: expected close parenthesis. "},
     {ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, "e0xe002: expected identifier. "},
     {ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR, "e0xe003: expected operator. "}};
+
+
+struct ErrorReport {
+    ErrorCode code;
+    std::string message;
+    uint32_t line;
+    uint32_t column;
+};

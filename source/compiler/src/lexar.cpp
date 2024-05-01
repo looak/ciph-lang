@@ -95,7 +95,7 @@ Lexar::skipWhiteSpaces(Position& cursorPos) {
     } while (!done);
 }
 
-LexarResult
+std::pair<bool, ErrorCode>
 Lexar::lex() {
     if (m_performedAnalysis)
         return {false, ErrorCode::LEXAR_PERFORMED_ANALYSIS};

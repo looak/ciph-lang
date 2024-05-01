@@ -10,7 +10,6 @@ BraceWrapping :
   AfterControlStatement                   : false
   BeforeElse                              : true
   AfterEnum                               : true
-  AfterStruct                             : true
   SplitEmptyFunction                      : false
 #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
 AccessModifierOffset                      : -4
