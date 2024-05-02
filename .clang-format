@@ -4,23 +4,15 @@ BasedOnStyle                              : Chromium
 Standard                                  : Auto
 IncludeBlocks                             : Regroup
 #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
-BreakBeforeBraces                         : Custom
-BraceWrapping :
-  AfterFunction                           : false
-  AfterControlStatement                   : false
-  BeforeElse                              : true
-  AfterEnum                               : true
-  SplitEmptyFunction                      : false
+BreakBeforeBraces                         : Sstroustrup
 #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
 AccessModifierOffset                      : -4
 AlignTrailingComments                     : true
 AllowAllParametersOfDeclarationOnNextLine : false
 AllowShortBlocksOnASingleLine             : true
-AllowShortFunctionsOnASingleLine          : InlineOnly
-AllowShortIfStatementsOnASingleLine       : false
-AllowShortLoopsOnASingleLine              : false
+AllowShortFunctionsOnASingleLine          : All
 AlwaysBreakAfterReturnType                : AllDefinitions
-BinPackParameters                         : false
+BinPackParameters                         : true
 BreakAfterReturnType                      : ExceptShortType
 BreakBeforeTernaryOperators               : false
 BreakConstructorInitializers              : BeforeComma

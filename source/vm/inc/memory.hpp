@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <algorithm>
 
+namespace ciph {
+
 template <size_t N>
 class Memory {
 public:
@@ -49,3 +51,5 @@ private:
     uint16_t m_size;
     uint16_t m_allocPointer;
 };
+
+} // namespace ciph

@@ -3,6 +3,8 @@
 #include "shared_defines.hpp"
 #include "execution_context.hpp"
 
+namespace ciph {
+
 struct Registers {
 public:
     void set(uint16_t* mem) {
@@ -67,3 +69,5 @@ private:
     Memory<0x1000> m_memory; // 4KB
     uint8_t* ptr = nullptr;
 };
+
+} // namespace ciph

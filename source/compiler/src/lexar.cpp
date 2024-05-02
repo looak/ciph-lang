@@ -4,6 +4,8 @@
 
 #include "lexar_defines.hpp"
 
+using namespace ciph;
+
 Token::Token(const std::string& value, TokenType type, Position position)
     : m_value(value)
     , m_type(type)
@@ -130,6 +132,8 @@ Lexar::lex() {
             push("}", TokenType::CLOSE_BRACE, cursorPosition);
             continue;
         }
+        else if (cursor == '\0') // eof
+            break;
 
         if (isdigit(cursor)) {
             uint32_t start = cursorPosition.column;
@@ -171,7 +175,7 @@ Lexar::lex() {
             cursorPosition.column--;
 
             if (s_keywords.find(value) != s_keywords.end()) {
-                type = s_keywords[value];
+                type = s_keywords.at(value);
             }
 
             // idea here is to set the cursor to the beginning of the digit, so that when it's referenced later we're
@@ -195,7 +199,7 @@ Lexar::lex() {
     m_position = 0;
     m_performedAnalysis = true;
     push("eof", TokenType::END_OF_FILE, cursorPosition);
-    return {true, ErrorCode::NO_ERROR};
+    return {true, ErrorCode::NO_ERR};
 }
 
 std::pair<bool, Token>

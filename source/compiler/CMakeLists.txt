@@ -3,7 +3,6 @@ set(PROJECT_NAME ciph-compiler_exe)
 # ---- dependencies ----
 
 find_package(fmt CONFIG REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
 
 # ---- executable ----
 

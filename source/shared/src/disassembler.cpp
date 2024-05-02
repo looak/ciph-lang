@@ -2,12 +2,15 @@
 #include "shared_defines.hpp"
 #include <fmt/core.h>
 
+using namespace ciph;
+
 std::string Disassembler::disassembleInstruction(size_t& program_count) const
 {
     auto instr = static_cast<instruction::def>(m_program[program_count]);
     std::string result = fmt::format("{} ", instruction::mnemonics.at(instr));
     switch (instr)
     {
+        case instruction::def::JLT:
         case instruction::def::PSH_LIT:
             result += dissassembleNumericLiteral(program_count);
             break;

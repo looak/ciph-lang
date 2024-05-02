@@ -2,6 +2,9 @@
 
 #include <map>
 
+namespace ciph {
+
+
 enum class TokenType
 {
     // literals
@@ -20,7 +23,7 @@ STRING,
 CHARACTER,
 BOOLEAN,*/
 
-    // scope and operators
+// scope and operators
     OPERATOR,
     OPEN_PAREN,
     CLOSE_PAREN,
@@ -73,30 +76,30 @@ enum class OperatorType : uint8_t
 
 typedef std::vector<std::pair<char, std::vector<std::pair<char, OperatorType>>>> OperatorMap;
 static OperatorMap
-generateOperatorMap() {
+    generateOperatorMap() {
     OperatorMap map = {
         {'=', {{'\0', OperatorType::ASSIGNMENT}, {'=', OperatorType::EQUAL}}},
         {'!', {{'\0', OperatorType::NOT}, {'=', OperatorType::NOT_EQUAL}}},
         {'<',
-         {{'\0', OperatorType::LESS_THAN},
-          {'=', OperatorType::LESS_EQUAL},
-          {'<', OperatorType::LEFT_SHIFT},
-          {'=', OperatorType::LEFT_SHIFT_ASSIGNMENT}}},
+            {{'\0', OperatorType::LESS_THAN},
+            {'=', OperatorType::LESS_EQUAL},
+            {'<', OperatorType::LEFT_SHIFT},
+            {'=', OperatorType::LEFT_SHIFT_ASSIGNMENT}}},
         {'>',
-         {{'\0', OperatorType::GREATER_THAN},
-          {'=', OperatorType::GREATER_EQUAL},
-          {'>', OperatorType::RIGHT_SHIFT},
-          {'=', OperatorType::RIGHT_SHIFT_ASSIGNMENT}}},
+            {{'\0', OperatorType::GREATER_THAN},
+            {'=', OperatorType::GREATER_EQUAL},
+            {'>', OperatorType::RIGHT_SHIFT},
+            {'=', OperatorType::RIGHT_SHIFT_ASSIGNMENT}}},
         {'&', {{'\0', OperatorType::AND}, {'&', OperatorType::AND_AND}, {'=', OperatorType::AND_ASSIGNMENT}}},
         {'|', {{'\0', OperatorType::OR}, {'|', OperatorType::OR_OR}, {'=', OperatorType::OR_ASSIGNMENT}}},
         {'^', {{'\0', OperatorType::XOR}, {'=', OperatorType::XOR_ASSIGNMENT}}},
         {'%', {{'\0', OperatorType::MODULUS}, {'=', OperatorType::MODULUS_ASSIGNMENT}}},
         {'+',
-         {{'\0', OperatorType::ADDITION}, {'+', OperatorType::INCREMENT}, {'=', OperatorType::ADDITION_ASSIGNMENT}}},
+            {{'\0', OperatorType::ADDITION}, {'+', OperatorType::INCREMENT}, {'=', OperatorType::ADDITION_ASSIGNMENT}}},
         {'-',
-         {{'\0', OperatorType::SUBTRACTION},
-          {'-', OperatorType::DECREMENT},
-          {'=', OperatorType::SUBTRACTION_ASSIGNMENT}}},
+            {{'\0', OperatorType::SUBTRACTION},
+            {'-', OperatorType::DECREMENT},
+            {'=', OperatorType::SUBTRACTION_ASSIGNMENT}}},
         {'*', {{'\0', OperatorType::MULTIPLICATION}, {'=', OperatorType::MULTIPLICATION_ASSIGNMENT}}},
         {'/', {{'\0', OperatorType::DIVISION}, {'=', OperatorType::DIVISION_ASSIGNMENT}}},
     };
@@ -104,19 +107,20 @@ generateOperatorMap() {
     return map;
 }
 
-static OperatorMap s_operators = generateOperatorMap();
-static std::map<std::string, TokenType> s_keywords = {
+const OperatorMap s_operators = generateOperatorMap();
+const std::map<std::string, TokenType> s_keywords = {
     {"let", TokenType::LET},
     {"return", TokenType::RETURN},
     {"if", TokenType::IF},
     {"else", TokenType::ELSE},
     {"while", TokenType::WHILE} /*,
-     {"for", TokenType::FOR},
-     {"return", TokenType::RETURN},
-     {"break", TokenType::BREAK},
-     {"continue", TokenType::CONTINUE},
-     {"function", TokenType::FUNCTION},
-     {"true", TokenType::TRUE},
-     {"false", TokenType::FALSE},
-     {"null", TokenType::NULL}*/
+        {"for", TokenType::FOR},
+        {"return", TokenType::RETURN},
+        {"break", TokenType::BREAK},
+        {"continue", TokenType::CONTINUE},
+        {"function", TokenType::FUNCTION},
+        {"true", TokenType::TRUE},
+        {"false", TokenType::FALSE},
+        {"null", TokenType::NULL}*/
 };
+} // namespace ciph

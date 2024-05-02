@@ -2,6 +2,8 @@
 
 #include "lexar.hpp"
 
+using namespace ciph;
+
 TEST(LexarTest, PrimitiveTokens) {
     // setup
     Lexar lx("12345");

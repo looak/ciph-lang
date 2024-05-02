@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+namespace ciph {
+
 struct ExecutionContext 
 {
 public:
@@ -19,3 +21,5 @@ public:
 	uint8_t* bytecode = nullptr;
 	int16_t return_value = 0;
 };
+
+} // namespace ciph

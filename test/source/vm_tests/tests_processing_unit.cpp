@@ -3,6 +3,8 @@
 #include <shared_defines.hpp>
 #include "processing_unit.hpp"
 
+using namespace ciph;
+
 uint16_t testProcessingUnit(uint8_t* program, uint16_t size)
 {
     ProcessingUnit unit;
@@ -172,4 +174,24 @@ TEST(ProcessingUnitTest, Return_Equals)
 
     uint16_t result = testProcessingUnit(program, sizeof(program));
     EXPECT_EQ(result, 0); // no difference, should probably return 1.
+}
+
+TEST(ProcessingUnitTest, While) {
+    // let x = 0
+    // while ( x < 10) {
+    //     x++
+    // }
+    // return x
+    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 0,
+                            +instruction::def::INC, +registers::def::sp, 0,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                            +instruction::def::PSH_LIT, 0, 10,                            
+                            +instruction::def::CMP, +registers::def::sp,
+                            +instruction::def::JLT, 0x00, 0x0E, // jump back fourteen bytes
+                            +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                            +instruction::def::RET
+                            };
+
+    uint16_t result = testProcessingUnit(program, sizeof(program));
+    EXPECT_EQ(result, 10);
 }

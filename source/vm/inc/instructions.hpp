@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include "execution_context.hpp"
 
-
+namespace ciph {
 namespace instruction {
 
 int16_t stack_read_at_offset(uint8_t* bytecode, uint16_t& sp);
@@ -38,6 +38,7 @@ void mov_handler(ExecutionContext& context);
 void jump_eq_handler(ExecutionContext& context);
 void jump_nz_handler(ExecutionContext& context);
 void jump_gt_handler(ExecutionContext& context);
+void jump_lt_handler(ExecutionContext& context);
 
 static std::unordered_map<def, handler> handlers = {
 	{def::PSH, push_handler},
@@ -57,7 +58,10 @@ static std::unordered_map<def, handler> handlers = {
 	{def::MOV, mov_handler},
 	{def::JEQ, jump_eq_handler},
 	{def::JNZ, jump_nz_handler},
-	{def::JGT, jump_gt_handler}
+	{def::JGT, jump_gt_handler},
+	{def::JLT, jump_lt_handler}
 
 }; // handlers
+
 } // namespace instruction
+} // namespace ciph

@@ -3,6 +3,9 @@
 #include <string>
 #include <map>
 
+namespace ciph
+{
+
 class Disassembler
 {
 public:
@@ -28,3 +31,5 @@ private:
     const uint8_t* m_program;
     size_t m_size;
 };
+
+} // namespace ciph

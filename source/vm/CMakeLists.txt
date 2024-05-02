@@ -3,6 +3,7 @@ set(PROJECT_NAME ciph-vm_exe)
 # ---- dependencies ----
 
 find_package(fmt CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 include(../compiler/source_list.cmake)
 
@@ -19,7 +20,7 @@ PUBLIC
 ${COMPILER_INC}
 )
 
-target_link_libraries(${COMPILER_LIB} PRIVATE ciph-shared_lib fmt::fmt)
+target_link_libraries(${COMPILER_LIB} PRIVATE ciph-shared_lib fmt::fmt spdlog::spdlog)
 
 target_include_directories(${COMPILER_LIB} 
     PUBLIC
@@ -38,6 +39,7 @@ target_link_libraries(${PROJECT_NAME}
   ${COMPILER_LIB}
   ciph-shared_lib
   fmt::fmt
+  spdlog::spdlog
 )
 
 target_include_directories(${PROJECT_NAME} 

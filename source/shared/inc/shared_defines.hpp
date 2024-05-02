@@ -8,6 +8,8 @@
 #define u16(x) static_cast<uint16_t>(x)
 #define u8(x) uint8_t(x)
 
+namespace ciph {
+
 namespace instruction {
 
 enum class def : uint8_t {
@@ -45,6 +47,7 @@ enum class def : uint8_t {
 	JNZ	 	=		0xC1, 	// Jump to address if imm is not zero.	
 	JEQ 	=		0xC2,  	// Jump to address if imm is zero.
 	JGT 	=		0xC3,  	// Jump to address if imm is positive.
+	JLT 	=		0xC4,  	// Jump to address if imm is negative.
 	CMP 	= 		0xCC, 	// Subtracts rX from rY and puts result in imm, if reg:sp is passed as rX we pop the compared elements from the stack
 	RET	 	=		0xCF, 	// Returns value in imm and terminates the program.
  
@@ -78,9 +81,10 @@ const std::unordered_map<def, std::string> mnemonics = {
 	{def::PEK_OFF, "PEK"},
 	{def::JMP, "JMP"},
 	{def::JNZ, "JNZ"},
-	{def::CMP, "CMP"},	
+	{def::JLT, "JLT"},
+	{def::CMP, "CMP"},
 	{def::RET, "RET"},
-	{def::NOP, "NOP"}	
+	{def::NOP, "NOP"}
 };
 
 } // namespace instruction
@@ -128,3 +132,5 @@ inline uint8_t operator+(registers::def reg) {
 inline uint8_t operator+(instruction::def i)	{
 	return static_cast<uint8_t>(i);
 }
+
+} // namespace ciph

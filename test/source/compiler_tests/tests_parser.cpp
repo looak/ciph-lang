@@ -5,6 +5,8 @@
 #include "error_defines.hpp"
 #include "parser.hpp"
 
+using namespace ciph;
+
 TEST(ParserTest, SimpleAddExpression) {
     // setup
     std::string code("1 + 2");
@@ -248,11 +250,13 @@ TEST(ParserTest, EqualsOperator_NotLegal) {
 
 TEST(ParserTest, WhileStatement_Legal) {
     // setup
-    std::string code(R"(let i = 0
-						while (i < 5) {
-							i++
-						}
-						return i 		)");
+    std::string code(
+        R"(
+			let i = 0
+			while (i < 5) {
+				i++
+			}
+			return i)");
     Parser parser(code);
 
     // do - we know the node type returned is a program
@@ -263,8 +267,6 @@ TEST(ParserTest, WhileStatement_Legal) {
     // validate
     EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
 
-    EXPECT_EQ(result->readStatements().size(), 4);
+    EXPECT_EQ(result->readStatements().size(), 3);
     EXPECT_EQ(result->readStatements()[1]->readType(), ASTNodeType::WHILE);
-    auto compare_expression = static_cast<const ASTComparisonExpressionNode*>(result->readStatements()[0]);
-    EXPECT_EQ(compare_expression->readOperator(), OperatorType::EQUAL);
 }

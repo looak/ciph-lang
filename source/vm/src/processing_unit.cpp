@@ -2,6 +2,8 @@
 #include "instructions.hpp"
 #include <fmt/core.h>
 
+using namespace ciph;
+
 ProcessingUnit::ProcessingUnit() {
     m_reg_memory = m_memory.allocate(static_cast<uint16_t>(registers::def::reg_cnt));
     m_registers.set(m_reg_memory);    

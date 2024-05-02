@@ -1,15 +1,16 @@
 #pragma once
 
+#include <array>
+#include <cstdint>
+#include <optional>
 #include <shared_defines.hpp>
+#include <string>
+#include <unordered_map>
+#include <variant>
+#include <vector>
 #include "lexar_defines.hpp"
 
-#include <cstdint>
-#include <string>
-#include <vector>
-#include <array>
-#include <unordered_map>
-#include <optional>
-#include <variant>
+namespace ciph {
 
 class ASTBaseNode;
 class ASTBinaryExpressionNode;
@@ -19,10 +20,17 @@ class ASTIdentifierNode;
 class ASTNumericLiteralNode;
 class ASTProgramNode;
 class ASTReturnNode;
+class ASTScopeNode;
+class ASTWhileNode;
 
 struct IdentifierContext {
-    IdentifierContext(const std::string& name, uint8_t offset) : name(name), offset(offset) {}
-    bool operator==(const std::string& _name) const { return this->name == _name; }
+    IdentifierContext(const std::string& name, uint8_t offset)
+        : name(name)
+        , offset(offset) {}
+    bool
+    operator==(const std::string& _name) const {
+        return this->name == _name;
+    }
 
     std::string name = "";
     uint8_t offset = 0;
@@ -30,9 +38,11 @@ struct IdentifierContext {
 };
 
 struct PointerContext {
-    PointerContext(uint16_t address, uint8_t reg) : address(address), reg(reg) {}
+    PointerContext(uint16_t address, uint8_t reg)
+        : address(address)
+        , reg(reg) {}
     uint16_t address = 0;
-    uint8_t reg = 0xFF;    
+    uint8_t reg = 0xFF;
 };
 
 struct RegisterValue {
@@ -40,13 +50,13 @@ struct RegisterValue {
 };
 
 
-class CodeGenerator
-{
+class CodeGenerator {
 public:
-	explicit CodeGenerator(const ASTProgramNode* program) : m_program(program) {}
-	~CodeGenerator() = default;
+    explicit CodeGenerator(const ASTProgramNode* program)
+        : m_program(program) {}
+    ~CodeGenerator() = default;
 
-	void generateCode();
+    void generateCode();
 
     const std::pair<uint8_t*, size_t> readRawBytecode() const;
     std::string outputBytecode();
@@ -54,24 +64,31 @@ public:
 
 private:
     void generateProgram(const ASTProgramNode* node);
-    
+    void generateScope(const ASTScopeNode* node);
+
     // expressions
     void generateExpression(const ASTBaseNode* node);
     void generateExpression(const ASTBaseNode* node, registers::def reg);
-    void generateComparisonExpression(const ASTComparisonExpressionNode* node, registers::def regA, std::optional<registers::def> regB = std::nullopt);
-    void generateBinaryExpression(const ASTBinaryExpressionNode* node, std::optional<registers::def> reg = std::nullopt);
-    void generateNumericLiteral(const ASTNumericLiteralNode* node);    
-    void generateOperator(const ASTBinaryExpressionNode* node, std::optional<registers::def> regA = std::nullopt, std::optional<registers::def> regB = std::nullopt);
-    void generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA, std::optional<registers::def> regB = std::nullopt);
-    void generateCompareOperator(const ASTComparisonExpressionNode* node, registers::def regA, std::optional<registers::def> regB = std::nullopt);
+    void generateComparisonExpression(const ASTComparisonExpressionNode* node, registers::def regA,
+                                      std::optional<registers::def> regB = std::nullopt);
+    void generateBinaryExpression(const ASTBinaryExpressionNode* node,
+                                  std::optional<registers::def> reg = std::nullopt);
+    void generateNumericLiteral(const ASTNumericLiteralNode* node);
+    void generateOperator(const ASTBinaryExpressionNode* node, std::optional<registers::def> regA = std::nullopt,
+                          std::optional<registers::def> regB = std::nullopt);
+    void generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA,
+                             std::optional<registers::def> regB = std::nullopt);
+    void generateCompareOperator(const ASTComparisonExpressionNode* node, registers::def regA,
+                                 std::optional<registers::def> regB = std::nullopt);
     void generateIdentifier(const ASTIdentifierNode* node, registers::def reg = registers::def::imm);
     void generateIncDec(const ASTIdentifierNode* node, bool isIncrement);
 
     // statements
     void generateReturnStatement(const ASTReturnNode* node);
     void generateLetStatement(const ASTLetNode* node);
-    
-    
+    void generateWhileStatement(const ASTWhileNode* node);
+
+
     /* @brief peek_offset
      * @param offset offset into the stack where the value is.
      * @param reg given register, if sp (stack pointer) is given, value gets pushed onto the stack.
@@ -85,7 +102,7 @@ private:
     void encodeOperator(OperatorType op);
 
     std::array<RegisterValue, static_cast<int>(registers::def::reg_cnt)> m_registers;
-   
+
     // program
     uint16_t m_stackSize = 0;
     std::unordered_map<std::string, IdentifierContext> m_identifiers;
@@ -95,3 +112,5 @@ private:
     std::vector<uint8_t> m_bytecode = {};
     std::string m_resultBytecode = "";
 };
+
+} // namespace ciph

@@ -3,13 +3,16 @@
 
 #include <fstream>
 #include <iostream>
+#include <variant>
 
 #include "code_generator.hpp"
 #include "disassembler.hpp"
-#include "error_reporter.hpp"
+//#include "error_reporter.hpp"
 #include "parser.hpp"
 #include "processing_unit.hpp"
 #include "shared_defines.hpp"
+
+using namespace ciph;
 
 void
 gotoxy(int x, int y) {
@@ -113,12 +116,12 @@ main(int argc, char* argv[]) {
     }
     else {
         auto parse_error = std::get<ParserError>(parse_result);
-        ErrorReport report = {.code = parse_error.code,
-                              .line = parse_error.position.line,
-                              .column = parse_error.position.column,
-                              .message = parse_error.additionalInfo};
+        // ErrorReport report = {.code = parse_error.code,
+        //                       .line = parse_error.position.line,
+        //                       .column = parse_error.position.column,
+        //                       .message = parse_error.additionalInfo};
 
-        log::error(report);
+        // log::error(report);
         return 1;
     }
 

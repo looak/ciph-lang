@@ -8,6 +8,8 @@
 #include "lexar_defines.hpp"
 #include "parser.hpp"
 
+using namespace ciph;
+
 class CodeGeneratorTestFixture : public ::testing::Test
 {
 public:
@@ -384,3 +386,40 @@ TEST_F(CodeGeneratorTestFixture, IncIdentifierExpression)
     EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
 }
 
+TEST_F(CodeGeneratorTestFixture, WhileStatement) {
+    // setup
+    std::string code(
+        R"(
+			let i = 0
+			while (i < 5) {
+				i++
+			}
+			return i)");
+    Parser parser(code);
+    auto parser_result = parser.parse();
+    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+
+    CodeGenerator generator(programNode);
+
+    // do
+    generator.generateCode();
+    std::string actual = generator.outputBytecode();
+    auto [actualProgram, actualSize] = generator.readRawBytecode();
+
+    // validate
+    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 0,
+                                    +instruction::def::INC, +registers::def::sp, 0,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                                    +instruction::def::PSH_LIT, 0, 10,                            
+                                    +instruction::def::CMP, +registers::def::sp,
+                                    +instruction::def::JLT, 0x00, 0x0E, // jump back fourteen bytes
+                                    +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                                    +instruction::def::RET};
+
+    std::string dissassembly = generator.disassemble();
+
+    uint32_t expectedSize = sizeof(expectedProgram);
+
+    EXPECT_EQ(expectedSize, actualSize);
+    EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
+}

@@ -4,6 +4,8 @@
 
 #include "ast.hpp"
 
+using namespace ciph;
+
 Parser::Parser(const std::string& input)
     : m_lexar(input) {
 }
@@ -57,11 +59,106 @@ Parser::parseStatement() {
 }
 
 std::variant<ParserError, ASTBaseNode*>
-Parser::parseWhileStatement() {
-    // m_lexar.pop();
-    // if (m_lexar.expect(TokenType::OPEN_PAREN) == false) {}
+Parser::parseWhileCondition() {
+    auto [success, expected_token] = m_lexar.popExpect(TokenType::OPEN_PAREN);
+    if (success == false) {
+        ParserError error{
+            .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
+            .position = expected_token.readPosition(),
+            .additionalInfo = "Expecting a open parenthesis after while keyword which contains a expression"};
+        return error;
+    }
 
-    return nullptr;
+    ASTExpressionNode* condition = nullptr;
+    auto condition_result = parseComparisonExpression();
+    if (auto condition_ptr = std::get_if<ASTBaseNode*>(&condition_result)) {
+        condition = static_cast<ASTExpressionNode*>(*condition_ptr);
+    }
+    else {
+        ParserError innerError = std::get<ParserError>(condition_result);
+        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION,
+                          .position = expected_token.readPosition(),
+                          .additionalInfo = "Expecting while loop to be defined with a expression.",
+                          .nestedError = {innerError}};
+        return error;
+    }
+
+    auto [success2, expected_token2] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
+    if (success2 == false) {
+        ParserError error{
+            .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
+            .position = expected_token2.readPosition(),
+            .additionalInfo = "Expecting a close parenthesis after while keyword which contains a expression"};
+        return error;
+    }
+
+    return condition;
+}
+
+std::variant<ParserError, ASTBaseNode*>
+Parser::parseWhileBody(ASTWhileNode* whileNode) {
+    auto [success, expected_token] = m_lexar.popExpect(TokenType::OPEN_BRACE);
+    if (success == false) {
+        ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
+                          .position = expected_token.readPosition(),
+                          .additionalInfo = "Expecting a open brace after while keyword which contains a expression"};
+        return error;
+    }
+
+    Token token = m_lexar.peek();
+    while (token.readType() != TokenType::CLOSE_BRACE) {
+        ASTBaseNode* statement = nullptr;
+        auto statement_result = parseStatement();
+        if (auto statement_ptr = std::get_if<ASTBaseNode*>(&statement_result)) {
+            statement = *statement_ptr;
+        }
+        else {
+            return std::get<ParserError>(statement_result);
+        }
+
+        whileNode->addStatement(statement);
+
+        token = m_lexar.peek();
+        if (token.readType() == TokenType::END_OF_FILE) {
+            ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
+                              .position = m_lexar.peek().readPosition(),
+                              .additionalInfo = "Expecting a close brace within while before end of file."};
+        }
+    }
+
+    auto [success1, expected_token1] = m_lexar.popExpect(TokenType::CLOSE_BRACE);
+    if (success1 == false) {
+        ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
+                          .position = expected_token1.readPosition(),
+                          .additionalInfo = "Expecting a close brace after while keyword which contains a expression"};
+        return error;
+    }
+
+    return whileNode;
+}
+
+std::variant<ParserError, ASTBaseNode*>
+Parser::parseWhileStatement() {
+    m_lexar.pop();
+
+    ASTComparisonExpressionNode* condition = nullptr;
+    auto condition_result = parseWhileCondition();
+    if (auto condition_ptr = std::get_if<ASTBaseNode*>(&condition_result)) {
+        condition = static_cast<ASTComparisonExpressionNode*>(*condition_ptr);
+    }
+    else {
+        return std::get<ParserError>(condition_result);
+    }
+
+    ASTWhileNode* whileNode = new ASTWhileNode(condition);
+
+    auto body_result = parseWhileBody(whileNode);
+    if (auto body_ptr = std::get_if<ParserError>(&body_result)) {
+        // create new error once we generalize while body into a scope parser
+        return body_result;
+    }
+
+    return whileNode;
 }
 
 std::variant<ParserError, ASTBaseNode*>
@@ -127,7 +224,6 @@ Parser::parseAddativeExpression() {
     else {
         return std::get<ParserError>(left_result);
     }
-
 
     auto op = m_lexar.peek();
     if (op.readOperator() == OperatorType::ADDITION || op.readOperator() == OperatorType::SUBTRACTION) {
@@ -200,8 +296,8 @@ Parser::parsePrimaryExpression() {
 
             auto [success, expected_token] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
             if (success == false) {
-                ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_CLOSE_PARENTHESIS,
-                                  .position = expected_token.readPosition(), // maybe should pass in token position here
+                ParserError error{.code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
+                                  .position = expected_token.readPosition(),
                                   .additionalInfo = "Missmatch between open and close parenthesis in expression."};
                 return error;
             }

@@ -3,6 +3,8 @@
 #include <processing_unit.hpp>
 #include <memory.hpp>
 
+using namespace ciph;
+
 int16_t pop_word(uint8_t* bytecode, uint16_t& sp)
 {
     int16_t value = 0;
