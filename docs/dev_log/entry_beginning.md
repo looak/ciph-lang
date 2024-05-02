@@ -36,3 +36,7 @@ updated everything to use 16bit ints, added a structure for the registers to mak
 
 #### new entry @2024-04-18
 Fixing return, I think return will figure out if it takes the value from the stack or from the ret register depending on what is actually happening and what operations it's doing.
+
+
+#### new entry @2024-05-01
+While loop is working, it will be re-entered if we pass over it more than once, i.e. nesting while loops doesn't work.

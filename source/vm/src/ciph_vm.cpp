@@ -104,9 +104,22 @@ main(int argc, char* argv[]) {
     bool running = true;
     std::string input("return 5 + 5");
 
-    std::getline(std::cin, input); // wait for user to press enter
-    if (input == "exit")
-        return 0;
+    std::vector<std::string> input_lines;
+    std::string line;
+
+    std::cout << "Enter your text (enter an empty line to finish):\n";
+
+    while (std::getline(std::cin, line)) {
+        if (line.empty()) { 
+            break; // Stop when an empty line is entered
+        }
+        input_lines.push_back(line);
+    }
+
+    input.clear();
+    for (const auto& toPrint : input_lines) {
+        input += toPrint;
+    }
 
     ASTBaseNode* abstract_program = nullptr;
     Parser parser(input);
