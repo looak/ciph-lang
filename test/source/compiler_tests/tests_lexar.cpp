@@ -144,12 +144,12 @@ TEST(LexarTest, KeywordsIdentification) {
 
         {"if", TokenType::IF},
         {"else", TokenType::ELSE},
-        {"while", TokenType::WHILE}
+        {"while", TokenType::WHILE},
+        {"fn", TokenType::FUNCTION}
         /*
         {"for", TokenType::FOR},
         {"break", TokenType::BREAK},
         {"continue", TokenType::CONTINUE},
-        {"function", TokenType::FUNCTION},
         {"true", TokenType::TRUE},*/
     };
 
@@ -209,4 +209,67 @@ TEST(LexarTest, BraceTokens) {
     token = lx.pop();
     EXPECT_EQ(token.readValue(), "]");
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACKET);
+}
+
+TEST(LexarTest, FunctionAndScope) {
+    Lexar lx("fn myFunction() { return 0 }");
+    lx.lex();
+
+    auto token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::FUNCTION);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "myFunction");
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::CLOSE_PAREN);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::OPEN_BRACE);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::RETURN);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::NUMBER);
+    EXPECT_EQ(token.readValue(), "0");
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
+    EXPECT_EQ(token.readType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexarTest, FunctionAndScopeAndCall) {
+    Lexar lx("fn myFunction() { return 0 } return myFunction()");
+    lx.lex();
+
+    auto token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::FUNCTION);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "myFunction");
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::CLOSE_PAREN);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::OPEN_BRACE);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::RETURN);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::NUMBER);
+    EXPECT_EQ(token.readValue(), "0");
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::RETURN);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "myFunction");
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::OPERATOR);
+    EXPECT_EQ(token.readOperator(), OperatorType::CALL);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::CLOSE_PAREN);
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::END_OF_FILE);
 }

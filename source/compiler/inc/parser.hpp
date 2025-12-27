@@ -9,7 +9,7 @@
 namespace ciph {
 
 class ASTBaseNode;
-class ASTWhileNode;
+class ASTScopeNode;
 struct ParserError {
     ErrorCode code;
     Position position;
@@ -39,7 +39,12 @@ private:
 
     std::variant<ParserError, ASTBaseNode*> parseWhileStatement();
     std::variant<ParserError, ASTBaseNode*> parseWhileCondition();
-    std::variant<ParserError, ASTBaseNode*> parseWhileBody(ASTWhileNode* whileNode);
+
+    std::variant<ParserError, ASTBaseNode*> parseFunctionStatement();
+    std::variant<ParserError, ASTBaseNode*> parseFunctionParameters();
+    std::variant<ParserError, ASTBaseNode*> parseFunctionBody();
+
+    std::variant<ParserError, ASTBaseNode*> parseScopeNode(ASTScopeNode* scopeNode);
 
     Lexar m_lexar;
 };

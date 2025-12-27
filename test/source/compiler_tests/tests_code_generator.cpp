@@ -410,7 +410,7 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement) {
     uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 0,
                                     +instruction::def::INC, +registers::def::sp, 0,
                                     +instruction::def::PEK_OFF, +registers::def::sp, 0,
-                                    +instruction::def::PSH_LIT, 0, 10,                            
+                                    +instruction::def::PSH_LIT, 0, 5,
                                     +instruction::def::CMP, +registers::def::sp,
                                     +instruction::def::JLT, 0x00, 0x0E, // jump back fourteen bytes
                                     +instruction::def::PEK_OFF, +registers::def::ret, 0,

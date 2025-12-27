@@ -40,3 +40,6 @@ Fixing return, I think return will figure out if it takes the value from the sta
 
 #### new entry @2024-05-01
 While loop is working, it will be re-entered if we pass over it more than once, i.e. nesting while loops doesn't work.
+
+#### new entry @today
+Working on simple function implementation -- probably need to figure out high-level parsing, i.e. main execution now lives in the global scope. Should force this to be wrapped in a fn main() or similar.

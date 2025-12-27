@@ -12,13 +12,14 @@ enum class ASTNodeType
 {
 	PROGRAM,
 	// literals
-	NUMERIC_LITERAL,     
+	NUMERIC_LITERAL,
 	IDENTIFIER,
 
 	// keywords
 	LET,
 	RETURN,
 	WHILE,
+	FUNCTION,
 
 	/*
 	STRING,
@@ -29,7 +30,8 @@ enum class ASTNodeType
 	BINARY_EXPRESSION,
 	INC_DEC_EXPRESSION,
 	COMPARISON_EXPRESSION,
-
+	
+	CALL_EXPRESSION,
 
 	END_OF_FILE,
 	UNKNOWN
@@ -199,7 +201,11 @@ private:
 class ASTLetNode : public ASTBaseNode
 {
 public:
-	ASTLetNode(const std::string& identifier, ASTExpressionNode* expression) : ASTBaseNode(ASTNodeType::LET), m_identifier(identifier), m_expression(expression) {}
+	ASTLetNode(const std::string& identifier, ASTExpressionNode* expression) 
+		: ASTBaseNode(ASTNodeType::LET)
+		, m_identifier(identifier)
+		, m_expression(expression) 
+		{}
 	~ASTLetNode() override = default;
 
 	[[nodiscard]] const std::string& readIdentifier() const { return m_identifier; }
@@ -208,6 +214,39 @@ public:
 private:
 	std::string m_identifier;
 	ASTExpressionNode* m_expression;
+};
+
+class ASTFunctionNode : public ASTScopeNode {
+private:
+	std::string m_name;
+public:
+	ASTFunctionNode(std::string name)
+		: ASTScopeNode(ASTNodeType::FUNCTION)
+		, m_name(std::move(name))
+		{}
+	~ASTFunctionNode() final = default;
+
+	[[nodiscard]] const std::string&
+	readName() const {
+		return m_name;
+	}
+};
+
+class ASTCallNode : public ASTExpressionNode {
+	private:
+		std::string m_functionName;
+	public:
+		ASTCallNode(const std::string& functionName)
+			: ASTExpressionNode(ASTNodeType::CALL_EXPRESSION)
+			, m_functionName(functionName)
+			{}
+		~ASTCallNode() override = default;
+
+		[[nodiscard]] const std::string&
+		readFunctionName() const {
+			return m_functionName;
+		}
+
 };
 
 } // namespace ciph	

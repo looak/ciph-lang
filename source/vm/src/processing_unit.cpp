@@ -30,9 +30,9 @@ int16_t ProcessingUnit::execute()
     instruction::def instr = instruction::def::RET;
     
     uint16_t& pc = m_reg_memory[+registers::def::pc];
-    do {        
+    do {
         instr = static_cast<instruction::def>(m_context.bytecode[pc]);
-        instruction::handlers[instr](m_context);        
+        instruction::handlers[instr](m_context);
         pc++;
 
     }

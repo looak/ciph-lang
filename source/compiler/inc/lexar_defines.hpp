@@ -17,6 +17,7 @@ enum class TokenType
     WHILE,
     IF,
     ELSE,
+    FUNCTION,
 
     /*
 STRING,
@@ -38,6 +39,7 @@ BOOLEAN,*/
 
 enum class OperatorType : uint8_t
 {
+    CALL, // implicit with identifiers followed by parenthesis
     ADDITION,
     SUBTRACTION,
     MULTIPLICATION,
@@ -113,12 +115,12 @@ const std::map<std::string, TokenType> s_keywords = {
     {"return", TokenType::RETURN},
     {"if", TokenType::IF},
     {"else", TokenType::ELSE},
-    {"while", TokenType::WHILE} /*,
+    {"while", TokenType::WHILE},
+    {"fn", TokenType::FUNCTION} /*,
         {"for", TokenType::FOR},
         {"return", TokenType::RETURN},
         {"break", TokenType::BREAK},
         {"continue", TokenType::CONTINUE},
-        {"function", TokenType::FUNCTION},
         {"true", TokenType::TRUE},
         {"false", TokenType::FALSE},
         {"null", TokenType::NULL}*/

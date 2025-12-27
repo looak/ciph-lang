@@ -105,6 +105,7 @@ public:
     Token peek(uint16_t offset = 0) const;
 
 private:
+    Token peekBack(int16_t offset = 1);
     void push(std::variant<std::string, OperatorType> value, TokenType type, Position& position);
     char popNextChar();
     char peekNextChar();

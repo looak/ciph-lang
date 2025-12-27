@@ -73,6 +73,12 @@ Lexar::push(std::variant<std::string, OperatorType> value, TokenType type, Posit
     position.column++;
 }
 
+Token Lexar::peekBack(int16_t offset) {
+    int16_t peekPos = m_tokens.size() - (offset + 1);
+    return m_tokens[peekPos];
+}
+
+
 void
 Lexar::skipWhiteSpaces(Position& cursorPos) {
     bool done = false;
@@ -109,6 +115,14 @@ Lexar::lex() {
         skipWhiteSpaces(cursorPosition);
         char cursor = popNextChar();
         if (cursor == '(') {
+            // this function call identification is not pretty...
+            auto optionalFuncToken = peekBack(1);
+            if (optionalFuncToken.readType() != TokenType::FUNCTION 
+                && peekBack(0).readType() == TokenType::IDENTIFIER) {
+                // function call
+                push(OperatorType::CALL, TokenType::OPERATOR, cursorPosition);
+                cursorPosition.column--; // adjust for the extra column added in push since call is implicit.
+            }
             push("(", TokenType::OPEN_PAREN, cursorPosition);
             continue;
         }
@@ -150,7 +164,6 @@ Lexar::lex() {
             m_position--;
             cursorPosition.column--;
 
-
             // idea here is to set the cursor to the beginning of the digit, so that when it's referenced later we're
             // pointing the user to the beginning of the digit.
             uint32_t difference = cursorPosition.column - start;
@@ -178,12 +191,15 @@ Lexar::lex() {
                 type = s_keywords.at(value);
             }
 
+
             // idea here is to set the cursor to the beginning of the digit, so that when it's referenced later we're
             // pointing the user to the beginning of the digit.
             uint32_t difference = cursorPosition.column - start;
             cursorPosition.column -= difference;
             push(value, type, cursorPosition);
             cursorPosition.column += difference;
+            
+
             continue;
         }
 

@@ -53,6 +53,10 @@ Parser::parseStatement() {
             return parseLetStatement();
         case TokenType::WHILE:
             return parseWhileStatement();
+        case TokenType::FUNCTION:
+            return parseFunctionStatement();
+        case TokenType::IDENTIFIER:
+
         default:
             return parseComparisonExpression();
     }
@@ -96,12 +100,12 @@ Parser::parseWhileCondition() {
 }
 
 std::variant<ParserError, ASTBaseNode*>
-Parser::parseWhileBody(ASTWhileNode* whileNode) {
+Parser::parseScopeNode(ASTScopeNode* scopeNode) {
     auto [success, expected_token] = m_lexar.popExpect(TokenType::OPEN_BRACE);
     if (success == false) {
         ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
                           .position = expected_token.readPosition(),
-                          .additionalInfo = "Expecting a open brace after while keyword which contains a expression"};
+                          .additionalInfo = "Expecting a open brace after keyword which contains a expression"};
         return error;
     }
 
@@ -116,13 +120,13 @@ Parser::parseWhileBody(ASTWhileNode* whileNode) {
             return std::get<ParserError>(statement_result);
         }
 
-        whileNode->addStatement(statement);
+        scopeNode->addStatement(statement);
 
         token = m_lexar.peek();
         if (token.readType() == TokenType::END_OF_FILE) {
             ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
                               .position = m_lexar.peek().readPosition(),
-                              .additionalInfo = "Expecting a close brace within while before end of file."};
+                              .additionalInfo = "Expecting a close brace before end of file."};
         }
     }
 
@@ -130,11 +134,11 @@ Parser::parseWhileBody(ASTWhileNode* whileNode) {
     if (success1 == false) {
         ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
                           .position = expected_token1.readPosition(),
-                          .additionalInfo = "Expecting a close brace after while keyword which contains a expression"};
+                          .additionalInfo = "Expecting a close brace after open brance which contains statements"};
         return error;
     }
 
-    return whileNode;
+    return scopeNode;
 }
 
 std::variant<ParserError, ASTBaseNode*>
@@ -152,7 +156,7 @@ Parser::parseWhileStatement() {
 
     ASTWhileNode* whileNode = new ASTWhileNode(condition);
 
-    auto body_result = parseWhileBody(whileNode);
+    auto body_result = parseScopeNode(whileNode);
     if (auto body_ptr = std::get_if<ParserError>(&body_result)) {
         // create new error once we generalize while body into a scope parser
         return body_result;
@@ -368,7 +372,13 @@ Parser::parseIdentifier() {
     token = m_lexar.peek();
 
     if (token.readType() == TokenType::OPERATOR) {
-        if (token.readOperator() == OperatorType::INCREMENT) {
+        if (token.readOperator() == OperatorType::CALL) {
+            m_lexar.pop();
+            m_lexar.popExpect(TokenType::OPEN_PAREN);
+            m_lexar.popExpect(TokenType::CLOSE_PAREN);
+            return new ASTCallNode(name);
+        }
+        else if (token.readOperator() == OperatorType::INCREMENT) {
             m_lexar.pop();
             return new ASTIdentifierNode(name, new ASTIncDecNode(true));
         }
@@ -379,4 +389,34 @@ Parser::parseIdentifier() {
     }
 
     return new ASTIdentifierNode(name, nullptr);
+}
+
+std::variant<ParserError, ASTBaseNode*>
+Parser::parseFunctionStatement() {
+    m_lexar.pop();
+    auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
+    if (success == false) {
+        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
+                          .position = token.readPosition(),
+                          .additionalInfo = "Expected function identifier after fn keyword"};
+        return error;
+    }
+    auto name = token.readValue();
+    auto functionNode = new ASTFunctionNode(name);
+
+    m_lexar.popExpect(TokenType::OPEN_PAREN);
+    // handle parameters later
+    m_lexar.popExpect(TokenType::CLOSE_PAREN);
+
+    parseScopeNode(functionNode);
+    
+    bool hasReturn = functionNode->readStatements().back()->readType() == ASTNodeType::RETURN;
+    if (hasReturn == false) {
+        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_RETURN_STATEMENT,
+                          .position = token.readPosition(),
+                          .additionalInfo = "Expected function to have a return statement"};
+        return error;
+    }
+
+    return functionNode;
 }

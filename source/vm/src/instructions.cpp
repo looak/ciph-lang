@@ -172,6 +172,7 @@ instruction::peek_offset_handler(ExecutionContext& context) {
     auto peek = read<peek_offset_instrction>(context.bytecode, context.registry[+registers::def::pc]);
     uint16_t sp = context.registry[+registers::def::fp] + (peek.offset * 2) + 2;
     int16_t value = instruction::stack_read_at_offset(context.bytecode, sp);
+    
 
     if (peek.reg == +registers::def::sp)
         push_helper(context, value);
