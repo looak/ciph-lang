@@ -1,13 +1,14 @@
 #include <fmt/core.h>
-#include <fstream>
-
-#include "shared_defines.hpp"
-#include "processing_unit.hpp"
-#include "disassembler.hpp"
-#include "code_generator.hpp"
-#include "parser.hpp"
-#include <iostream>
 #include <windows.h>
+
+#include <fstream>
+#include <iostream>
+
+#include "code_generator.hpp"
+#include "disassembler.hpp"
+#include "parser.hpp"
+#include "processing_unit.hpp"
+#include "shared_defines.hpp"
 
 void gotoxy(int x, int y) {
     COORD coord;
@@ -16,8 +17,7 @@ void gotoxy(int x, int y) {
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
-void PrintProgramAndCurrentCount(ProcessingUnit& pu, Disassembler& disassembler, int x, int y)
-{    
+void PrintProgramAndCurrentCount(ProcessingUnit& pu, Disassembler& disassembler, int x, int y) {
     const auto& disassemblyMap = disassembler.disassembledInstructions();
 
     const uint16_t& programCount = pu.registries()[+registers::def::pc];
@@ -26,8 +26,7 @@ void PrintProgramAndCurrentCount(ProcessingUnit& pu, Disassembler& disassembler,
     uint16_t currProgram = programCount - baseProgram;
     int yOffset = y;
     for (const auto& [key, instruction] : disassemblyMap) {
-        if (key == currProgram)
-        {
+        if (key == currProgram) {
             gotoxy(x - 3, yOffset);
             fmt::print("->");
         }
@@ -36,8 +35,7 @@ void PrintProgramAndCurrentCount(ProcessingUnit& pu, Disassembler& disassembler,
     }
 }
 
-void PrintStack(ProcessingUnit& pu, int x, int y)
-{
+void PrintStack(ProcessingUnit& pu, int x, int y) {
     uint16_t stackSize = pu.registries()[+registers::def::sp] - pu.registries()[+registers::def::fp];
     stackSize /= 2;
 
@@ -48,23 +46,21 @@ void PrintStack(ProcessingUnit& pu, int x, int y)
     uint16_t stackTop = pu.registries()[+registers::def::sp];
     uint16_t stackEnd = pu.registries()[+registers::def::fp];
 
-    while (stackTop > stackEnd)
-    {        
+    while (stackTop > stackEnd) {
         int16_t value = 0;
-        
+
         value = (value << 8) | pu.memory()[--stackTop];
         value = (value << 8) | pu.memory()[--stackTop];
-        gotoxy(x, ++y);        
-        fmt::println("0x{} [offset: {}] {:04X}", stackTop, stackSize - ++cnt, value);        
+        gotoxy(x, ++y);
+        fmt::println("0x{} [offset: {}] {:04X}", stackTop, stackSize - ++cnt, value);
     }
 }
 
-void PrintRegisters(ProcessingUnit& pu, int x, int y)
-{
+void PrintRegisters(ProcessingUnit& pu, int x, int y) {
     auto regs = pu.registries();
     gotoxy(x, y);
     fmt::println("Registers:");
-    gotoxy(x, ++y);    
+    gotoxy(x, ++y);
     gotoxy(x, ++y);
     fmt::println("imm: 0x{:04X}", regs[+registers::def::imm]);
     gotoxy(x, ++y);
@@ -94,28 +90,28 @@ void PrintRegisters(ProcessingUnit& pu, int x, int y)
     gotoxy(x, ++y);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 
     bool running = true;
     std::string input("return 5 + 5");
 
-    std::getline(std::cin, input); // wait for user to press enter
-    if (input == "exit")
-        return 0;
-        
+    // std::string input = "";
+    //  std::getline(std::cin, input); // wait for user to press enter
+    //  if (input == "exit")
+    //      return 0;
+
     Parser parser(input);
     auto abstract_program = parser.parse();
     CodeGenerator code_generator(reinterpret_cast<ASTProgramNode*>(abstract_program));
     code_generator.generateCode();
     auto [program, psize] = code_generator.readRawBytecode();
 
-            
 
     ProcessingUnit pu;
     pu.load_program(&program[0], psize);
     Disassembler disassembler(&program[0], psize);
     disassembler.disassemble();
-    
+
     running = true;
     while (running) {
         system("cls");
@@ -140,5 +136,5 @@ int main(int argc, char *argv[]) {
     gotoxy(0, 24);
     fmt::println("Program returned: {}", pu.context().return_value);
     std::getline(std::cin, input); // wait for user to press enter
-    return 0;    
+    return 0;
 }

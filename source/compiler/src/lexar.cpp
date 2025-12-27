@@ -1,13 +1,15 @@
 #include "lexar.hpp"
 
+#include <map>
+
 #include "lexar_defines.hpp"
 
-Token::Token(const std::string& value, TokenType type)
+Token::Token(const std::string& value, CIPHTokenType type)
     : m_value(value)
     , m_type(type) {
 }
 
-Token::Token(const OperatorType& value, TokenType type)
+Token::Token(const OperatorType& value, CIPHTokenType type)
     : m_value(value)
     , m_type(type) {
 }
@@ -17,67 +19,67 @@ std::string Token::readValue() const {
 }
 
 OperatorType Token::readOperator() const {
-    if (m_type != TokenType::OPERATOR)
+    if (m_type != CIPHTokenType::OPERATOR)
         return OperatorType::UNKNOWN;
 
     return std::get<OperatorType>(m_value);
 }
 
-TokenType Token::readType() const {
+CIPHTokenType Token::readType() const {
     return m_type;
 }
 
 bool Token::hasValue() const {
-    return m_type != TokenType::UNKNOWN;
+    return m_type != CIPHTokenType::UNKNOWN;
 }
 
 Lexar::Lexar(const std::string& input)
     : m_input(input)
     , m_position(0)
-    , m_peek("", TokenType::UNKNOWN)
+    , m_peek("", CIPHTokenType::UNKNOWN)
     , m_tokens()
     , m_performedAnalysis(false) {
 }
 
 LexarResult Lexar::lex() {
     if (m_performedAnalysis)
-        return {false, ErrorCode::LEXAR_PERFORMED_ANALYSIS};
+        return {false, ErrorCode::CIPH_LEXAR_PERFORMED_ANALYSIS};
     std::string value = "";
-    TokenType type = TokenType::UNKNOWN;
+    CIPHTokenType type = CIPHTokenType::UNKNOWN;
 
     skipWhiteSpaces();
 
     while (m_position < m_input.size()) {
         char cursor = popNextChar();
         if (cursor == '(') {
-            m_tokens.emplace_back("(", TokenType::OPEN_PAREN);
+            m_tokens.emplace_back("(", CIPHTokenType::OPEN_PAREN);
             continue;
         }
         else if (cursor == ')') {
-            m_tokens.emplace_back(")", TokenType::CLOSE_PAREN);
+            m_tokens.emplace_back(")", CIPHTokenType::CLOSE_PAREN);
             continue;
         }
         else if (cursor == '[') {
-            m_tokens.emplace_back("[", TokenType::OPEN_BRACKET);
+            m_tokens.emplace_back("[", CIPHTokenType::OPEN_BRACKET);
             continue;
         }
         else if (cursor == ']') {
-            m_tokens.emplace_back("]", TokenType::CLOSE_BRACKET);
+            m_tokens.emplace_back("]", CIPHTokenType::CLOSE_BRACKET);
             continue;
         }
         else if (cursor == '{') {
-            m_tokens.emplace_back("{", TokenType::OPEN_BRACE);
+            m_tokens.emplace_back("{", CIPHTokenType::OPEN_BRACE);
             continue;
         }
         else if (cursor == '}') {
-            m_tokens.emplace_back("}", TokenType::CLOSE_BRACE);
+            m_tokens.emplace_back("}", CIPHTokenType::CLOSE_BRACE);
             continue;
         }
 
         if (isdigit(cursor)) {
             do {
                 value += cursor;
-                type = TokenType::NUMBER;
+                type = CIPHTokenType::NUMBER;
 
                 cursor = popNextChar();
 
@@ -93,7 +95,7 @@ LexarResult Lexar::lex() {
         if (isalpha(cursor)) {
             do {
                 value += cursor;
-                type = TokenType::IDENTIFIER;
+                type = CIPHTokenType::IDENTIFIER;
 
                 cursor = popNextChar();
 
@@ -101,8 +103,8 @@ LexarResult Lexar::lex() {
 
             m_position--;
 
-            if (s_keywords.find(value) != s_keywords.end()) {
-                m_tokens.emplace_back(value, s_keywords[value]);
+            if (identifyKeyword(value) != CIPHTokenType::UNKNOWN) {
+                m_tokens.emplace_back(value, identifyKeyword(value));
                 continue;
             }
 
@@ -117,19 +119,19 @@ LexarResult Lexar::lex() {
         }
 
         // if we reach this without hitting a continue, we have an unknown character
-        return {false, ErrorCode::LEXAR_UNKNOWN_CHARACTER};
+        return {false, ErrorCode::CIPH_LEXAR_UNKNOWN_CHARACTER};
     }
 
     // reset position, we'll reuse this variable when we pop & peek the tokens in our vector.
     m_position = 0;
     m_performedAnalysis = true;
-    m_tokens.emplace_back("eof", TokenType::END_OF_FILE);
-    return {true, ErrorCode::NO_ERROR};
+    m_tokens.emplace_back("eof", CIPHTokenType::END_OF_FILE);
+    return {true, ErrorCode::CIPH_NO_ERROR};
 }
 
 bool Lexar::popOperator(OperatorType op) {
     Token token = pop();
-    if (token.readType() != TokenType::OPERATOR)
+    if (token.readType() != CIPHTokenType::OPERATOR)
         return false;
     if (token.readOperator() != op)
         return false;
@@ -137,7 +139,7 @@ bool Lexar::popOperator(OperatorType op) {
     return true;
 }
 
-bool Lexar::expect(TokenType type) {
+bool Lexar::expect(CIPHTokenType type) {
     Token token = pop();
     if (token.readType() != type)
         return false;
@@ -156,7 +158,7 @@ Token Lexar::peek() {
 Token Lexar::pop() {
     if (m_peek.hasValue()) {
         Token token = m_peek;
-        m_peek = Token("", TokenType::UNKNOWN); // reset peek
+        m_peek = Token("", CIPHTokenType::UNKNOWN); // reset peek
         return token;
     }
 }
@@ -195,16 +197,39 @@ std::optional<Token> Lexar::identifyOperator(char cursor) {
             char peek = peekNextChar();
 
             if (isOperator(peek) == false)
-                return Token(op.second[0].second, TokenType::OPERATOR);
+                return Token(op.second[0].second, CIPHTokenType::OPERATOR);
 
             for (auto& sub_op : op.second) {
                 if (sub_op.first == peek) {
                     popNextChar();
-                    return Token(sub_op.second, TokenType::OPERATOR);
+                    return Token(sub_op.second, CIPHTokenType::OPERATOR);
                 }
             }
         }
     }
 
     return {};
+}
+
+CIPHTokenType Lexar::identifyKeyword(const std::string& value) {
+    static const std::map<std::string, CIPHTokenType> s_keywords = {
+        {"let", CIPHTokenType::LET}, {"return", CIPHTokenType::RETURN} /*,
+                                  {"if", CIPHTokenType::IF},
+                                  {"else", CIPHTokenType::ELSE},
+                                  {"while", CIPHTokenType::WHILE},
+                                  {"for", CIPHTokenType::FOR},
+                                  {"return", CIPHTokenType::RETURN},
+                                  {"break", CIPHTokenType::BREAK},
+                                  {"continue", CIPHTokenType::CONTINUE},
+                                  {"function", CIPHTokenType::FUNCTION},
+                                  {"true", CIPHTokenType::TRUE},
+                                  {"false", CIPHTokenType::FALSE},
+                                  {"null", CIPHTokenType::NULL}*/
+    };
+    auto token = s_keywords.find(value);
+    if (token != s_keywords.end()) {
+        return token->second;
+    }
+
+    return CIPHTokenType::UNKNOWN;
 }

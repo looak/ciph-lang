@@ -8,17 +8,48 @@
 #include "error_defines.hpp"
 #include "lexar_defines.hpp"
 
+enum class CIPHTokenType
+{
+    // literals
+    NUMBER,
+    IDENTIFIER,
+
+    // keywords
+    LET,
+    RETURN,
+    WHILE,
+    IF,
+    ELSE,
+
+    /*
+STRING,
+CHARACTER,
+BOOLEAN,*/
+
+    // scope and operators
+    OPERATOR,
+    OPEN_PAREN,
+    CLOSE_PAREN,
+    OPEN_BRACE,
+    CLOSE_BRACE,
+    OPEN_BRACKET,
+    CLOSE_BRACKET,
+
+    END_OF_FILE,
+    UNKNOWN
+};
+
 class Token {
 public:
-    Token(const std::string& value, TokenType type);
-    Token(const OperatorType& value, TokenType type);
+    Token(const std::string& value, CIPHTokenType type);
+    Token(const OperatorType& value, CIPHTokenType type);
     ~Token() = default;
 
     Token(const Token& other) = default;
 
     std::string readValue() const;
     OperatorType readOperator() const;
-    TokenType readType() const;
+    CIPHTokenType readType() const;
 
 
     // TODO: should be moved to cpp file
@@ -32,7 +63,7 @@ public:
 
 private:
     std::variant<std::string, OperatorType> m_value;
-    TokenType m_type;
+    CIPHTokenType m_type;
 };
 
 typedef std::pair<bool, ErrorCode> LexarResult;
@@ -46,7 +77,7 @@ public:
      * @return Lexar result, a pair of a bool and error code		*/
     LexarResult lex();
 
-    bool expect(TokenType type);
+    bool expect(CIPHTokenType type);
     bool popOperator(OperatorType op);
     Token peek();
     Token pop();
@@ -57,7 +88,7 @@ private:
     char peekNextChar();
 
     void skipWhiteSpaces();
-
+    CIPHTokenType identifyKeyword(const std::string& value);
     std::optional<Token> identifyOperator(char cursor);
     bool isOperator(char cursor);
 

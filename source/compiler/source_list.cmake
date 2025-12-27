@@ -15,6 +15,8 @@ set(COMPILER_INC
     ${COMPILER_INC_DIR}/lexar.hpp
     ${COMPILER_INC_DIR}/lexar_defines.hpp
     ${COMPILER_INC_DIR}/parser.hpp
+    ${COMPILER_INC_DIR}/error_reporter.hpp
+    ${COMPILER_INC_DIR}/error_defines.hpp
 )
 
 set(COMPILER_ALL_SRC 
