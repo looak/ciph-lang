@@ -22,6 +22,7 @@ class ASTProgramNode;
 class ASTReturnNode;
 class ASTScopeNode;
 class ASTWhileNode;
+class ASTCallNode;
 
 struct IdentifierContext {
     IdentifierContext(const std::string& name, uint8_t offset)
@@ -45,6 +46,11 @@ struct PointerContext {
     uint8_t reg = 0xFF;
 };
 
+struct FunctionContext {
+    std::string name = "";
+    uint16_t address = 0;
+};
+
 struct RegisterValue {
     std::optional<IdentifierContext> value;
 };
@@ -63,23 +69,27 @@ public:
     std::string disassemble() const;
 
 private:
+
+
     void generateProgram(const ASTProgramNode* node);
     void generateScope(const ASTScopeNode* node);
+    void generateFunction(const ASTBaseNode* node);
 
     // expressions
     void generateExpression(const ASTBaseNode* node);
     void generateExpression(const ASTBaseNode* node, registers::def reg);
-    void generateComparisonExpression(const ASTComparisonExpressionNode* node, registers::def regA,
-                                      std::optional<registers::def> regB = std::nullopt);
-    void generateBinaryExpression(const ASTBinaryExpressionNode* node,
-                                  std::optional<registers::def> reg = std::nullopt);
+    void generateComparisonExpression(  const ASTComparisonExpressionNode* node, registers::def regA,
+                                        std::optional<registers::def> regB = std::nullopt);
+    void generateBinaryExpression(  const ASTBinaryExpressionNode* node,
+                                    std::optional<registers::def> reg = std::nullopt);
     void generateNumericLiteral(const ASTNumericLiteralNode* node);
-    void generateOperator(const ASTBinaryExpressionNode* node, std::optional<registers::def> regA = std::nullopt,
-                          std::optional<registers::def> regB = std::nullopt);
-    void generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA,
-                             std::optional<registers::def> regB = std::nullopt);
-    void generateCompareOperator(const ASTComparisonExpressionNode* node, registers::def regA,
-                                 std::optional<registers::def> regB = std::nullopt);
+    void generateCall(const ASTCallNode* callNode);
+    void generateOperator(  const ASTBinaryExpressionNode* node, std::optional<registers::def> regA = std::nullopt,
+                            std::optional<registers::def> regB = std::nullopt);
+    void generateOperatorReg(   const ASTBinaryExpressionNode* node, registers::def regA,
+                                std::optional<registers::def> regB = std::nullopt);
+    void generateCompareOperator(   const ASTComparisonExpressionNode* node, registers::def regA,
+                                    std::optional<registers::def> regB = std::nullopt);
     void generateIdentifier(const ASTIdentifierNode* node, registers::def reg = registers::def::imm);
     void generateIncDec(const ASTIdentifierNode* node, bool isIncrement);
 
@@ -88,15 +98,19 @@ private:
     void generateLetStatement(const ASTLetNode* node);
     void generateWhileStatement(const ASTWhileNode* node);
 
+    // functions
+    void resolveUnresolvedCalls();
+
 
     /* @brief peek_offset
      * @param offset offset into the stack where the value is.
      * @param reg given register, if sp (stack pointer) is given, value gets pushed onto the stack.
      * @return true: the value was assigned to a register. false: the value was pushed to the stack.   */
     bool peek_offset(uint8_t offset, registers::def reg);
-
-    void push(instruction::def pushType);
+    
     void pop();
+    void emit(instruction::def opCode) { m_bytecode.push_back(static_cast<uint8_t>(opCode)); }
+    void patch(uint16_t position, uint16_t byte);
     void encode(int16_t value);
     void encodeRegister(registers::def reg);
     void encodeOperator(OperatorType op);
@@ -106,7 +120,9 @@ private:
     // program
     uint16_t m_stackSize = 0;
     std::unordered_map<std::string, IdentifierContext> m_identifiers;
-
+    std::unordered_map<uint16_t, PointerContext> m_pointers;
+    std::unordered_map<std::string, FunctionContext> m_functions;
+    std::unordered_map<std::string, std::vector<uint8_t>> m_unresolvedCalls;
 
     const ASTProgramNode* m_program = nullptr;
     std::vector<uint8_t> m_bytecode = {};

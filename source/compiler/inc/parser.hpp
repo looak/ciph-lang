@@ -44,6 +44,7 @@ private:
     std::variant<ParserError, ASTBaseNode*> parseFunctionParameters();
     std::variant<ParserError, ASTBaseNode*> parseFunctionBody();
 
+    // this assumption that I can reuse scope for while & function bodies might be flawed later...
     std::variant<ParserError, ASTBaseNode*> parseScopeNode(ASTScopeNode* scopeNode);
 
     Lexar m_lexar;

@@ -49,7 +49,8 @@ enum class def : uint8_t {
 	JGT 	=		0xC3,  	// Jump to address if imm is positive.
 	JLT 	=		0xC4,  	// Jump to address if imm is negative.
 	CMP 	= 		0xCC, 	// Subtracts rX from rY and puts result in imm, if reg:sp is passed as rX we pop the compared elements from the stack
-	RET	 	=		0xCF, 	// Returns value in imm and terminates the program.
+	RET	 	=		0xCF, 	// Returns value in imm.
+	HALT	=		0xFE, 	// Terminates the program.
  
 	// Other instructions
 	NOP	 	=		0x00  	// No operation instruction, program counter should just tick pass this.

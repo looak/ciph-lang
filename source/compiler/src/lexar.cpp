@@ -73,12 +73,6 @@ Lexar::push(std::variant<std::string, OperatorType> value, TokenType type, Posit
     position.column++;
 }
 
-Token Lexar::peekBack(int16_t offset) {
-    int16_t peekPos = m_tokens.size() - (offset + 1);
-    return m_tokens[peekPos];
-}
-
-
 void
 Lexar::skipWhiteSpaces(Position& cursorPos) {
     bool done = false;
@@ -115,14 +109,6 @@ Lexar::lex() {
         skipWhiteSpaces(cursorPosition);
         char cursor = popNextChar();
         if (cursor == '(') {
-            // this function call identification is not pretty...
-            auto optionalFuncToken = peekBack(1);
-            if (optionalFuncToken.readType() != TokenType::FUNCTION 
-                && peekBack(0).readType() == TokenType::IDENTIFIER) {
-                // function call
-                push(OperatorType::CALL, TokenType::OPERATOR, cursorPosition);
-                cursorPosition.column--; // adjust for the extra column added in push since call is implicit.
-            }
             push("(", TokenType::OPEN_PAREN, cursorPosition);
             continue;
         }

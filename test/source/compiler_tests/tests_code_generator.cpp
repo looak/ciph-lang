@@ -71,9 +71,9 @@ TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
     generator.generateCode();
 
     // validate
-    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0x0A, 0xFE,
-                                  +instruction::def::PSH_LIT, 0x0A, 0xBE,
-                                  +instruction::def::ADD };
+    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0x0A, 0xFE,
+                                    +instruction::def::PSH_LIT, 0x0A, 0xBE,
+                                    +instruction::def::ADD };
 
     uint32_t expectedSize = sizeof(expectedProgram);
 
@@ -395,6 +395,43 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement) {
 				i++
 			}
 			return i)");
+    Parser parser(code);
+    auto parser_result = parser.parse();
+    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+
+    CodeGenerator generator(programNode);
+
+    // do
+    generator.generateCode();
+    std::string actual = generator.outputBytecode();
+    auto [actualProgram, actualSize] = generator.readRawBytecode();
+
+    // validate
+    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 0,
+                                    +instruction::def::INC, +registers::def::sp, 0,
+                                    +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                                    +instruction::def::PSH_LIT, 0, 5,
+                                    +instruction::def::CMP, +registers::def::sp,
+                                    +instruction::def::JLT, 0x00, 0x0E, // jump back fourteen bytes
+                                    +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                                    +instruction::def::RET};
+
+    std::string dissassembly = generator.disassemble();
+
+    uint32_t expectedSize = sizeof(expectedProgram);
+
+    EXPECT_EQ(expectedSize, actualSize);
+    EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
+}
+
+TEST_F(CodeGeneratorTestFixture, SimpleFunctionReturn) {
+    // setup
+    std::string code(
+        R"(
+			fn number() {
+                return 5+5
+            }
+            return number())");
     Parser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));

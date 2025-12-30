@@ -233,6 +233,7 @@ TEST(LexarTest, FunctionAndScope) {
     EXPECT_EQ(token.readValue(), "0");
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
+    token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::END_OF_FILE);
 }
 
@@ -263,9 +264,6 @@ TEST(LexarTest, FunctionAndScopeAndCall) {
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readValue(), "myFunction");
-    token = lx.pop();
-    EXPECT_EQ(token.readType(), TokenType::OPERATOR);
-    EXPECT_EQ(token.readOperator(), OperatorType::CALL);
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
     token = lx.pop();

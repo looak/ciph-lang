@@ -278,7 +278,7 @@ TEST(ParserTest, SimpleFunction_ReturnsConstant) {
 			fn number() {
 				return 42
 			}
-			return number()");
+			return number())");
 	Parser parser(code);
 
 	auto parser_result = parser.parse();
@@ -299,6 +299,8 @@ TEST(ParserTest, SimpleFunction_ReturnsConstant) {
 	// validate
 	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
 
-	EXPECT_EQ(result->readStatements().size(), 3);
-	EXPECT_EQ(result->readStatements()[1]->readType(), ASTNodeType::WHILE);
+	EXPECT_EQ(result->readStatements().size(), 2);
+	EXPECT_EQ(result->readStatements()[0]->readType(), ASTNodeType::FUNCTION);
+	EXPECT_EQ(result->readStatements()[1]->readType(), ASTNodeType::RETURN);
+	EXPECT_EQ(static_cast<const ASTReturnNode*>(result->readStatements()[1])->readExpression()->readType(), ASTNodeType::CALL_EXPRESSION);
 }

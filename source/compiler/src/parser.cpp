@@ -329,9 +329,9 @@ Parser::parseLetStatement() {
     m_lexar.pop();
     auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
-        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
-                          .position = token.readPosition(),
-                          .additionalInfo = "Expected identifier after let keyword"};
+        ParserError error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
+                            .position = token.readPosition(),
+                            .additionalInfo = "Expected identifier after let keyword"};
         return error;
     }
 
@@ -362,30 +362,34 @@ std::variant<ParserError, ASTBaseNode*>
 Parser::parseIdentifier() {
     auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
-        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
-                          .position = token.readPosition(),
-                          .additionalInfo = "Expected identifier in expression"};
+        ParserError error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
+                            .position = token.readPosition(),
+                            .additionalInfo = "Expected identifier in expression"};
         return error;
     }
 
     std::string name = token.readValue();
     token = m_lexar.peek();
 
-    if (token.readType() == TokenType::OPERATOR) {
-        if (token.readOperator() == OperatorType::CALL) {
-            m_lexar.pop();
-            m_lexar.popExpect(TokenType::OPEN_PAREN);
-            m_lexar.popExpect(TokenType::CLOSE_PAREN);
-            return new ASTCallNode(name);
+    if (token.readType() == TokenType::OPEN_PAREN) {
+        m_lexar.pop(); // pop open paren
+        // handle arguments later
+        auto [success, result] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
+        if (success == false) {
+            ParserError error{  .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
+                                .position = result.readPosition(),
+                                .additionalInfo = "Expected closing parenthesis for function call"};
+            return error;
         }
-        else if (token.readOperator() == OperatorType::INCREMENT) {
-            m_lexar.pop();
-            return new ASTIdentifierNode(name, new ASTIncDecNode(true));
-        }
-        else if (token.readOperator() == OperatorType::DECREMENT) {
-            m_lexar.pop();
-            return new ASTIdentifierNode(name, new ASTIncDecNode(false));
-        }
+        return new ASTCallNode(name);
+    }
+    else if (token.readOperator() == OperatorType::INCREMENT) {
+        m_lexar.pop();
+        return new ASTIdentifierNode(name, new ASTIncDecNode(true));
+    }
+    else if (token.readOperator() == OperatorType::DECREMENT) {
+        m_lexar.pop();
+        return new ASTIdentifierNode(name, new ASTIncDecNode(false));
     }
 
     return new ASTIdentifierNode(name, nullptr);
@@ -396,9 +400,9 @@ Parser::parseFunctionStatement() {
     m_lexar.pop();
     auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
-        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
-                          .position = token.readPosition(),
-                          .additionalInfo = "Expected function identifier after fn keyword"};
+        ParserError error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
+                            .position = token.readPosition(),
+                            .additionalInfo = "Expected function identifier after fn keyword"};
         return error;
     }
     auto name = token.readValue();

@@ -17,12 +17,44 @@ CodeGenerator::disassemble() const {
 
 void
 CodeGenerator::generateCode() {
+    m_bytecode.clear();
+    
+    
+    emit(instruction::def::JMP);
+    uint16_t main_addrs = 1;
+    encode(main_addrs); // placeholder for address
+    m_functions.emplace("main", FunctionContext{"main", main_addrs});
+
     generateProgram(m_program);
+
+    emit(instruction::def::HALT);
+
+    // patch jump to main
+    // jmp is at position 0, address is at position 1
+    patch(1, m_functions["main"].address);
+
+    resolveUnresolvedCalls();
 }
 
 void
 CodeGenerator::generateProgram(const ASTProgramNode* node) {
     generateScope(node);
+}
+
+void
+CodeGenerator::generateFunction(const ASTBaseNode* node) {
+    const ASTFunctionNode* functionNode = static_cast<const ASTFunctionNode*>(node);
+    if (m_functions.contains(functionNode->readName()) == false) {
+        m_functions.emplace(functionNode->readName(),
+                            FunctionContext{functionNode->readName(),
+                                            static_cast<uint16_t>(m_bytecode.size())});
+    }
+    else {
+        fmt::print("Function {} already exists\n", functionNode->readName());
+        return;
+    }
+
+    generateScope(functionNode);
 }
 
 void
@@ -78,10 +110,37 @@ CodeGenerator::generateExpression(const ASTBaseNode* node, registers::def reg) {
             generateIdentifier(identifierNode, reg);
             break;
         }
+        case ASTNodeType::CALL_EXPRESSION: {
+            const auto* callNode = static_cast<const ASTCallNode*>(node);
+            generateCall(callNode);
+            break;
+        }
         default: {
             fmt::print("Unknown node type\n");
             break;
         }
+    }
+}
+
+void
+CodeGenerator::generateCall(const ASTCallNode* callNode) {
+    if (auto function = m_functions.find(callNode->readFunctionName()); function != m_functions.end()) {
+        m_bytecode.push_back(static_cast<uint8_t>(instruction::def::JMP));
+        encode(function->second.address);
+    }
+    else {
+        if (m_unresolvedCalls.find(callNode->readFunctionName()) == m_unresolvedCalls.end()) {
+            auto [iter, inserted] = m_unresolvedCalls.emplace(callNode->readFunctionName(), std::vector<uint8_t>{});
+            emit(instruction::def::JMP);
+            iter->second.push_back(static_cast<uint8_t>(m_bytecode.size())); // position to patch later
+            encode(0x0000); // placeholder
+        }
+        else {
+            auto& positions = m_unresolvedCalls[callNode->readFunctionName()];
+            emit(instruction::def::JMP);
+            positions.push_back(static_cast<uint8_t>(m_bytecode.size())); // position to patch later
+            encode(0x0000); // placeholder
+        }        
     }
 }
 
@@ -135,8 +194,8 @@ CodeGenerator::generateLetStatement(const ASTLetNode* node) {
             fmt::print("Stack overflow\n");
             return;
         }
-        m_identifiers.emplace(node->readIdentifier(),
-                              IdentifierContext(node->readIdentifier(), static_cast<uint8_t>(m_stackSize)));
+        m_identifiers.emplace(  node->readIdentifier(),
+                                IdentifierContext(node->readIdentifier(), static_cast<uint8_t>(m_stackSize)));
         generateExpression(node->readExpression(), registers::def::sp);
     }
     else {
@@ -196,8 +255,8 @@ CodeGenerator::encodeOperator(OperatorType op) {
 }
 
 void
-CodeGenerator::generateOperatorReg(const ASTBinaryExpressionNode* node, registers::def regA,
-                                   std::optional<registers::def> regB) {
+CodeGenerator::generateOperatorReg( const ASTBinaryExpressionNode* node, registers::def regA,
+                                    std::optional<registers::def> regB) {
     encodeOperator(node->readOperator());
 
     if (regA == registers::def::ret) {
@@ -220,8 +279,8 @@ CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node, std::option
 }
 
 void
-CodeGenerator::generateCompareOperator(const ASTComparisonExpressionNode* node, registers::def regA,
-                                       std::optional<registers::def> regB) {
+CodeGenerator::generateCompareOperator( const ASTComparisonExpressionNode* node, registers::def regA,
+                                        std::optional<registers::def> regB) {
     m_bytecode.push_back(static_cast<uint8_t>(instruction::def::CMP));
     encodeRegister(regA);
     if (regB.has_value()) {
@@ -237,8 +296,8 @@ CodeGenerator::generateCompareOperator(const ASTComparisonExpressionNode* node, 
 
 void
 CodeGenerator::generateNumericLiteral(const ASTNumericLiteralNode* node) {
-    push(instruction::def::PSH_LIT);
-    // 4 byte integer
+    emit(instruction::def::PSH_LIT);
+    // 2 byte integer
     int16_t value = node->readValue();
     encode(value);
 }
@@ -274,6 +333,11 @@ CodeGenerator::encodeRegister(registers::def reg) {
     m_bytecode.push_back(+reg);
 }
 
+void CodeGenerator::patch(uint16_t position, uint16_t byte) { 
+    m_bytecode[position] = static_cast<uint8_t>((byte >> 8) & 0xFF);
+    m_bytecode[position + 1] = static_cast<uint8_t>(byte & 0xFF);
+}
+
 bool
 CodeGenerator::peek_offset(uint8_t offset, registers::def reg) {
     m_bytecode.push_back(static_cast<uint8_t>(instruction::def::PEK_OFF));
@@ -283,8 +347,15 @@ CodeGenerator::peek_offset(uint8_t offset, registers::def reg) {
     return reg == registers::def::sp;
 }
 
-void
-CodeGenerator::push(instruction::def pushType) {
-    m_stackSize++;
-    m_bytecode.push_back(static_cast<uint8_t>(pushType));
+void CodeGenerator::resolveUnresolvedCalls() {
+    for (const auto& [functionName, positions] : m_unresolvedCalls) {
+        if (auto function = m_functions.find(functionName); function != m_functions.end()) {
+            for (const auto& pos : positions) {
+                patch(pos, function->second.address);
+            }
+        }
+        else {
+            fmt::print("Unresolved function call to {}\n", functionName);
+        }
+    }
 }
