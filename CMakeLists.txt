@@ -1,70 +1,46 @@
-cmake_minimum_required(VERSION 3.14)
-
-include(cmake/prelude.cmake)
+cmake_minimum_required(VERSION 3.28)
 
 project(
     ciph-lang
     VERSION 0.1.0
-    DESCRIPTION "learning project for getting a deeper understanding of programming languages"
-    HOMEPAGE_URL "https://example.com/"
+    DESCRIPTION "Learning project for getting a deeper understanding of programming languages"
     LANGUAGES CXX
 )
 
-include(cmake/project-is-top-level.cmake)
-include(cmake/variables.cmake)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-
-# ---- Declare library ----
-
-add_subdirectory("source/shared")
-add_subdirectory("source/compiler")
-add_subdirectory("source/vm")
-
-# add_library(
-#     ciph-lang_lib OBJECT
-#     source/lib.cpp
-# )
-
-# target_include_directories(
-#     ciph-lang_lib ${warning_guard}
-#     PUBLIC
-#     "\$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>"
-# )
-
-# target_compile_features(ciph-lang_lib PUBLIC cxx_std_20)
-
-# find_package(fmt REQUIRED)
-# target_link_libraries(ciph-lang_lib PRIVATE fmt::fmt)
-
-# ---- Declare executable ----
-
-# add_executable(ciph-lang_exe source/main.cpp)
-# add_executable(ciph-lang::exe ALIAS ciph-lang_exe)
-
-# set_property(TARGET ciph-lang_exe PROPERTY OUTPUT_NAME ciph-lang)
-
-# target_compile_features(ciph-lang_exe PRIVATE cxx_std_20)
-
-# target_link_libraries(ciph-lang_exe PRIVATE ciph-lang_lib)
-
-# ---- Install rules ----
-
-if(NOT CMAKE_SKIP_INSTALL_RULES)
-  include(cmake/install-rules.cmake)
+if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(FATAL_ERROR
+    "In-source builds are not supported. Use a preset (cmake --preset dev) "
+    "or pass a separate build directory, e.g. -B .build/dev")
 endif()
 
-# ---- Developer mode ----
+# ---- Options ----
 
-if(NOT ciph-lang_DEVELOPER_MODE)
-  return()
-elseif(NOT PROJECT_IS_TOP_LEVEL)
-  message(
-      AUTHOR_WARNING
-      "Developer mode is intended for developers of ciph-lang"
-  )
+option(CIPH_BUILD_TESTS "Build the unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(CIPH_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
+include(CiphProjectSettings) # output layout, build type, warnings target
+include(CiphDependencies)    # fmt, GoogleTest
+
+# ---- Libraries ----
+
+add_subdirectory(source/shared)   # ciph::shared
+add_subdirectory(source/compiler) # ciph::compiler
+add_subdirectory(source/vm)       # ciph::vm
+
+# ---- Executables ----
+
+add_subdirectory(apps)
+
+# ---- Tests ----
+
+if(CIPH_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(test)
 endif()
 
-include(cmake/dev-mode.cmake)
+# ---- Install ----
+
+include(GNUInstallDirs)
+install(TARGETS ciph-compiler ciph-vm RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

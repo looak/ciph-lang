@@ -1,5 +1,5 @@
-#include "processing_unit.hpp"
-#include "instructions.hpp"
+#include <ciph/vm/processing_unit.hpp>
+#include <ciph/vm/instructions.hpp>
 #include <fmt/core.h>
 
 using namespace ciph;

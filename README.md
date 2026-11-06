@@ -1,19 +1,69 @@
 # ciph-lang
 
-This is the ciph-lang project.
+A learning project for getting a deeper understanding of programming languages:
+a compiler (`ciph-compiler`) that turns ciph source into bytecode, and a virtual
+machine (`ciph-vm`) that runs it.
 
-# Building and installing
+## Project layout
 
-See the [BUILDING](BUILDING.md) document.
+```
+source/
+  shared/    ciph::shared    bytecode definitions, disassembler
+  compiler/  ciph::compiler  lexer, parser, code generator
+  vm/        ciph::vm        instructions, processing unit
+apps/
+  compiler/  ciph-compiler   executable
+  vm/        ciph-vm         executable
+test/        GoogleTest suites (compiler_tests, vm_tests)
+cmake/       project CMake modules
+```
 
-# Contributing
+Each library keeps its public headers in `include/ciph/<lib>/`. Include them as
+`#include <ciph/compiler/parser.hpp>`.
 
-See the [CONTRIBUTING](CONTRIBUTING.md) document.
+## Building
 
-# Licensing
+You need CMake 3.28 or newer, Ninja, and a C++20 compiler (GCC, Clang or
+MSVC). Dependencies (fmt and GoogleTest) come from your system if CMake can
+find them. Otherwise they are downloaded automatically.
 
-<!--
-Please go to https://choosealicense.com/licenses/ and choose a license that
-fits your needs. The recommended license for a project of this type is the
-GNU AGPLv3.
--->
+```sh
+cmake --preset dev            # configure -> .build/dev
+cmake --build --preset dev    # build     -> dist/dev/Debug
+ctest --preset dev            # run the tests
+```
+
+Or do all three in one go with `cmake --workflow --preset dev`.
+
+| Configure preset | Compiler |
+|---|---|
+| `dev` | whatever CMake finds (`CXX`, `PATH`, MSVC dev shell) |
+| `dev-clang` | `clang++` |
+| `dev-gcc` | `g++` |
+| `dev-msvc` | `cl` (Windows) |
+| `ci` | default compiler, Release (used by GitHub Actions) |
+
+On Windows, run MSVC builds from a *Developer PowerShell for VS*. Alternatively,
+open the folder in Visual Studio or VS Code (CMake Tools), which set up the
+environment for you.
+
+### Output directories
+
+- `.build/<preset>/` holds generated and intermediate files, including test
+  binaries.
+- `dist/<preset>/<Config>/` holds the final executables.
+
+Both directories are git-ignored and safe to delete.
+
+### Options
+
+| Option | Default | |
+|---|---|---|
+| `CIPH_BUILD_TESTS` | `ON` when top-level | build the GoogleTest suites |
+| `CIPH_WARNINGS_AS_ERRORS` | `OFF` | `-Werror` / `/WX` |
+
+### Installing
+
+```sh
+cmake --install .build/dev --config Release --prefix <dir>
+```

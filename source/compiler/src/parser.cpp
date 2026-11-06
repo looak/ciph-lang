@@ -1,8 +1,8 @@
-#include "parser.hpp"
+#include <ciph/compiler/parser.hpp>
 
 #include <fmt/core.h>
 
-#include "ast.hpp"
+#include <ciph/compiler/ast.hpp>
 
 using namespace ciph;
 

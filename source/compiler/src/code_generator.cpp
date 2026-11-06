@@ -1,11 +1,11 @@
-#include "code_generator.hpp"
+#include <ciph/compiler/code_generator.hpp>
 
 #include <fmt/core.h>
 
-#include <disassembler.hpp>
-#include <shared_defines.hpp>
+#include <ciph/shared/disassembler.hpp>
+#include <ciph/shared/shared_defines.hpp>
 
-#include "ast.hpp"
+#include <ciph/compiler/ast.hpp>
 
 using namespace ciph;
 

@@ -1,8 +1,8 @@
-#include "instructions.hpp"
+#include <ciph/vm/instructions.hpp>
 
 #include <functional>
 
-#include "processing_unit.hpp"
+#include <ciph/vm/processing_unit.hpp>
 
 using namespace ciph;
 

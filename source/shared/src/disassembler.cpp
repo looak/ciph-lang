@@ -1,5 +1,5 @@
-#include "disassembler.hpp"
-#include "shared_defines.hpp"
+#include <ciph/shared/disassembler.hpp>
+#include <ciph/shared/shared_defines.hpp>
 #include <fmt/core.h>
 
 using namespace ciph;

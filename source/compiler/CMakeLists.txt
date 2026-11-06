@@ -1,21 +1,18 @@
-set(PROJECT_NAME ciph-compiler_exe)
-
-# ---- dependencies ----
-
-find_package(fmt CONFIG REQUIRED)
-
-# ---- executable ----
-
-include(source_list.cmake)
-add_executable(${PROJECT_NAME} ${COMPILER_ALL_SRC})
-
-target_link_libraries(${PROJECT_NAME}
-  PRIVATE  
-  fmt::fmt
-  ciph-shared_lib
+ciph_add_library(compiler
+  SOURCES
+    src/code_generator.cpp
+    src/lexar.cpp
+    src/parser.cpp
+  HEADERS
+    include/ciph/compiler/ast.hpp
+    include/ciph/compiler/code_generator.hpp
+    include/ciph/compiler/error_defines.hpp
+    include/ciph/compiler/error_reporter.hpp
+    include/ciph/compiler/lexar.hpp
+    include/ciph/compiler/lexar_defines.hpp
+    include/ciph/compiler/parser.hpp
+  DEPENDS
+    ciph::shared
+  PRIVATE_DEPENDS
+    fmt::fmt
 )
-
-target_include_directories(${PROJECT_NAME} 
-    PUBLIC
-        ${COMPILER_INC_DIR}
-        ${SHARED_INC_DIR})

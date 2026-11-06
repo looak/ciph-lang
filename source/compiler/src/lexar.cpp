@@ -1,8 +1,8 @@
-#include "lexar.hpp"
+#include <ciph/compiler/lexar.hpp>
 
-#include <shared_defines.hpp>
+#include <ciph/shared/shared_defines.hpp>
 
-#include "lexar_defines.hpp"
+#include <ciph/compiler/lexar_defines.hpp>
 
 using namespace ciph;
 
