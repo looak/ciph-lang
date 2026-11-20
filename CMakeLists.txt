@@ -17,11 +17,12 @@ endif()
 
 option(CIPH_BUILD_TESTS "Build the unit tests" ${PROJECT_IS_TOP_LEVEL})
 option(CIPH_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+option(CIPH_BUILD_STUDIO "Build ciph-studio, the node graph editor (needs OpenGL)" ${PROJECT_IS_TOP_LEVEL})
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 include(CiphProjectSettings) # output layout, build type, warnings target
-include(CiphDependencies)    # fmt, GoogleTest
+include(CiphDependencies)    # fmt, GoogleTest, GLFW, Dear ImGui, imnodes
 
 # ---- Libraries ----
 
@@ -44,3 +45,6 @@ endif()
 
 include(GNUInstallDirs)
 install(TARGETS ciph-compiler ciph-vm RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+if(CIPH_BUILD_STUDIO)
+  install(TARGETS ciph-studio RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()

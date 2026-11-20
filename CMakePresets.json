@@ -40,9 +40,9 @@
     {
       "name": "ci",
       "displayName": "CI",
-      "description": "Default compiler, Release. Flip CIPH_WARNINGS_AS_ERRORS on once the code is warning-clean.",
+      "description": "Default compiler, Release. Flip CIPH_WARNINGS_AS_ERRORS on once the code is warning-clean. ciph-studio is skipped: it needs windowing system packages the runners do not have.",
       "inherits": "base",
-      "cacheVariables": { "CIPH_WARNINGS_AS_ERRORS": "OFF" }
+      "cacheVariables": { "CIPH_WARNINGS_AS_ERRORS": "OFF", "CIPH_BUILD_STUDIO": "OFF" }
     }
   ],
   "buildPresets": [
