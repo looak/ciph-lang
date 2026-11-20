@@ -35,7 +35,7 @@ if(CIPH_BUILD_TESTS)
   FetchContent_MakeAvailable(googletest)
 endif()
 
-# ---- GLFW, Dear ImGui, imnodes (ciph-studio only) ----
+# ---- GLFW, Dear ImGui, imnodes, ImGuiColorTextEdit (ciph-studio only) ----
 
 if(CIPH_BUILD_STUDIO)
   find_package(OpenGL REQUIRED)
@@ -65,7 +65,13 @@ if(CIPH_BUILD_STUDIO)
     URL https://github.com/Nelarius/imnodes/archive/2d0c280b07b2f62b120034811cc6e41251673961.tar.gz
     SOURCE_SUBDIR _none
   )
-  FetchContent_MakeAvailable(glfw imgui imnodes)
+  # goossens' rewrite of ImGuiColorTextEdit. Its tags track Dear ImGui
+  # releases, so bump this together with imgui above.
+  FetchContent_Declare(imguicolortextedit
+    URL https://github.com/goossens/ImGuiColorTextEdit/archive/refs/tags/v1.93.0.tar.gz
+    SOURCE_SUBDIR _none
+  )
+  FetchContent_MakeAvailable(glfw imgui imnodes imguicolortextedit)
 
   add_library(ciph_imgui STATIC EXCLUDE_FROM_ALL
     "${imgui_SOURCE_DIR}/imgui.cpp"
@@ -90,4 +96,11 @@ if(CIPH_BUILD_STUDIO)
   add_library(imnodes::imnodes ALIAS ciph_imnodes)
   target_include_directories(ciph_imnodes SYSTEM PUBLIC "${imnodes_SOURCE_DIR}")
   target_link_libraries(ciph_imnodes PUBLIC imgui::imgui)
+
+  add_library(ciph_imgui_texteditor STATIC EXCLUDE_FROM_ALL
+    "${imguicolortextedit_SOURCE_DIR}/TextEditor.cpp"
+  )
+  add_library(imgui::texteditor ALIAS ciph_imgui_texteditor)
+  target_include_directories(ciph_imgui_texteditor SYSTEM PUBLIC "${imguicolortextedit_SOURCE_DIR}")
+  target_link_libraries(ciph_imgui_texteditor PUBLIC imgui::imgui)
 endif()

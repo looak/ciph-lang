@@ -1,18 +1,23 @@
 // ciph-studio: node graph editor and debugger for ciph.
 //
-// For now this only opens a window with a hard-coded sample graph, to prove
-// the Dear ImGui + imnodes + GLFW/OpenGL toolchain builds and runs.
+// For now this only opens a window with a hard-coded sample graph and a code
+// editor for the selected node, to prove the toolchain builds and runs.
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <map>
+#include <string>
 
 #include <imgui.h>
+#include <imgui_internal.h> // DockBuilder
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <imnodes.h>
 
 #include <GLFW/glfw3.h>
+
+#include "source_panel.hpp"
 
 namespace {
 
@@ -30,9 +35,35 @@ glfw_error_callback(int error, const char* description) {
 //   }
 //
 // Ids are arbitrary but must be unique per kind (node / pin / link).
+enum Node { inputs = 1, check, div, ne, result };
+
+const char*
+node_name(int node) {
+    switch (node) {
+    case inputs: return "inputs";
+    case check: return "check";
+    case div: return "div";
+    case ne: return "ne";
+    case result: return "return";
+    default: return "?";
+    }
+}
+
+// Shows the source of `node` in the panel. Only `check` is a defined node
+// with a ciph body; the rest stand in for native instructions.
+void
+show_node_source(ciph::studio::SourcePanel& panel, std::map<int, std::string>& sources, int node) {
+    if (auto it = sources.find(node); it != sources.end()) {
+        panel.show(node_name(node), it->second);
+    } else if (node == 0) {
+        panel.show_message("Select a node to see its source.");
+    } else {
+        panel.show_message(std::string(node_name(node)) + " is a native node and has no ciph source.");
+    }
+}
+
 void
 draw_sample_graph(bool first_frame) {
-    enum Node { inputs = 1, check, div, ne, result };
     enum Pin {
         in_a = 1, in_b, in_d,
         check_b, check_out,
@@ -152,6 +183,12 @@ main(int argc, char* argv[]) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+    ciph::studio::SourcePanel source_panel;
+    std::map<int, std::string> sources = {
+        {check, "fn check() {\n    let c = 2 * 21\n    return c\n}\n"},
+    };
+    int shown_node = 0;
+
     bool first_frame = true;
     long frame = 0;
     while (!glfwWindowShouldClose(window) && (frame_limit < 0 || frame < frame_limit)) {
@@ -161,14 +198,43 @@ main(int argc, char* argv[]) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::DockSpaceOverViewport();
+        const ImGuiID dockspace = ImGui::DockSpaceOverViewport();
+        if (first_frame) {
+            // Default layout, unless imgui.ini already restored one.
+            const ImGuiDockNode* root = ImGui::DockBuilderGetNode(dockspace);
+            if (root != nullptr && !root->IsSplitNode() && root->Windows.Size == 0) {
+                ImGuiID left = 0;
+                ImGuiID right = 0;
+                ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Right, 0.35f, &right, &left);
+                ImGui::DockBuilderDockWindow("Graph", left);
+                ImGui::DockBuilderDockWindow("Node source", right);
+                ImGui::DockBuilderFinish(dockspace);
+            }
+        }
 
         ImGui::Begin("Graph");
         ImNodes::BeginNodeEditor();
         draw_sample_graph(first_frame);
         ImNodes::MiniMap(0.15f, ImNodesMiniMapLocation_BottomRight);
         ImNodes::EndNodeEditor();
+        if (first_frame) {
+            ImNodes::SelectNode(check);
+        }
+        int selected_node = 0;
+        if (ImNodes::NumSelectedNodes() == 1) {
+            ImNodes::GetSelectedNodes(&selected_node);
+        }
         ImGui::End();
+
+        if (selected_node != shown_node) {
+            // Keep edits made to the node we are leaving.
+            if (source_panel.has_source()) {
+                sources[shown_node] = source_panel.text();
+            }
+            show_node_source(source_panel, sources, selected_node);
+            shown_node = selected_node;
+        }
+        source_panel.draw();
 
         ImGui::Render();
 
