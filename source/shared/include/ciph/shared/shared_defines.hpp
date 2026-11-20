@@ -85,6 +85,7 @@ const std::unordered_map<def, std::string> mnemonics = {
 	{def::JLT, "JLT"},
 	{def::CMP, "CMP"},
 	{def::RET, "RET"},
+	{def::HALT, "HALT"},
 	{def::NOP, "NOP"}
 };
 

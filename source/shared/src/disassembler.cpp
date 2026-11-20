@@ -10,6 +10,7 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
     std::string result = fmt::format("{} ", instruction::mnemonics.at(instr));
     switch (instr)
     {
+        case instruction::def::JMP:
         case instruction::def::JLT:
         case instruction::def::PSH_LIT:
             result += dissassembleNumericLiteral(program_count);

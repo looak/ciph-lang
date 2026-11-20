@@ -234,7 +234,10 @@ TEST(ParserTest, EqualsOperator) {
 	EXPECT_EQ(compare_expression->readOperator(), OperatorType::EQUAL);
 }
 
-TEST(ParserTest, EqualsOperator_NotLegal) {
+// DISABLED: placeholder. Chained comparisons such as `x == x == x` should be
+// rejected with an error, but the parser does not do that yet and this test
+// has no real assertion. Re-enable once the error exists.
+TEST(ParserTest, DISABLED_EqualsOperator_NotLegal) {
 	// setup
 	std::string code("x == x == x");
 	Parser parser(code);

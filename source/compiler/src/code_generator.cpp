@@ -21,8 +21,12 @@ CodeGenerator::generateCode() {
     
     
     emit(instruction::def::JMP);
-    uint16_t main_addrs = 1;
-    encode(main_addrs); // placeholder for address
+    encode(0x0000); // placeholder for address, patched below
+
+    // Main starts right after the jump. This only holds while function bodies
+    // are not generated; once they are, main starts after them and this
+    // address has to be set when the first top-level statement is emitted.
+    uint16_t main_addrs = static_cast<uint16_t>(m_bytecode.size());
     m_functions.emplace("main", FunctionContext{"main", main_addrs});
 
     generateProgram(m_program);
@@ -297,6 +301,7 @@ CodeGenerator::generateCompareOperator( const ASTComparisonExpressionNode* node,
 void
 CodeGenerator::generateNumericLiteral(const ASTNumericLiteralNode* node) {
     emit(instruction::def::PSH_LIT);
+    m_stackSize++; // one value pushed
     // 2 byte integer
     int16_t value = node->readValue();
     encode(value);

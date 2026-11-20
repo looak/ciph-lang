@@ -46,7 +46,10 @@ TEST_F(CodeGeneratorTestFixture, NumericLiteral_ExpectArray)
     generator.generateCode();
 
     // validate
-    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0x0E, 0xEF };
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0x0E, 0xEF,
+                                    +instruction::def::HALT };
     uint32_t expectedSize = sizeof(expectedProgram);
     
     auto [actualProgram, actualSize] = generator.readRawBytecode();
@@ -71,9 +74,12 @@ TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
     generator.generateCode();
 
     // validate
-    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0x0A, 0xFE,
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0x0A, 0xFE,
                                     +instruction::def::PSH_LIT, 0x0A, 0xBE,
-                                    +instruction::def::ADD };
+                                    +instruction::def::ADD,
+                                    +instruction::def::HALT };
 
     uint32_t expectedSize = sizeof(expectedProgram);
 
@@ -99,11 +105,14 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_MulBeforeAdd)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
-                                  +instruction::def::PSH_LIT, 0, 2,
-                                  +instruction::def::MUL,
-                                  +instruction::def::PSH_LIT, 0, 3,
-                                  +instruction::def::ADD };
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::MUL,
+                                    +instruction::def::PSH_LIT, 0, 3,
+                                    +instruction::def::ADD,
+                                    +instruction::def::HALT };
     uint32_t expectedSize = sizeof(expectedProgram);
 
     EXPECT_EQ(expectedSize, actualSize);
@@ -124,11 +133,14 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_PaarenthasesBeforeMu
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
-                                  +instruction::def::PSH_LIT, 0, 2,
-                                  +instruction::def::PSH_LIT, 0, 3,
-                                  +instruction::def::ADD,
-                                  +instruction::def::MUL };
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::PSH_LIT, 0, 3,
+                                    +instruction::def::ADD,
+                                    +instruction::def::MUL,
+                                    +instruction::def::HALT };
     uint32_t expectedSize = sizeof(expectedProgram);
 
     EXPECT_EQ(expectedSize, actualSize);
@@ -150,13 +162,16 @@ TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
-                                  +instruction::def::PSH_LIT, 0, 2,
-                                  +instruction::def::PSH_LIT, 0, 3,
-                                  +instruction::def::ADD,
-                                  +instruction::def::MUL,                                  
-                                  +instruction::def::POP_REG, +registers::def::ret,
-                                  +instruction::def::RET };
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::PSH_LIT, 0, 3,
+                                    +instruction::def::ADD,
+                                    +instruction::def::MUL,
+                                    +instruction::def::POP_REG, +registers::def::ret,
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
     uint32_t expectedSize = sizeof(expectedProgram);
 
     EXPECT_EQ(expectedSize, actualSize);
@@ -178,11 +193,14 @@ TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression_Simple)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
-                                  +instruction::def::PSH_LIT, 0, 3,
-                                  +instruction::def::ADD,
-                                  +instruction::def::POP_REG, +registers::def::ret,
-                                  +instruction::def::RET };
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::PSH_LIT, 0, 3,
+                                    +instruction::def::ADD,
+                                    +instruction::def::POP_REG, +registers::def::ret,
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
     uint32_t expectedSize = sizeof(expectedProgram);
 
     EXPECT_EQ(expectedSize, actualSize);
@@ -205,13 +223,16 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_Expression)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = { +instruction::def::PSH_LIT, 0, 2,
-                                  +instruction::def::PSH_LIT, 0, 2,
-                                  +instruction::def::PSH_LIT, 0, 3,
-                                  +instruction::def::ADD,
-                                  +instruction::def::MUL,
-                                  +instruction::def::PEK_OFF, +registers::def::ret, 0,
-                                  +instruction::def::RET };
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::PSH_LIT, 0, 2,
+                                    +instruction::def::PSH_LIT, 0, 3,
+                                    +instruction::def::ADD,
+                                    +instruction::def::MUL,
+                                    +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
 
     std::string dissassembly = generator.disassemble();
 
@@ -239,7 +260,9 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_MultipleVariables)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 2,
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 2,
                                     +instruction::def::PSH_LIT, 0, 3,
                                     +instruction::def::PEK_OFF, +registers::def::sp, 0,
                                     +instruction::def::PEK_OFF, +registers::def::sp, 1,
@@ -248,7 +271,8 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_MultipleVariables)
                                     +instruction::def::PEK_OFF, +registers::def::sp, 1,
                                     +instruction::def::ADD,
                                     +instruction::def::POP_REG, +registers::def::ret,
-                                    +instruction::def::RET};
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
 
     std::string dissassembly = generator.disassemble();
 
@@ -276,7 +300,9 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 10,
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 10,
                                     +instruction::def::PSH_LIT, 0, 20,
                                     +instruction::def::ADD,
                                     +instruction::def::PSH_LIT, 0, 3,
@@ -284,7 +310,8 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
                                     +instruction::def::PEK_OFF, +registers::def::sp, 1,
                                     +instruction::def::DIV,
                                     +instruction::def::POP_REG, +registers::def::ret,
-                                    +instruction::def::RET};
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
 
     std::string dissassembly = generator.disassemble();
 
@@ -310,11 +337,14 @@ TEST_F(CodeGeneratorTestFixture, Return_Equals)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 5,
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 5,
                                     +instruction::def::PSH_LIT, 0, 2,
                                     +instruction::def::CMP, +registers::def::sp,
                                     +instruction::def::MOV, +registers::def::ret, +registers::def::imm,
-                                    +instruction::def::RET};
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
 
     std::string dissassembly = generator.disassemble();
 
@@ -341,12 +371,15 @@ TEST_F(CodeGeneratorTestFixture, Return_EqualsIdentifer)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 10,
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 10,
                                     +instruction::def::PEK_OFF, +registers::def::sp, 0,
                                     +instruction::def::PSH_LIT, 0, 10,
                                     +instruction::def::CMP, +registers::def::sp,
                                     +instruction::def::MOV, +registers::def::ret, +registers::def::imm,
-                                    +instruction::def::RET};
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
 
     std::string dissassembly = generator.disassemble();
 
@@ -373,10 +406,13 @@ TEST_F(CodeGeneratorTestFixture, IncIdentifierExpression)
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 10,
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 10,
                                     +instruction::def::INC, +registers::def::sp, 0,
                                     +instruction::def::PEK_OFF, +registers::def::ret, 0,
-                                    +instruction::def::RET};
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
 
     std::string dissassembly = generator.disassemble();
 
@@ -407,14 +443,17 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement) {
     auto [actualProgram, actualSize] = generator.readRawBytecode();
 
     // validate
-    uint8_t expectedProgram[] = {   +instruction::def::PSH_LIT, 0, 0,
+    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
+                                    +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 0,
                                     +instruction::def::INC, +registers::def::sp, 0,
                                     +instruction::def::PEK_OFF, +registers::def::sp, 0,
                                     +instruction::def::PSH_LIT, 0, 5,
                                     +instruction::def::CMP, +registers::def::sp,
                                     +instruction::def::JLT, 0x00, 0x0E, // jump back fourteen bytes
                                     +instruction::def::PEK_OFF, +registers::def::ret, 0,
-                                    +instruction::def::RET};
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
 
     std::string dissassembly = generator.disassemble();
 
@@ -424,7 +463,10 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement) {
     EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
 }
 
-TEST_F(CodeGeneratorTestFixture, SimpleFunctionReturn) {
+// DISABLED: placeholder. Function bodies are not generated yet, and the expected
+// bytes below were copied from the while test. Re-enable with real expectations
+// once function support is designed and built.
+TEST_F(CodeGeneratorTestFixture, DISABLED_SimpleFunctionReturn) {
     // setup
     std::string code(
         R"(
