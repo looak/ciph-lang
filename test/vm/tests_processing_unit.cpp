@@ -195,3 +195,55 @@ TEST(ProcessingUnitTest, While) {
     uint16_t result = testProcessingUnit(program, sizeof(program));
     EXPECT_EQ(result, 10);
 }
+
+TEST(ProcessingUnitTest, Jump_SkipsToAddressFromProgramStart) {
+    // The jump at address 0 targets address 9, skipping the first return.
+    uint8_t program[] = {   +instruction::def::JMP, 0x00, 0x09,
+                            +instruction::def::PSH_LIT, 0, 1,
+                            +instruction::def::POP_REG, +registers::def::ret,
+                            +instruction::def::RET,
+                            +instruction::def::PSH_LIT, 0, 2,
+                            +instruction::def::POP_REG, +registers::def::ret,
+                            +instruction::def::RET
+                            };
+
+    uint16_t result = testProcessingUnit(program, sizeof(program));
+    EXPECT_EQ(result, 2);
+}
+
+TEST(ProcessingUnitTest, Halt_StopsWithoutReturning) {
+    // HALT ends the program; the RET after it must never run.
+    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 7,
+                            +instruction::def::POP_REG, +registers::def::ret,
+                            +instruction::def::HALT,
+                            +instruction::def::RET
+                            };
+
+    ProcessingUnit unit;
+    unit.load_program(program, sizeof(program));
+    int16_t result = unit.execute();
+
+    EXPECT_EQ(result, 0); // no RET ran, so no return value was produced
+    EXPECT_EQ(unit.registries()[+registers::def::ret], 7);
+}
+
+TEST(ProcessingUnitTest, CompilerLayout_JumpToMainThenWhile) {
+    // What the compiler emits today for:
+    //   let i = 0
+    //   while (i < 5) { i++ }
+    //   return i
+    uint8_t program[] = {   +instruction::def::JMP, 0x00, 0x03,
+                            +instruction::def::PSH_LIT, 0, 0,
+                            +instruction::def::INC, +registers::def::sp, 0,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                            +instruction::def::PSH_LIT, 0, 5,
+                            +instruction::def::CMP, +registers::def::sp,
+                            +instruction::def::JLT, 0x00, 0x0E,
+                            +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                            +instruction::def::RET,
+                            +instruction::def::HALT
+                            };
+
+    uint16_t result = testProcessingUnit(program, sizeof(program));
+    EXPECT_EQ(result, 5);
+}

@@ -243,3 +243,20 @@ instruction::jump_lt_handler(ExecutionContext& context) {
         pc -= value;
     }
 }
+
+void
+instruction::jump_handler(ExecutionContext& context) {
+    uint16_t& pc = context.registry[+registers::def::pc];
+    uint16_t address = static_cast<uint16_t>(read_word(context.bytecode, ++pc));
+
+    // The address counts from the start of the program, which is loaded at bp.
+    // The execute loop increments pc after every handler, so land one byte
+    // before the target.
+    pc = static_cast<uint16_t>(context.registry[+registers::def::bp] + address - 1);
+}
+
+void
+instruction::halt_handler(ExecutionContext&) {
+    // Nothing to do: the execute loop stops when it sees HALT. Unlike RET it
+    // leaves the return value and the stack untouched.
+}
