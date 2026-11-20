@@ -25,7 +25,7 @@ Each library keeps its public headers in `include/ciph/<lib>/`. Include them as
 ## Building
 
 You need CMake 3.28 or newer, Ninja, and a C++20 compiler (GCC, Clang or
-MSVC). Dependencies (fmt, GoogleTest and GLFW) come from your system if CMake
+MSVC). Dependencies (fmt, nlohmann/json, GoogleTest and GLFW) come from your system if CMake
 can find them. Otherwise they are downloaded automatically. Dear ImGui,
 imnodes and ImGuiColorTextEdit are always downloaded.
 

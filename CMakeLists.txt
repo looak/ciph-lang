@@ -22,7 +22,7 @@ option(CIPH_BUILD_STUDIO "Build ciph-studio, the node graph editor (needs OpenGL
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 include(CiphProjectSettings) # output layout, build type, warnings target
-include(CiphDependencies)    # fmt, GoogleTest, GLFW, Dear ImGui, imnodes
+include(CiphDependencies)    # fmt, json, GoogleTest, studio UI libraries
 
 # ---- Libraries ----
 

@@ -18,6 +18,21 @@ FetchContent_Declare(fmt
 )
 FetchContent_MakeAvailable(fmt)
 
+# ---- nlohmann/json ----
+#
+# Used for the compiler's debug snapshots (and by ciph-studio to read them).
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_Install OFF CACHE INTERNAL "")
+
+FetchContent_Declare(nlohmann_json
+  URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+  SYSTEM
+  EXCLUDE_FROM_ALL
+  FIND_PACKAGE_ARGS 3.11
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 # ---- GoogleTest ----
 
 if(CIPH_BUILD_TESTS)
