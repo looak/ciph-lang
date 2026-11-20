@@ -45,6 +45,7 @@ if(TARGET ciph::platform)
 
   ciph_add_test(platform_tests
     SOURCES
+      platform/tests_executable_path.cpp
       platform/tests_process.cpp
       platform/tests_windows_command_line.cpp
     DEPENDS

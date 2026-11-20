@@ -2,8 +2,6 @@
 
 #include <imgui.h>
 
-#include <ciph/compiler/lexar_defines.hpp>
-
 namespace ciph::studio {
 
 namespace {
@@ -53,53 +51,33 @@ is_punctuation(ImWchar c) {
 
 } // namespace
 
-const TextEditor::Language*
-ciph_language() {
-    static const TextEditor::Language language = [] {
-        TextEditor::Language lang;
-        lang.name = "ciph";
-        for (const auto& [keyword, token] : s_keywords) {
-            (void)token;
-            lang.keywords.insert(keyword);
-        }
-        lang.isPunctuation = is_punctuation;
-        lang.getIdentifier = get_identifier;
-        lang.getNumber = get_number;
-        return lang;
-    }();
-    return &language;
-}
+SourcePanel::SourcePanel(const std::vector<std::string>& keywords) {
+    m_language.name = "ciph";
+    m_language.keywords.insert(keywords.begin(), keywords.end());
+    m_language.isPunctuation = is_punctuation;
+    m_language.getIdentifier = get_identifier;
+    m_language.getNumber = get_number;
 
-SourcePanel::SourcePanel() {
-    m_editor.SetLanguage(ciph_language());
+    m_editor.SetLanguage(&m_language);
     m_editor.SetTabSize(4);
     m_editor.SetInsertSpacesOnTabs(true);
-    show_message("Select a node to see its source.");
 }
 
 void
-SourcePanel::show(std::string_view title, std::string_view source) {
-    m_title = title;
-    m_editor.SetText(source);
-    m_has_source = true;
-}
-
-void
-SourcePanel::show_message(std::string_view message) {
-    m_message = message;
-    m_has_source = false;
-}
-
-void
-SourcePanel::draw() {
+SourcePanel::draw_editor(std::string_view title) {
     ImGui::Begin("Node source");
-    if (m_has_source) {
-        ImGui::TextUnformatted(m_title.c_str());
-        ImGui::Separator();
-        m_editor.Render("##source");
-    } else {
-        ImGui::TextDisabled("%s", m_message.c_str());
-    }
+    ImGui::TextUnformatted(title.data(), title.data() + title.size());
+    ImGui::Separator();
+    m_editor.Render("##source");
+    ImGui::End();
+}
+
+void
+SourcePanel::draw_message(std::string_view message) {
+    ImGui::Begin("Node source");
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::TextUnformatted(message.data(), message.data() + message.size());
+    ImGui::PopStyleColor();
     ImGui::End();
 }
 

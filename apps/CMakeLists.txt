@@ -12,12 +12,16 @@ target_link_libraries(ciph-vm PRIVATE ciph::vm ciph::compiler fmt::fmt ciph::war
 
 if(CIPH_BUILD_STUDIO)
   add_executable(ciph-studio
+    studio/build_session.cpp
     studio/main.cpp
     studio/source_panel.cpp
   )
+  # The studio starts these as separate programs and expects to find them next
+  # to itself, so make sure they are built whenever it is.
+  add_dependencies(ciph-studio ciph-compiler ciph-vm)
   target_compile_features(ciph-studio PRIVATE cxx_std_20)
   target_link_libraries(ciph-studio PRIVATE
-    ciph::compiler
+    ciph::platform
     imgui::imgui
     imgui::texteditor
     imnodes::imnodes

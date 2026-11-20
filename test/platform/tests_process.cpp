@@ -37,11 +37,12 @@ read_file(const std::filesystem::path& path) {
 
 // Starts the helper; fails the test with the error message if it did not start.
 Process
-start_child(std::vector<std::string> arguments, std::filesystem::path working_directory = {}) {
+start_child(std::vector<std::string> arguments, std::filesystem::path working_directory = {},
+            ConsoleMode console = ConsoleMode::none) {
     auto result = Process::start({.executable = child_path(),
                                   .arguments = std::move(arguments),
                                   .working_directory = std::move(working_directory),
-                                  .console = ConsoleMode::none});
+                                  .console = console});
     if (auto* error = std::get_if<ProcessError>(&result)) {
         // gtest reports an exception thrown by a test as a failure.
         throw std::runtime_error(error->message);
@@ -127,4 +128,10 @@ TEST(ProcessTest, Move_TransfersOwnership) {
     Process third = start_child({"exit", "1"});
     third = std::move(second);
     EXPECT_EQ(third.wait(), 9);
+}
+
+TEST(ProcessTest, NewWindowConsole_RunsChild) {
+    // This is the mode ciph-studio uses to open the VM stepper. A console
+    // window flashes up briefly while this test runs.
+    EXPECT_EQ(start_child({"exit", "5"}, {}, ConsoleMode::new_window).wait(), 5);
 }

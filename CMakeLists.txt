@@ -17,7 +17,15 @@ endif()
 
 option(CIPH_BUILD_TESTS "Build the unit tests" ${PROJECT_IS_TOP_LEVEL})
 option(CIPH_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
-option(CIPH_BUILD_STUDIO "Build ciph-studio, the node graph editor (needs OpenGL)" ${PROJECT_IS_TOP_LEVEL})
+# ciph-studio needs ciph::platform, which is only implemented for Windows.
+set(_ciph_studio_default OFF)
+if(PROJECT_IS_TOP_LEVEL AND WIN32)
+  set(_ciph_studio_default ON)
+endif()
+option(CIPH_BUILD_STUDIO "Build ciph-studio, the node graph editor (Windows only, needs OpenGL)" ${_ciph_studio_default})
+if(CIPH_BUILD_STUDIO AND NOT WIN32)
+  message(FATAL_ERROR "CIPH_BUILD_STUDIO is ON, but ciph-studio can only be built on Windows for now.")
+endif()
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 

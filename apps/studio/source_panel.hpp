@@ -2,36 +2,37 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <TextEditor.h>
 
 namespace ciph::studio {
 
-// Syntax highlighting for ciph source. Keywords come from the compiler's lexer
-// so the two cannot drift apart.
-const TextEditor::Language* ciph_language();
-
-// Docked panel holding a code editor for the body of one node.
+// Docked panel holding a code editor for a node's ciph source.
 class SourcePanel {
 public:
-    SourcePanel();
+    // `keywords` are highlighted as language keywords. The studio gets them
+    // from the compiler at startup; an empty list just means no keyword
+    // colouring.
+    explicit SourcePanel(const std::vector<std::string>& keywords);
 
-    // Replaces the editor contents. `title` names what is being edited.
-    void show(std::string_view title, std::string_view source);
+    // The editor keeps a pointer to m_language, so a SourcePanel must stay
+    // where it is.
+    SourcePanel(const SourcePanel&) = delete;
+    SourcePanel& operator=(const SourcePanel&) = delete;
 
-    // Shows `message` instead of an editor (nothing selected, native node, ...).
-    void show_message(std::string_view message);
-
+    void set_text(std::string_view source) { m_editor.SetText(source); }
     [[nodiscard]] std::string text() const { return m_editor.GetText(); }
-    [[nodiscard]] bool has_source() const { return m_has_source; }
 
-    void draw();
+    // Draws the panel with the editor, under a heading naming what is edited.
+    void draw_editor(std::string_view title);
+
+    // Draws the panel with a message in place of the editor.
+    void draw_message(std::string_view message);
 
 private:
+    TextEditor::Language m_language; // declared before m_editor, which points at it
     TextEditor m_editor;
-    std::string m_title;
-    std::string m_message;
-    bool m_has_source = false;
 };
 
 } // namespace ciph::studio

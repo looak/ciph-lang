@@ -11,7 +11,7 @@ source/
   shared/    ciph::shared    bytecode definitions, disassembler
   compiler/  ciph::compiler  lexer, parser, code generator
   vm/        ciph::vm        instructions, processing unit
-  platform/  ciph::platform  OS specific code: starting processes (Windows only)
+  platform/  ciph::platform  OS specific code: processes, executable path (Windows only)
 apps/
   compiler/  ciph-compiler   executable
   vm/        ciph-vm         executable
@@ -30,9 +30,8 @@ MSVC). Dependencies (fmt, nlohmann/json, GoogleTest and GLFW) come from your sys
 can find them. Otherwise they are downloaded automatically. Dear ImGui,
 imnodes and ImGuiColorTextEdit are always downloaded.
 
-`ciph-studio` needs OpenGL. On Linux, building GLFW from source also needs the
-X11 and Wayland development packages (see the GLFW compile guide). Pass
-`-DCIPH_BUILD_STUDIO=OFF` to skip it.
+`ciph-studio` is only built on Windows for now, because it relies on
+`ciph::platform`. It needs OpenGL. Pass `-DCIPH_BUILD_STUDIO=OFF` to skip it.
 
 ```sh
 cmake --preset dev            # configure -> .build/dev
@@ -54,6 +53,17 @@ On Windows, run MSVC builds from a *Developer PowerShell for VS*. Alternatively,
 open the folder in Visual Studio or VS Code (CMake Tools), which set up the
 environment for you.
 
+## Using the tools
+
+```sh
+ciph-compiler examples/while.ciph -o while.bin   # also writes while.bin.lst
+ciph-vm while.bin                                # step with Enter, "exit" to stop
+ciph-studio                                      # edit, Compile, Run
+```
+
+`ciph-studio` starts `ciph-compiler` and `ciph-vm` as separate programs and
+expects them next to its own executable, which is where the build puts them.
+
 ### Output directories
 
 - `.build/<preset>/` holds generated and intermediate files, including test
@@ -67,7 +77,7 @@ Both directories are git-ignored and safe to delete.
 | Option | Default | |
 |---|---|---|
 | `CIPH_BUILD_TESTS` | `ON` when top-level | build the GoogleTest suites |
-| `CIPH_BUILD_STUDIO` | `ON` when top-level | build `ciph-studio` |
+| `CIPH_BUILD_STUDIO` | `ON` when top-level on Windows | build `ciph-studio` |
 | `CIPH_WARNINGS_AS_ERRORS` | `OFF` | `-Werror` / `/WX` |
 
 ### Installing
