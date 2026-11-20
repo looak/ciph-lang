@@ -55,3 +55,37 @@ if(TARGET ciph::platform)
   )
   add_dependencies(platform_tests process_test_child)
 endif()
+
+# ---- Command line tests ----
+#
+# Run the real executables on files, the way ciph-studio does.
+
+set(_cli_dir "${CMAKE_CURRENT_BINARY_DIR}/cli")
+file(MAKE_DIRECTORY "${_cli_dir}")
+
+add_test(NAME cli.compiler.compiles_example
+  COMMAND ciph-compiler "${PROJECT_SOURCE_DIR}/examples/while.ciph" -o "${_cli_dir}/while.bin"
+)
+set_tests_properties(cli.compiler.compiles_example PROPERTIES FIXTURES_SETUP cli_while_bytecode)
+
+# The stepper waits for Enter between instructions. Under CTest there is no
+# input, so it runs straight through to the result.
+add_test(NAME cli.vm.runs_compiled_example
+  COMMAND ciph-vm "${_cli_dir}/while.bin"
+)
+set_tests_properties(cli.vm.runs_compiled_example PROPERTIES
+  FIXTURES_REQUIRED cli_while_bytecode
+  PASS_REGULAR_EXPRESSION "Program returned: 5"
+)
+
+add_test(NAME cli.compiler.reports_compile_error
+  COMMAND ciph-compiler "${CMAKE_CURRENT_SOURCE_DIR}/cli/missing_identifier.ciph" -o "${_cli_dir}/bad.bin"
+)
+set_tests_properties(cli.compiler.reports_compile_error PROPERTIES
+  PASS_REGULAR_EXPRESSION "missing_identifier.ciph:1:[0-9]+: error: "
+)
+
+add_test(NAME cli.compiler.rejects_missing_arguments COMMAND ciph-compiler)
+set_tests_properties(cli.compiler.rejects_missing_arguments PROPERTIES
+  PASS_REGULAR_EXPRESSION "usage: ciph-compiler"
+)

@@ -9,6 +9,8 @@
 
 #include <fstream>
 #include <iostream>
+#include <iterator>
+#include <vector>
 #include <variant>
 
 #include <ciph/compiler/code_generator.hpp>
@@ -109,10 +111,77 @@ PrintRegisters(ProcessingUnit& pu, int x, int y) {
     gotoxy(x, ++y);
 }
 
+// Reads a whole file as bytes. Returns false if it could not be read.
+bool
+read_bytecode(const char* path, std::vector<uint8_t>& bytecode) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        return false;
+    }
+    bytecode.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    return true;
+}
+
+// Steps through a loaded program, redrawing the disassembly, stack and
+// registers after every instruction. Enter advances; "exit" stops.
 int
-main(int argc, char* argv[]) {
+run_stepper(uint8_t* program, uint16_t psize) {
+    std::string input;
+
+    ProcessingUnit pu;
+    pu.load_program(program, psize);
+    Disassembler disassembler(program, psize);
+    disassembler.disassemble();
 
     bool running = true;
+    while (running) {
+        system("cls");
+
+        PrintProgramAndCurrentCount(pu, disassembler, 5, 2);
+        PrintStack(pu, 32, 2);
+        PrintRegisters(pu, 64, 2);
+        running = pu.step();
+
+        gotoxy(0, 24);
+        std::getline(std::cin, input);
+        if (input == "exit")
+            running = false;
+    }
+
+    system("cls");
+
+    PrintProgramAndCurrentCount(pu, disassembler, 5, 2);
+    PrintStack(pu, 32, 2);
+    PrintRegisters(pu, 64, 2);
+
+    gotoxy(0, 24);
+    fmt::println("Program returned: {}", pu.context().return_value);
+    std::getline(std::cin, input); // wait for user to press enter
+    return 0;
+}
+
+// ciph-vm <bytecode>   steps through a compiled program
+// ciph-vm              reads ciph source typed into the console, compiles it,
+//                      then steps through it
+int
+main(int argc, char* argv[]) {
+    if (argc == 2) {
+        std::vector<uint8_t> bytecode;
+        if (!read_bytecode(argv[1], bytecode)) {
+            fmt::println(stderr, "ciph-vm: could not read '{}'", argv[1]);
+            return 2;
+        }
+        if (bytecode.empty()) {
+            fmt::println(stderr, "ciph-vm: '{}' is empty", argv[1]);
+            return 2;
+        }
+        return run_stepper(bytecode.data(), static_cast<uint16_t>(bytecode.size()));
+    }
+    if (argc > 2) {
+        fmt::println(stderr, "usage: ciph-vm [<bytecode>]");
+        return 2;
+    }
+
     std::string input("return 5 + 5");
 
     std::vector<std::string> input_lines;
@@ -155,34 +224,5 @@ main(int argc, char* argv[]) {
     auto [program, psize] = code_generator.readRawBytecode();
 
 
-    ProcessingUnit pu;
-    pu.load_program(&program[0], psize);
-    Disassembler disassembler(&program[0], psize);
-    disassembler.disassemble();
-
-    running = true;
-    while (running) {
-        system("cls");
-
-        PrintProgramAndCurrentCount(pu, disassembler, 5, 2);
-        PrintStack(pu, 32, 2);
-        PrintRegisters(pu, 64, 2);
-        running = pu.step();
-
-        gotoxy(0, 24);
-        std::getline(std::cin, input);
-        if (input == "exit")
-            running = false;
-    }
-
-    system("cls");
-
-    PrintProgramAndCurrentCount(pu, disassembler, 5, 2);
-    PrintStack(pu, 32, 2);
-    PrintRegisters(pu, 64, 2);
-
-    gotoxy(0, 24);
-    fmt::println("Program returned: {}", pu.context().return_value);
-    std::getline(std::cin, input); // wait for user to press enter
-    return 0;
+    return run_stepper(&program[0], static_cast<uint16_t>(psize));
 }
