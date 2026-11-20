@@ -30,6 +30,11 @@ add_subdirectory(source/shared)   # ciph::shared
 add_subdirectory(source/compiler) # ciph::compiler
 add_subdirectory(source/vm)       # ciph::vm
 
+# Operating system specific code. Only Windows is implemented so far.
+if(WIN32)
+  add_subdirectory(source/platform) # ciph::platform
+endif()
+
 # ---- Executables ----
 
 add_subdirectory(apps)

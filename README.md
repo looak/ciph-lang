@@ -11,11 +11,12 @@ source/
   shared/    ciph::shared    bytecode definitions, disassembler
   compiler/  ciph::compiler  lexer, parser, code generator
   vm/        ciph::vm        instructions, processing unit
+  platform/  ciph::platform  OS specific code: starting processes (Windows only)
 apps/
   compiler/  ciph-compiler   executable
   vm/        ciph-vm         executable
   studio/    ciph-studio     node graph editor (Dear ImGui + imnodes)
-test/        GoogleTest suites (compiler_tests, vm_tests)
+test/        GoogleTest suites (compiler_tests, vm_tests, platform_tests)
 cmake/       project CMake modules
 ```
 

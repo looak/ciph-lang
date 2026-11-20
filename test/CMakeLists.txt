@@ -32,3 +32,26 @@ ciph_add_test(vm_tests
   DEPENDS
     ciph::vm
 )
+
+if(TARGET ciph::platform)
+  # Small program the process tests start as a child. Kept in the build tree
+  # next to the tests; its path is handed to them as a compile definition.
+  add_executable(process_test_child platform/process_test_child.cpp)
+  target_compile_features(process_test_child PRIVATE cxx_std_20)
+  target_link_libraries(process_test_child PRIVATE ciph::warnings)
+  set_target_properties(process_test_child PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>"
+  )
+
+  ciph_add_test(platform_tests
+    SOURCES
+      platform/tests_process.cpp
+      platform/tests_windows_command_line.cpp
+    DEPENDS
+      ciph::platform
+  )
+  target_compile_definitions(platform_tests PRIVATE
+    CIPH_TEST_CHILD_PATH="$<TARGET_FILE:process_test_child>"
+  )
+  add_dependencies(platform_tests process_test_child)
+endif()
