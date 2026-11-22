@@ -1,0 +1,7 @@
+# Keep every text file as LF in the repository and in the working tree, on all
+# platforms. Without this, Windows checkouts get CRLF and the two differ.
+* text=auto eol=lf
+
+# Windows-only scripts keep the line endings their interpreters expect.
+*.bat text eol=crlf
+*.cmd text eol=crlf
