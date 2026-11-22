@@ -8,7 +8,7 @@
 //
 //   <output>       the bytecode, as raw bytes
 //   <output>.lst   a disassembly listing, one instruction per line
-//   <output>.err   only when compiling failed: the error
+//   <output>.err   only when compiling failed: the errors
 //
 // All three are removed before compiling, so what is on disk always belongs
 // to the latest run.
@@ -19,10 +19,11 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
-#include <variant>
+#include <vector>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
@@ -32,6 +33,7 @@
 #include <ciph/compiler/error_defines.hpp>
 #include <ciph/compiler/lexar_defines.hpp>
 #include <ciph/compiler/parser.hpp>
+#include <ciph/compiler/semantic_analyzer.hpp>
 #include <ciph/shared/disassembler.hpp>
 
 using namespace ciph;
@@ -79,6 +81,22 @@ format_error(std::string& out, const std::filesystem::path& source, const Parser
     }
 }
 
+// Writes every error to <output>.err and to the console. Returns the exit
+// code for a failed compile.
+int
+report_errors(const std::filesystem::path& source, const std::filesystem::path& error_path,
+              std::span<const ParserError> errors) {
+    std::string message;
+    for (const ParserError& error : errors) {
+        format_error(message, source, error, 0);
+    }
+
+    std::ofstream error_file(error_path, std::ios::binary);
+    error_file << message;
+    fmt::print(stderr, "{}", message);
+    return exit_compile_error;
+}
+
 // Writes the language's keywords, one per line. ciph-studio reads this for
 // syntax highlighting, so the list has a single owner: the lexer.
 int
@@ -116,16 +134,15 @@ compile(const std::filesystem::path& source_path, const std::filesystem::path& o
     Parser parser(source.str());
     auto parse_result = parser.parse();
     if (!parse_result) {
-        std::string message;
-        format_error(message, source_path, parse_result.error(), 0);
+        return report_errors(source_path, error_path, std::span(&parse_result.error(), 1));
+    }
+    const auto* program = static_cast<const ASTProgramNode*>(*parse_result);
 
-        std::ofstream error_file(error_path, std::ios::binary);
-        error_file << message;
-        fmt::print(stderr, "{}", message);
-        return exit_compile_error;
+    SemanticAnalyzer analyzer(program);
+    if (const std::vector<ParserError> errors = analyzer.analyze(); !errors.empty()) {
+        return report_errors(source_path, error_path, errors);
     }
 
-    const auto* program = static_cast<const ASTProgramNode*>(*parse_result);
     CodeGenerator generator(program);
     generator.generateCode();
     auto [bytecode, size] = generator.readRawBytecode();
