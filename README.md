@@ -9,7 +9,7 @@ machine (`ciph-vm`) that runs it, and a node graph editor (`ciph-studio`).
 ```
 source/
   shared/    ciph::shared    bytecode definitions, disassembler
-  compiler/  ciph::compiler  lexer, parser, code generator
+  compiler/  ciph::compiler  lexer, parser, semantic analyzer, code generator
   vm/        ciph::vm        instructions, processing unit
   platform/  ciph::platform  OS specific code: processes, executable path (Windows only)
 apps/
@@ -22,6 +22,44 @@ cmake/       project CMake modules
 
 Each library keeps its public headers in `include/ciph/<lib>/`. Include them as
 `#include <ciph/compiler/parser.hpp>`.
+
+## The language today
+
+```
+// counts to five
+let i = 0;
+while (i < 5) {
+    i++;
+}
+return i;
+```
+
+- Every value is a 16-bit integer.
+- `let` declares a variable. `return` ends the program with a value.
+- `while` loops. The body runs before the condition is first checked.
+- Expressions use `+ - * /`, parentheses, and the comparisons `==`, `!=`, `<`
+  and `>`.
+- Simple statements end with `;`, including the last one in a block. Blocks
+  (`while`, `fn`) take no `;` after the `}`.
+- `//` starts a comment that runs to the end of the line.
+
+Functions are in progress: `fn name() { ... }` parses, but bodies are not
+compiled yet and there are no parameters.
+
+## How source becomes a running program
+
+```
+source text
+  -> lexer              tokens, each with a line, column and length
+  -> parser             a tree (AST); each node records its tokens
+  -> semantic analyzer  checks the tree (being written)
+  -> code generator     bytecode
+  -> ciph-vm            runs the bytecode
+```
+
+The compiler and the VM are separate programs that pass files to each other.
+The compiler stops at the first syntax error and reports it as
+`<file>:<line>:<column>: error: <what>`.
 
 ## Building
 
