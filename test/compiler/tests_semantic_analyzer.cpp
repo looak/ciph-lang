@@ -139,3 +139,36 @@ TEST(SemanticAnalyzerTest, ErrorPointsAtTheName) {
     EXPECT_EQ(errors[0].position.line, 2);
     EXPECT_EQ(errors[0].position.column, 8);
 }
+
+TEST(SemanticAnalyzerTest, ErrorsAreReportedInSourceOrder) {
+    // Function definitions are checked before the statements around them, so
+    // the redefinition is found before the undeclared x, but comes later in
+    // the source.
+    auto errors = analyze("return x; fn a() { return 1; } fn a() { return 2; }");
+
+    ASSERT_EQ(errors.size(), 2);
+    EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
+    EXPECT_EQ(errors[1].code, ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER);
+}
+
+TEST(SemanticAnalyzerTest, NestedFunctionWithOuterName_IsAnError) {
+    auto errors = analyze("fn f() { fn f() { return 1; } return 2; } return f();");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER);
+}
+
+TEST(SemanticAnalyzerTest, FunctionBodyMayReuseOuterVariableName) {
+    // The body cannot see the outer x, so declaring its own x is not a
+    // redeclaration.
+    auto errors = analyze("let x = 5; fn f() { let x = 1; return x; } return f();");
+
+    EXPECT_TRUE(errors.empty());
+}
+
+TEST(SemanticAnalyzerTest, UndeclaredNameInWhileCondition_IsAnError) {
+    auto errors = analyze("while (y < 5) { } return 0;");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
+}

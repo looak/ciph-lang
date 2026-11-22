@@ -20,9 +20,9 @@ class Token {
 public:
     // `length` is how many characters of source the token covers, starting at
     // `position`. Together they give the token's extent on its line.
-    Token(const std::string& value, TokenType type, Position position, uint32_t length);
-    Token(const OperatorType& value, TokenType type, Position position, uint32_t length);
-    Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position, uint32_t length);
+    Token(const std::string& value, TokenType type, Position position, uint32_t length, uint32_t index);
+    Token(const OperatorType& value, TokenType type, Position position, uint32_t length, uint32_t index);
+    Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position, uint32_t length, uint32_t index);
 
     ~Token() = default;
 
@@ -35,12 +35,14 @@ public:
     Position readPosition() const;
     uint32_t readLength() const;
     bool hasValue() const;
+    uint32_t readIndex() const;
 
 private:
     std::variant<std::string, OperatorType> m_value;
     TokenType m_type;
     Position m_position;
     uint32_t m_length;
+    uint32_t m_index;
 };
 
 class Lexar {
@@ -133,6 +135,7 @@ private:
     std::vector<Token> m_tokens;
 
     bool m_performedAnalysis;
+    uint32_t m_index;
 };
 
 } // namespace ciph

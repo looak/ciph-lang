@@ -51,7 +51,12 @@ struct SourceRange
 	uint32_t first = no_token;
 	uint32_t last = no_token;
 
+	// The token that best stands for the node: a let's or fn's name, a
+	// binary expression's operator. Errors point here. Unset means `first`.
+	uint32_t focus = no_token;
+
 	[[nodiscard]] bool hasTokens() const { return first != no_token; }
+	[[nodiscard]] uint32_t focusToken() const { return focus != no_token ? focus : first; }
 };
 
 class ASTBaseNode

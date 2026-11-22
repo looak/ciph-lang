@@ -365,7 +365,9 @@ Parser::parseLetStatement() {
         return expression;
     }
 
-    return new ASTLetNode(rangeFrom(first), name, static_cast<ASTExpressionNode*>(*expression));
+    auto range = rangeFrom(first);
+    range.focus = token.readIndex();
+    return new ASTLetNode(range, name, static_cast<ASTExpressionNode*>(*expression));
 }
 
 ParseExpect

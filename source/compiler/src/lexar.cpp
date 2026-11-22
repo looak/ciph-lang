@@ -6,25 +6,28 @@
 
 using namespace ciph;
 
-Token::Token(const std::string& value, TokenType type, Position position, uint32_t length)
+Token::Token(const std::string& value, TokenType type, Position position, uint32_t length, uint32_t index)
     : m_value(value)
     , m_type(type)
     , m_position(position)
-    , m_length(length) {
+    , m_length(length)
+    , m_index(index) {
 }
 
-Token::Token(const OperatorType& value, TokenType type, Position position, uint32_t length)
+Token::Token(const OperatorType& value, TokenType type, Position position, uint32_t length, uint32_t index)
     : m_value(value)
     , m_type(type)
     , m_position(position)
-    , m_length(length) {
+    , m_length(length)
+    , m_index(index) {
 }
 
-Token::Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position, uint32_t length)
+Token::Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position, uint32_t length, uint32_t index)
     : m_value(value)
     , m_type(type)
     , m_position(position)
-    , m_length(length) {
+    , m_length(length)
+    , m_index(index) {
 }
 
 Token
@@ -33,6 +36,7 @@ Token::operator=(const Token& other) {
     m_type = other.m_type;
     m_position = other.m_position;
     m_length = other.m_length;
+    m_index = other.m_index;
     return *this;
 }
 
@@ -69,17 +73,24 @@ Token::readLength() const {
     return m_length;
 }
 
+uint32_t
+Token::readIndex() const {
+    return m_index;
+}
+
 Lexar::Lexar(const std::string& input)
     : m_input(input)
     , m_position(0)
     , m_tokens()
-    , m_performedAnalysis(false) {
+    , m_performedAnalysis(false)
+    , m_index(0) {
 }
 
 void
 Lexar::push(std::variant<std::string, OperatorType> value, TokenType type, Position& position, uint32_t length) {
-    m_tokens.emplace_back(value, type, position, length);
+    m_tokens.emplace_back(value, type, position, length, m_index);
     position.column++;
+    m_index++;
 }
 
 void
@@ -275,7 +286,8 @@ Lexar::peek(uint16_t offset) const {
 
 Token
 Lexar::pop() {
-    return m_tokens[m_position++];
+    Token token = m_tokens[m_position++];
+    return token;
 }
 
 char
