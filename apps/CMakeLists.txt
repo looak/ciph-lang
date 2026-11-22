@@ -19,7 +19,7 @@ if(CIPH_BUILD_STUDIO)
   # The studio starts these as separate programs and expects to find them next
   # to itself, so make sure they are built whenever it is.
   add_dependencies(ciph-studio ciph-compiler ciph-vm)
-  target_compile_features(ciph-studio PRIVATE cxx_std_20)
+  target_compile_features(ciph-studio PRIVATE cxx_std_23)
   target_link_libraries(ciph-studio PRIVATE
     ciph::platform
     imgui::imgui

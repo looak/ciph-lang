@@ -70,7 +70,7 @@ function(ciph_add_library name)
       FILES ${arg_HEADERS}
   )
 
-  target_compile_features(${target} PUBLIC cxx_std_20)
+  target_compile_features(${target} PUBLIC cxx_std_23)
   set_target_properties(${target} PROPERTIES CXX_EXTENSIONS OFF)
 
   target_link_libraries(${target}
