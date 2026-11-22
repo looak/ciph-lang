@@ -84,3 +84,58 @@ TEST(SemanticAnalyzerTest, CallBeforeDefinition_IsAllowed) {
 
     EXPECT_TRUE(errors.empty());
 }
+
+TEST(SemanticAnalyzerTest, CallToUnknownFunction_IsAnError) {
+    auto errors = analyze("return nope();");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
+}
+
+TEST(SemanticAnalyzerTest, RedefinedFunction_IsAnError) {
+    auto errors = analyze("fn a() { return 1; } fn a() { return 2; } return a();");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER);
+}
+
+TEST(SemanticAnalyzerTest, FunctionBodyCannotSeeOuterVariables) {
+    auto errors = analyze("let x = 5; fn f() { return x; } return f();");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
+}
+
+TEST(SemanticAnalyzerTest, FunctionCanCallItself) {
+    auto errors = analyze("fn f() { return f(); } return f();");
+
+    EXPECT_TRUE(errors.empty());
+}
+
+TEST(SemanticAnalyzerTest, FunctionEndsWithItsBlock) {
+    auto errors = analyze("let i = 0; while (i < 1) { fn g() { return 1; } i++; } return g();");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
+}
+
+TEST(SemanticAnalyzerTest, FunctionsAndVariablesHaveSeparateNames) {
+    auto errors = analyze("let f = 1; fn f() { return 2; } return f + f();");
+
+    EXPECT_TRUE(errors.empty());
+}
+
+TEST(SemanticAnalyzerTest, LetCannotUseItsOwnName) {
+    auto errors = analyze("let x = x; return x;");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
+}
+
+TEST(SemanticAnalyzerTest, ErrorPointsAtTheName) {
+    auto errors = analyze("let x = 5;\nreturn y;");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].position.line, 2);
+    EXPECT_EQ(errors[0].position.column, 8);
+}
