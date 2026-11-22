@@ -6,22 +6,25 @@
 
 using namespace ciph;
 
-Token::Token(const std::string& value, TokenType type, Position position)
+Token::Token(const std::string& value, TokenType type, Position position, uint32_t length)
     : m_value(value)
     , m_type(type)
-    , m_position(position) {
+    , m_position(position)
+    , m_length(length) {
 }
 
-Token::Token(const OperatorType& value, TokenType type, Position position)
+Token::Token(const OperatorType& value, TokenType type, Position position, uint32_t length)
     : m_value(value)
     , m_type(type)
-    , m_position(position) {
+    , m_position(position)
+    , m_length(length) {
 }
 
-Token::Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position)
+Token::Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position, uint32_t length)
     : m_value(value)
     , m_type(type)
-    , m_position(position) {
+    , m_position(position)
+    , m_length(length) {
 }
 
 Token
@@ -29,6 +32,7 @@ Token::operator=(const Token& other) {
     m_value = other.m_value;
     m_type = other.m_type;
     m_position = other.m_position;
+    m_length = other.m_length;
     return *this;
 }
 
@@ -60,6 +64,11 @@ Token::readPosition() const {
     return m_position;
 }
 
+uint32_t
+Token::readLength() const {
+    return m_length;
+}
+
 Lexar::Lexar(const std::string& input)
     : m_input(input)
     , m_position(0)
@@ -68,8 +77,8 @@ Lexar::Lexar(const std::string& input)
 }
 
 void
-Lexar::push(std::variant<std::string, OperatorType> value, TokenType type, Position& position) {
-    m_tokens.emplace_back(value, type, position);
+Lexar::push(std::variant<std::string, OperatorType> value, TokenType type, Position& position, uint32_t length) {
+    m_tokens.emplace_back(value, type, position, length);
     position.column++;
 }
 
@@ -121,47 +130,47 @@ Lexar::lex() {
         skipWhiteSpaces(cursorPosition);
         char cursor = popNextChar();
         if (cursor == ';') {
-            push(";", TokenType::SEMICOLON, cursorPosition);
+            push(";", TokenType::SEMICOLON, cursorPosition, 1);
             continue;
         }
         else if (cursor == ',') {
-            push(",", TokenType::COMMA, cursorPosition);
+            push(",", TokenType::COMMA, cursorPosition, 1);
             continue;
         }
         else if (cursor == ':') {
-            push(":", TokenType::COLON, cursorPosition);
+            push(":", TokenType::COLON, cursorPosition, 1);
             continue;
         }
         else if (cursor == '-' && peekNextChar() == '>') {
             // Checked before the operators, which would read '-' and '>'
             // as two tokens.
             popNextChar();
-            push("->", TokenType::ARROW, cursorPosition);
+            push("->", TokenType::ARROW, cursorPosition, 2);
             cursorPosition.column++; // two characters wide
             continue;
         }
         else if (cursor == '(') {
-            push("(", TokenType::OPEN_PAREN, cursorPosition);
+            push("(", TokenType::OPEN_PAREN, cursorPosition, 1);
             continue;
         }
         else if (cursor == ')') {
-            push(")", TokenType::CLOSE_PAREN, cursorPosition);
+            push(")", TokenType::CLOSE_PAREN, cursorPosition, 1);
             continue;
         }
         else if (cursor == '[') {
-            push("[", TokenType::OPEN_BRACKET, cursorPosition);
+            push("[", TokenType::OPEN_BRACKET, cursorPosition, 1);
             continue;
         }
         else if (cursor == ']') {
-            push("]", TokenType::CLOSE_BRACKET, cursorPosition);
+            push("]", TokenType::CLOSE_BRACKET, cursorPosition, 1);
             continue;
         }
         else if (cursor == '{') {
-            push("{", TokenType::OPEN_BRACE, cursorPosition);
+            push("{", TokenType::OPEN_BRACE, cursorPosition, 1);
             continue;
         }
         else if (cursor == '}') {
-            push("}", TokenType::CLOSE_BRACE, cursorPosition);
+            push("}", TokenType::CLOSE_BRACE, cursorPosition, 1);
             continue;
         }
         else if (cursor == '\0') // eof
@@ -186,7 +195,7 @@ Lexar::lex() {
             // pointing the user to the beginning of the digit.
             uint32_t difference = cursorPosition.column - start;
             cursorPosition.column -= difference;
-            push(value, type, cursorPosition);
+            push(value, type, cursorPosition, static_cast<uint32_t>(value.size()));
             cursorPosition.column += difference;
             continue;
         }
@@ -216,7 +225,7 @@ Lexar::lex() {
             // pointing the user to the beginning of the digit.
             uint32_t difference = cursorPosition.column - start;
             cursorPosition.column -= difference;
-            push(value, type, cursorPosition);
+            push(value, type, cursorPosition, static_cast<uint32_t>(value.size()));
             cursorPosition.column += difference;
             
 
@@ -234,7 +243,7 @@ Lexar::lex() {
     // reset position, we'll reuse this variable when we pop & peek the tokens in our vector.
     m_position = 0;
     m_performedAnalysis = true;
-    push("eof", TokenType::END_OF_FILE, cursorPosition);
+    push("eof", TokenType::END_OF_FILE, cursorPosition, 0);
     return {true, ErrorCode::NO_ERR};
 }
 
@@ -301,15 +310,16 @@ Lexar::identifyOperator(char cursor, Position& cursorPos) {
             char peek = peekNextChar();
 
             if (isOperator(peek) == false) {
-                push(op.second[0].second, TokenType::OPERATOR, cursorPos);
+                push(op.second[0].second, TokenType::OPERATOR, cursorPos, 1);
                 return true;
             }
 
             for (auto& sub_op : op.second) {
                 if (sub_op.first == peek) {
                     popNextChar();
+                    // The token starts at the first of its two characters.
+                    push(sub_op.second, TokenType::OPERATOR, cursorPos, 2);
                     cursorPos.column++;
-                    push(sub_op.second, TokenType::OPERATOR, cursorPos);
                     return true;
                 }
             }

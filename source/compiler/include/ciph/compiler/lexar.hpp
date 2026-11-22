@@ -18,9 +18,11 @@ struct Position
 
 class Token {
 public:
-    Token(const std::string& value, TokenType type, Position position);
-    Token(const OperatorType& value, TokenType type, Position position);
-    Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position);
+    // `length` is how many characters of source the token covers, starting at
+    // `position`. Together they give the token's extent on its line.
+    Token(const std::string& value, TokenType type, Position position, uint32_t length);
+    Token(const OperatorType& value, TokenType type, Position position, uint32_t length);
+    Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position, uint32_t length);
 
     ~Token() = default;
 
@@ -31,12 +33,14 @@ public:
     OperatorType readOperator() const;
     TokenType readType() const;
     Position readPosition() const;
+    uint32_t readLength() const;
     bool hasValue() const;
 
 private:
     std::variant<std::string, OperatorType> m_value;
     TokenType m_type;
     Position m_position;
+    uint32_t m_length;
 };
 
 class Lexar {
@@ -104,8 +108,17 @@ public:
     * @return The token at the specified offset in the token stream. */
     Token peek(uint16_t offset = 0) const;
 
+    // Index, into readTokens(), of the token the next pop() returns. The
+    // parser uses it to record which tokens an AST node was built from.
+    uint32_t nextIndex() const { return m_position; }
+
+    // Every token, in source order, ending with END_OF_FILE. Valid after lex().
+    const std::vector<Token>& readTokens() const { return m_tokens; }
+
 private:
-    void push(std::variant<std::string, OperatorType> value, TokenType type, Position& position);
+    // Adds a token starting at `position` and covering `length` characters,
+    // then moves `position` one column on.
+    void push(std::variant<std::string, OperatorType> value, TokenType type, Position& position, uint32_t length);
     char popNextChar();
     char peekNextChar();
 

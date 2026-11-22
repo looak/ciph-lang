@@ -288,6 +288,36 @@ TEST(LexarTest, WindowsLineEndings_AreWhitespace) {
     EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
 }
 
+TEST(LexarTest, Tokens_KnowTheirColumnAndLength) {
+    // setup:    123456789012345678
+    Lexar lx("let count = 123 <= x;");
+
+    // do
+    auto [success, error] = lx.lex();
+
+    // validate
+    ASSERT_TRUE(success);
+    struct Expected {
+        uint32_t column;
+        uint32_t length;
+    };
+    const Expected expected[] = {
+        {1, 3},  // let
+        {5, 5},  // count
+        {11, 1}, // =
+        {13, 3}, // 123
+        {17, 2}, // <=  starts at its first character
+        {20, 1}, // x
+        {21, 1}, // ;
+        {22, 0}, // end of file
+    };
+    for (const Expected& e : expected) {
+        auto token = lx.pop();
+        EXPECT_EQ(token.readPosition().column, e.column);
+        EXPECT_EQ(token.readLength(), e.length);
+    }
+}
+
 TEST(LexarTest, LineComments_AreSkipped) {
     // setup
     Lexar lx("let // the rest of this line is ignored: return 5 / 2\nx // comment at end of input");
