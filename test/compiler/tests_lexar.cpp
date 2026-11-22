@@ -271,3 +271,19 @@ TEST(LexarTest, FunctionAndScopeAndCall) {
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::END_OF_FILE);
 }
+TEST(LexarTest, WindowsLineEndings_AreWhitespace) {
+    // setup
+    Lexar lx("let x\r\nreturn");
+
+    // do
+    auto [success, error] = lx.lex();
+
+    // validate
+    ASSERT_TRUE(success);
+    EXPECT_EQ(lx.pop().readType(), TokenType::LET);
+    EXPECT_EQ(lx.pop().readType(), TokenType::IDENTIFIER);
+    auto token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::RETURN);
+    EXPECT_EQ(token.readPosition().line, 2u);
+    EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
+}

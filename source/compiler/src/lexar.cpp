@@ -90,6 +90,11 @@ Lexar::skipWhiteSpaces(Position& cursorPos) {
             cursorPos.column++;
             m_position++;
         }
+        else if (m_input[m_position] == '\r') {
+            // Windows line endings are "\r\n"; the '\n' that follows does the
+            // line counting.
+            m_position++;
+        }
         else {
             done = true;
         }
