@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
-#include <variant>
+#include <expected>
 #include <vector>
 
 namespace ciph::platform {
@@ -46,7 +46,7 @@ class Process {
 public:
     // Starts a child process. Returns as soon as it is started, without
     // waiting for it to finish.
-    [[nodiscard]] static std::variant<ProcessError, Process> start(const ProcessOptions& options);
+    [[nodiscard]] static std::expected<Process, ProcessError> start(const ProcessOptions& options);
 
     Process(Process&& other) noexcept;
     Process& operator=(Process&& other) noexcept;

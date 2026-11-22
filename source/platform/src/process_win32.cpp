@@ -71,7 +71,7 @@ as_handle(std::uintptr_t handle) {
 
 } // namespace
 
-std::variant<ProcessError, Process>
+std::expected<Process, ProcessError>
 Process::start(const ProcessOptions& options) {
     const std::string executable = to_utf8(options.executable.native());
 
@@ -109,8 +109,8 @@ Process::start(const ProcessOptions& options) {
                                         working_directory, &startup, &info);
     if (!started) {
         const DWORD code = GetLastError();
-        return ProcessError{"could not start '" + executable + "': " + describe_system_error(code) +
-                            " (Windows error " + std::to_string(code) + ")"};
+        return std::unexpected(ProcessError{"could not start '" + executable + "': " + describe_system_error(code) +
+                                            " (Windows error " + std::to_string(code) + ")"});
     }
 
     // We only ever ask about the process, never its main thread.

@@ -4,7 +4,6 @@
 #include <sstream>
 #include <system_error>
 #include <utility>
-#include <variant>
 
 namespace ciph::studio {
 
@@ -50,8 +49,7 @@ BuildSession::query_keywords() {
     auto result = platform::Process::start({.executable = m_compiler,
                                             .arguments = {"--keywords", keywords_path.string()},
                                             .console = platform::ConsoleMode::none});
-    auto* process = std::get_if<platform::Process>(&result);
-    if (process == nullptr || process->wait() != 0) {
+    if (!result || result->wait() != 0) {
         return {};
     }
 
@@ -85,13 +83,13 @@ BuildSession::compile(std::string_view source) {
     auto result = platform::Process::start({.executable = m_compiler,
                                             .arguments = {m_source_path.string(), "-o", m_bytecode_path.string()},
                                             .console = platform::ConsoleMode::none});
-    if (auto* error = std::get_if<platform::ProcessError>(&result)) {
+    if (!result) {
         m_state = BuildState::failed;
-        m_output = "The compiler did not start: " + error->message;
+        m_output = "The compiler did not start: " + result.error().message;
         return;
     }
 
-    m_compile_process = std::get<platform::Process>(std::move(result));
+    m_compile_process = std::move(*result);
     m_state = BuildState::compiling;
     m_output = "Compiling...";
 }
@@ -141,8 +139,8 @@ BuildSession::run() {
     auto result = platform::Process::start({.executable = m_vm,
                                             .arguments = {m_bytecode_path.string()},
                                             .console = platform::ConsoleMode::new_window});
-    if (auto* error = std::get_if<platform::ProcessError>(&result)) {
-        m_output = "The VM did not start: " + error->message;
+    if (!result) {
+        m_output = "The VM did not start: " + result.error().message;
         return false;
     }
     return true;

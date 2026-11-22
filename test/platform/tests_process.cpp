@@ -43,11 +43,11 @@ start_child(std::vector<std::string> arguments, std::filesystem::path working_di
                                   .arguments = std::move(arguments),
                                   .working_directory = std::move(working_directory),
                                   .console = console});
-    if (auto* error = std::get_if<ProcessError>(&result)) {
+    if (!result) {
         // gtest reports an exception thrown by a test as a failure.
-        throw std::runtime_error(error->message);
+        throw std::runtime_error(result.error().message);
     }
-    return std::get<Process>(std::move(result));
+    return std::move(*result);
 }
 
 } // namespace
@@ -69,8 +69,8 @@ TEST(ProcessTest, Start_MissingExecutable_ReportsWhichAndWhy) {
 
     auto result = Process::start({.executable = missing});
 
-    ASSERT_TRUE(std::holds_alternative<ProcessError>(result));
-    const std::string& message = std::get<ProcessError>(result).message;
+    ASSERT_FALSE(result.has_value());
+    const std::string& message = result.error().message;
     EXPECT_NE(message.find("no_such_program.exe"), std::string::npos) << message;
     EXPECT_NE(message.find("Windows error 2"), std::string::npos) << message;
 }
