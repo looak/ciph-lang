@@ -173,13 +173,13 @@ CodeGenerator::generateReturnStatement(const ASTReturnNode* node) {
 
 void
 CodeGenerator::generateWhileStatement(const ASTWhileNode* node) {
-    uint16_t start = m_bytecode.size();
+    uint16_t start = static_cast<uint16_t>(m_bytecode.size());
 
     generateScope(node);
 
     generateComparisonExpression(node->readCondition(), registers::def::sp);
 
-    uint16_t end = m_bytecode.size();
+    uint16_t end = static_cast<uint16_t>(m_bytecode.size());
     switch (node->readCondition()->readOperator())
     {
     case OperatorType::LESS_THAN:
@@ -260,7 +260,7 @@ CodeGenerator::encodeOperator(OperatorType op) {
 
 void
 CodeGenerator::generateOperatorReg( const ASTBinaryExpressionNode* node, registers::def regA,
-                                    std::optional<registers::def> regB) {
+                                    [[maybe_unused]] std::optional<registers::def> regB) {
     encodeOperator(node->readOperator());
 
     if (regA == registers::def::ret) {
@@ -283,7 +283,7 @@ CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node, std::option
 }
 
 void
-CodeGenerator::generateCompareOperator( const ASTComparisonExpressionNode* node, registers::def regA,
+CodeGenerator::generateCompareOperator( [[maybe_unused]] const ASTComparisonExpressionNode* node, registers::def regA,
                                         std::optional<registers::def> regB) {
     m_bytecode.push_back(static_cast<uint8_t>(instruction::def::CMP));
     encodeRegister(regA);

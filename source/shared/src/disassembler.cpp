@@ -64,7 +64,7 @@ std::string Disassembler::disassembleInstructionWithOptionalReg(size_t& program_
     std::string result = fmt::format("{} ", registers::name.at(reg));
     if (reg != registers::def::sp)
     {
-        fmt::format("{}, {}", result, dissassembleReg(program_count));        
+        result = fmt::format("{}, {}", registers::name.at(reg), dissassembleReg(program_count));
     }
     return result;
 }

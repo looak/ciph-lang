@@ -78,7 +78,7 @@ TEST_F(InstructionsTest, PushHandler)
 
     instruction::handlers[instruction](context);
     int16_t value = peek_word(context.bytecode, registries[+registers::def::sp]);
-	EXPECT_EQ(value, int16_t(0xf00d));
+	EXPECT_EQ(static_cast<uint16_t>(value), 0xf00d);
 }
 
 TEST_F(InstructionsTest, PeekHandler_Reg)
@@ -146,11 +146,10 @@ TEST_F(InstructionsTest, PeekHandler_Offset)
 
 int16_t BinaryExpressionHandlerTest(int16_t a, int16_t b, instruction::def _instr, InstructionsTest* fixture)
 {
-    int16_t offset = 0;
 	ExecutionContext context(fixture->registries, fixture->mem.getMemory());
     uint8_t program[] = {
-        +instruction::def::PSH_LIT, (a >> 8) & u8(0xFF), a & u8(0xFF),
-        +instruction::def::PSH_LIT, (b >> 8) & u8(0xFF), b & u8(0xFF),
+        +instruction::def::PSH_LIT, static_cast<uint8_t>((a >> 8) & 0xFF), static_cast<uint8_t>(a & 0xFF),
+        +instruction::def::PSH_LIT, static_cast<uint8_t>((b >> 8) & 0xFF), static_cast<uint8_t>(b & 0xFF),
         +_instr
     };
 

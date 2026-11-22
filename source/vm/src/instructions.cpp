@@ -195,7 +195,7 @@ instruction::inc_handler(ExecutionContext& context) {
     if (reg == +registers::def::sp) {
         uint8_t offset = context.bytecode[++pc];
         offset *= 2;
-        offset += context.registry[+registers::def::fp] + 2;
+        offset = static_cast<uint8_t>(offset + context.registry[+registers::def::fp] + 2);
         uint16_t offset16 = static_cast<uint16_t>(offset);
         int16_t value = stack_read_at_offset(context.bytecode, offset16);
         value++;
@@ -213,7 +213,7 @@ instruction::dec_handler(ExecutionContext& context) {
     if (reg == +registers::def::sp) {
         uint8_t offset = context.bytecode[++pc];
         offset *= 2;
-        offset += context.registry[+registers::def::fp] + 2;
+        offset = static_cast<uint8_t>(offset + context.registry[+registers::def::fp] + 2);
         uint16_t offset16 = static_cast<uint16_t>(offset);
         int16_t value = stack_read_at_offset(context.bytecode, offset16);
         value--;
@@ -225,13 +225,13 @@ instruction::dec_handler(ExecutionContext& context) {
 }
 
 void
-instruction::jump_eq_handler(ExecutionContext& context) {
+instruction::jump_eq_handler(ExecutionContext&) {
 }
 void
-instruction::jump_nz_handler(ExecutionContext& context) {
+instruction::jump_nz_handler(ExecutionContext&) {
 }
 void
-instruction::jump_gt_handler(ExecutionContext& context) {
+instruction::jump_gt_handler(ExecutionContext&) {
 }
 
 void
