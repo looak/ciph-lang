@@ -29,17 +29,18 @@ enum class ErrorCode : uint16_t {
 // can I some how define my errors to expect parameters, such as name of variable or line number?
 const std::unordered_map<ErrorCode, std::string> error_codes_map = {
     {ErrorCode::SYNTAX_ERROR, "e0xef: syntax_error"},
-    {ErrorCode::ERROR_UNKNOWN, "e0xffff: unknown_error"},
-    {ErrorCode::LEXAR_PERFORMED_ANALYSIS, "e0xa001: lexar has already performed an analysis"},
-    {ErrorCode::LEXAR_UNKNOWN_CHARACTER, "e0xa002: unsupported character in input"},
     {ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, "e0xe001: parenthesis missmatch"},
     {ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, "e0xe002: brace missmatch"},
-    {ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, "e0xe002: expected identifier"},
-    {ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR, "e0xe003: expected operator"},
-    {ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, "e0xe004: expected expression"},
+    {ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, "e0xe003: expected identifier"},
+    {ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR, "e0xe004: expected operator"},
+    {ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, "e0xe005: expected expression"},
     {ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON, "e0xe006: expected semicolon"},
+    {ErrorCode::SYNTAX_ERROR_EXPECTED_RETURN_STATEMENT, "e0xe101: expected return statement"},
     {ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER, "e0xe201: undeclared identifier"},
-    {ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, "e0xe202: redeclared identifier"}};
+    {ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, "e0xe202: redeclared identifier"},
+    {ErrorCode::LEXAR_PERFORMED_ANALYSIS, "e0xa001: lexar has already performed an analysis"},
+    {ErrorCode::LEXAR_UNKNOWN_CHARACTER, "e0xa002: unsupported character in input"},
+    {ErrorCode::ERROR_UNKNOWN, "e0xffff: unknown_error"}};
 
 
 // struct ErrorReport {
