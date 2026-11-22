@@ -73,7 +73,7 @@ imnodes and ImGuiColorTextEdit are always downloaded.
 
 ```sh
 cmake --preset dev            # configure -> .build/dev
-cmake --build --preset dev    # build     -> dist/dev/Debug
+cmake --build --preset dev    # build     -> dist/Debug
 ctest --preset dev            # run the tests
 ```
 
@@ -106,7 +106,8 @@ expects them next to its own executable, which is where the build puts them.
 
 - `.build/<preset>/` holds generated and intermediate files, including test
   binaries.
-- `dist/<preset>/<Config>/` holds the final executables.
+- `dist/<Config>/` holds the final executables. All presets share it, so
+  building with another preset replaces them.
 
 Both directories are git-ignored and safe to delete.
 

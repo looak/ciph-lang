@@ -8,7 +8,7 @@
       "generator": "Ninja Multi-Config",
       "binaryDir": "${sourceDir}/.build/${presetName}",
       "cacheVariables": {
-        "CIPH_DIST_DIR": "${sourceDir}/dist/${presetName}"
+        "CIPH_DIST_DIR": "${sourceDir}/dist"
       }
     },
     {

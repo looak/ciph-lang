@@ -11,7 +11,7 @@ endif()
 # ---- Output layout ----
 #
 #   .build/<preset>/            configure + intermediate files (CMake binary dir)
-#   dist/<preset>/<Config>      final executables
+#   dist/<Config>               final executables
 #
 # Only applied when ciph-lang is the top-level project, so it never writes into
 # the source tree of a project that consumes it via add_subdirectory/FetchContent.
