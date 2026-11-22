@@ -20,7 +20,7 @@ analyze(const std::string& code) {
         return {};
     }
 
-    SemanticAnalyzer analyzer(static_cast<const ASTProgramNode*>(*parser_result));
+    SemanticAnalyzer analyzer(static_cast<const ASTProgramNode*>(*parser_result), parser.readTokens());
     return analyzer.analyze();
 }
 
@@ -32,57 +32,54 @@ TEST(SemanticAnalyzerTest, ValidProgram_NoErrors) {
     EXPECT_TRUE(errors.empty());
 }
 
-// The tests below describe the first rules. Remove DISABLED_ from each one as
-// the rule it covers is implemented.
-
-TEST(SemanticAnalyzerTest, DISABLED_UndeclaredIdentifier_IsAnError) {
+TEST(SemanticAnalyzerTest, UndeclaredIdentifier_IsAnError) {
     auto errors = analyze("return x;");
 
     ASSERT_EQ(errors.size(), 1);
     EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
 }
 
-TEST(SemanticAnalyzerTest, DISABLED_UseBeforeDeclaration_IsAnError) {
+TEST(SemanticAnalyzerTest, UseBeforeDeclaration_IsAnError) {
     auto errors = analyze("let y = x; let x = 5; return y;");
 
     ASSERT_EQ(errors.size(), 1);
     EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
 }
 
-TEST(SemanticAnalyzerTest, DISABLED_RedeclaredIdentifier_IsAnError) {
+TEST(SemanticAnalyzerTest, RedeclaredIdentifier_IsAnError) {
     auto errors = analyze("let x = 5; let x = 6; return x;");
 
     ASSERT_EQ(errors.size(), 1);
     EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER);
 }
 
-TEST(SemanticAnalyzerTest, DISABLED_RedeclaredInNestedBlock_IsAnError) {
+TEST(SemanticAnalyzerTest, RedeclaredInNestedBlock_IsAnError) {
     auto errors = analyze("let x = 0; while (x < 5) { let x = 1; } return x;");
 
     ASSERT_EQ(errors.size(), 1);
     EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER);
 }
 
-TEST(SemanticAnalyzerTest, DISABLED_DeclarationEndsWithItsBlock) {
+TEST(SemanticAnalyzerTest, DeclarationEndsWithItsBlock) {
     auto errors = analyze("let i = 0; while (i < 5) { let inner = 1; i++; } return inner;");
 
     ASSERT_EQ(errors.size(), 1);
     EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
 }
 
-TEST(SemanticAnalyzerTest, DISABLED_SameNameInSiblingBlocks_IsAllowed) {
+TEST(SemanticAnalyzerTest, SameNameInSiblingBlocks_IsAllowed) {
     auto errors = analyze("let i = 0; while (i < 5) { let t = 1; i++; } while (i < 9) { let t = 2; i++; } return i;");
 
     EXPECT_TRUE(errors.empty());
 }
 
-TEST(SemanticAnalyzerTest, DISABLED_AllErrorsAreCollected) {
+TEST(SemanticAnalyzerTest, AllErrorsAreCollected) {
     auto errors = analyze("let x = a; let y = b; return x;");
 
     EXPECT_EQ(errors.size(), 2);
 }
 
-TEST(SemanticAnalyzerTest, DISABLED_CallBeforeDefinition_IsAllowed) {
+TEST(SemanticAnalyzerTest, CallBeforeDefinition_IsAllowed) {
     auto errors = analyze("let x = number(); fn number() { return 42; } return x;");
 
     EXPECT_TRUE(errors.empty());

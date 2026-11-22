@@ -138,7 +138,7 @@ compile(const std::filesystem::path& source_path, const std::filesystem::path& o
     }
     const auto* program = static_cast<const ASTProgramNode*>(*parse_result);
 
-    SemanticAnalyzer analyzer(program);
+    SemanticAnalyzer analyzer(program, parser.readTokens());
     if (const std::vector<ParserError> errors = analyzer.analyze(); !errors.empty()) {
         return report_errors(source_path, error_path, errors);
     }
