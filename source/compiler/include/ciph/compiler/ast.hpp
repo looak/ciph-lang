@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <stack>
 #include <vector>
@@ -30,29 +31,49 @@ enum class ASTNodeType
 	BINARY_EXPRESSION,
 	INC_DEC_EXPRESSION,
 	COMPARISON_EXPRESSION,
-	
+
 	CALL_EXPRESSION,
 
 	END_OF_FILE,
 	UNKNOWN
 };
 
+// The tokens an AST node was built from: indices into the lexer's token list
+// (Lexar::readTokens()), both ends inclusive. A token knows its line, column
+// and length, so a range leads back to the exact source text.
+//
+// A node that was not built from source text, such as one a test creates by
+// hand, has no range: pass SourceRange{}.
+struct SourceRange
+{
+	static constexpr uint32_t no_token = 0xFFFFFFFF;
+
+	uint32_t first = no_token;
+	uint32_t last = no_token;
+
+	[[nodiscard]] bool hasTokens() const { return first != no_token; }
+};
+
 class ASTBaseNode
 {
 public:
-	explicit ASTBaseNode(ASTNodeType type) : m_type(type) {}
+	ASTBaseNode(ASTNodeType type, SourceRange range) : m_type(type), m_range(range) {}
 	virtual ~ASTBaseNode() = default;
 	ASTNodeType readType() const { return m_type; }
+	[[nodiscard]] SourceRange readSourceRange() const { return m_range; }
 
+protected:
+	void setSourceRange(SourceRange range) { m_range = range; }
 
 private:
 	ASTNodeType m_type;
+	SourceRange m_range;
 };
 
 class ASTScopeNode : public ASTBaseNode
 {
 public:
-	explicit ASTScopeNode(ASTNodeType type) : ASTBaseNode(type) {}
+	ASTScopeNode(ASTNodeType type, SourceRange range) : ASTBaseNode(type, range) {}
 	virtual ~ASTScopeNode() override
 	{
 		for (auto& statement : m_statements)
@@ -63,6 +84,10 @@ public:
 	void addStatement(ASTBaseNode* statement) { m_statements.push_back(statement); }
 	const std::vector<ASTBaseNode*>& readStatements() const { return m_statements; }
 
+	// A scope node is created before its statements are parsed, when only its
+	// first token is known. The parser calls this once it reaches the end.
+	void closeSourceRange(uint32_t lastToken) { setSourceRange({readSourceRange().first, lastToken}); }
+
 private:
 	std::vector<ASTBaseNode*> m_statements;
 };
@@ -70,22 +95,22 @@ private:
 class ASTProgramNode : public ASTScopeNode
 {
 public:
-	ASTProgramNode() : ASTScopeNode(ASTNodeType::PROGRAM) {}
+	explicit ASTProgramNode(SourceRange range) : ASTScopeNode(ASTNodeType::PROGRAM, range) {}
 	~ASTProgramNode() final = default;
 };
 
 class ASTExpressionNode : public ASTBaseNode
 {
 public:
-	explicit ASTExpressionNode(ASTNodeType type) : ASTBaseNode(type) {}
+	ASTExpressionNode(ASTNodeType type, SourceRange range) : ASTBaseNode(type, range) {}
 	~ASTExpressionNode() override = default;
 };
 
 class ASTBinaryExpressionNode : public ASTExpressionNode
 {
 public:
-	ASTBinaryExpressionNode(ASTBaseNode* lhs, ASTBaseNode* rhs, OperatorType op) :
-		ASTExpressionNode(ASTNodeType::BINARY_EXPRESSION),
+	ASTBinaryExpressionNode(SourceRange range, ASTBaseNode* lhs, ASTBaseNode* rhs, OperatorType op) :
+		ASTExpressionNode(ASTNodeType::BINARY_EXPRESSION, range),
 		m_left(lhs),
 		m_right(rhs),
 		m_operator(op)
@@ -109,8 +134,8 @@ private:
 class ASTComparisonExpressionNode : public ASTExpressionNode
 {
 public:
-	ASTComparisonExpressionNode(ASTBaseNode* lhs, ASTBaseNode* rhs, OperatorType op) :
-		ASTExpressionNode(ASTNodeType::COMPARISON_EXPRESSION),
+	ASTComparisonExpressionNode(SourceRange range, ASTBaseNode* lhs, ASTBaseNode* rhs, OperatorType op) :
+		ASTExpressionNode(ASTNodeType::COMPARISON_EXPRESSION, range),
 		m_left(lhs),
 		m_right(rhs),
 		m_operator(op)
@@ -133,8 +158,8 @@ private:
 
 class ASTWhileNode : public ASTScopeNode {
 public:
-    explicit ASTWhileNode(ASTComparisonExpressionNode* condition)
-        : ASTScopeNode(ASTNodeType::WHILE)
+    ASTWhileNode(SourceRange range, ASTComparisonExpressionNode* condition)
+        : ASTScopeNode(ASTNodeType::WHILE, range)
         , m_condition(condition) {}
     ~ASTWhileNode() final = default;
 
@@ -150,7 +175,7 @@ private:
 class ASTIncDecNode : public ASTExpressionNode
 {
 public:
-	explicit ASTIncDecNode(bool isIncrement) : ASTExpressionNode(ASTNodeType::INC_DEC_EXPRESSION), m_isIncrement(isIncrement) {}
+	ASTIncDecNode(SourceRange range, bool isIncrement) : ASTExpressionNode(ASTNodeType::INC_DEC_EXPRESSION, range), m_isIncrement(isIncrement) {}
 	~ASTIncDecNode() override = default;
 
 	[[nodiscard]] bool readIsIncrement() const { return m_isIncrement; }
@@ -162,7 +187,7 @@ private:
 class ASTNumericLiteralNode : public ASTExpressionNode
 {
 public:
-	explicit ASTNumericLiteralNode(int16_t value) : ASTExpressionNode(ASTNodeType::NUMERIC_LITERAL), m_value(value) {}
+	ASTNumericLiteralNode(SourceRange range, int16_t value) : ASTExpressionNode(ASTNodeType::NUMERIC_LITERAL, range), m_value(value) {}
 	~ASTNumericLiteralNode() override = default;
 
 	[[nodiscard]] int16_t readValue() const { return m_value; }
@@ -174,10 +199,10 @@ private:
 class ASTIdentifierNode : public ASTExpressionNode
 {
 public:
-	ASTIdentifierNode(const std::string& name, const ASTExpressionNode* op) : ASTExpressionNode(ASTNodeType::IDENTIFIER), m_name(name), m_operator(op) {}
+	ASTIdentifierNode(SourceRange range, const std::string& name, const ASTExpressionNode* op) : ASTExpressionNode(ASTNodeType::IDENTIFIER, range), m_name(name), m_operator(op) {}
 	~ASTIdentifierNode() override = default;
 
-	[[nodiscard]] const std::string& readName() const { return m_name; }	
+	[[nodiscard]] const std::string& readName() const { return m_name; }
 	[[nodiscard]] const ASTExpressionNode* readOperator() const { return m_operator; }
 
 private:
@@ -188,7 +213,7 @@ private:
 class ASTReturnNode : public ASTBaseNode
 {
 public:
-	explicit ASTReturnNode(ASTBaseNode* expression) : ASTBaseNode(ASTNodeType::RETURN), m_expression(expression) {}
+	ASTReturnNode(SourceRange range, ASTBaseNode* expression) : ASTBaseNode(ASTNodeType::RETURN, range), m_expression(expression) {}
 	~ASTReturnNode() override = default;
 
 	[[nodiscard]] ASTBaseNode* editExpression() { return m_expression; }
@@ -201,10 +226,10 @@ private:
 class ASTLetNode : public ASTBaseNode
 {
 public:
-	ASTLetNode(const std::string& identifier, ASTExpressionNode* expression) 
-		: ASTBaseNode(ASTNodeType::LET)
+	ASTLetNode(SourceRange range, const std::string& identifier, ASTExpressionNode* expression)
+		: ASTBaseNode(ASTNodeType::LET, range)
 		, m_identifier(identifier)
-		, m_expression(expression) 
+		, m_expression(expression)
 		{}
 	~ASTLetNode() override = default;
 
@@ -220,8 +245,8 @@ class ASTFunctionNode : public ASTScopeNode {
 private:
 	std::string m_name;
 public:
-	ASTFunctionNode(std::string name)
-		: ASTScopeNode(ASTNodeType::FUNCTION)
+	ASTFunctionNode(SourceRange range, std::string name)
+		: ASTScopeNode(ASTNodeType::FUNCTION, range)
 		, m_name(std::move(name))
 		{}
 	~ASTFunctionNode() final = default;
@@ -236,8 +261,8 @@ class ASTCallNode : public ASTExpressionNode {
 	private:
 		std::string m_functionName;
 	public:
-		ASTCallNode(const std::string& functionName)
-			: ASTExpressionNode(ASTNodeType::CALL_EXPRESSION)
+		ASTCallNode(SourceRange range, const std::string& functionName)
+			: ASTExpressionNode(ASTNodeType::CALL_EXPRESSION, range)
 			, m_functionName(functionName)
 			{}
 		~ASTCallNode() override = default;
@@ -249,4 +274,4 @@ class ASTCallNode : public ASTExpressionNode {
 
 };
 
-} // namespace ciph	
+} // namespace ciph

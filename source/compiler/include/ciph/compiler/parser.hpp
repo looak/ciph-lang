@@ -10,6 +10,7 @@ namespace ciph {
 
 class ASTBaseNode;
 class ASTScopeNode;
+struct SourceRange;
 struct ParserError {
     ErrorCode code;
     Position position;
@@ -29,7 +30,14 @@ public:
     ParseExpect parse();
     ParseExpect parseProgram();
 
+    // The tokens the program was parsed from. An AST node's SourceRange holds
+    // indices into this list.
+    const std::vector<Token>& readTokens() const { return m_lexar.readTokens(); }
+
 private:
+    // The range from token `first` to the token most recently popped.
+    SourceRange rangeFrom(uint32_t first) const;
+
     ParseExpect parseStatement();
     // Pops the ';' that ends a simple statement and passes the statement on;
     // `what` names the statement in the error message.

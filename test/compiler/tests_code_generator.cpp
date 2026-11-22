@@ -18,7 +18,7 @@ public:
      
     }
 
-    ASTProgramNode m_program;
+    ASTProgramNode m_program{SourceRange{}}; // built by hand, so no source tokens
 };
 
 bool compareBytecode(const uint8_t* expected, const uint8_t* actual, size_t size)
@@ -36,7 +36,7 @@ bool compareBytecode(const uint8_t* expected, const uint8_t* actual, size_t size
 TEST_F(CodeGeneratorTestFixture, NumericLiteral_ExpectArray)
 {
     // setup
-    ASTNumericLiteralNode* node = new ASTNumericLiteralNode(0x0eef);
+    ASTNumericLiteralNode* node = new ASTNumericLiteralNode(SourceRange{}, 0x0eef);
 
     m_program.addStatement(node);
 
@@ -61,10 +61,10 @@ TEST_F(CodeGeneratorTestFixture, NumericLiteral_ExpectArray)
 TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
 {
     // setup
-    ASTNumericLiteralNode* left = new ASTNumericLiteralNode(0x0AFE);
-    ASTNumericLiteralNode* right = new ASTNumericLiteralNode(0x0ABE);
+    ASTNumericLiteralNode* left = new ASTNumericLiteralNode(SourceRange{}, 0x0AFE);
+    ASTNumericLiteralNode* right = new ASTNumericLiteralNode(SourceRange{}, 0x0ABE);
 
-    ASTBinaryExpressionNode* node = new ASTBinaryExpressionNode(left, right, OperatorType::ADDITION);
+    ASTBinaryExpressionNode* node = new ASTBinaryExpressionNode(SourceRange{}, left, right, OperatorType::ADDITION);
 
     m_program.addStatement(node);
 
