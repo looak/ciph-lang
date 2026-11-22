@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <variant>
+#include <expected>
 
 #include <ciph/compiler/error_defines.hpp>
 #include <ciph/compiler/lexar.hpp>
@@ -19,33 +19,38 @@ struct ParserError {
     std::vector<ParserError> nestedError = {};
 };
 
+using ParseExpect = std::expected<ASTBaseNode*, ParserError>;
+
 class Parser {
 public:
     explicit Parser(const std::string& input);
     ~Parser() = default;
 
-    std::variant<ParserError, ASTBaseNode*> parse();
-    std::variant<ParserError, ASTBaseNode*> parseProgram();
+    ParseExpect parse();
+    ParseExpect parseProgram();
 
 private:
-    std::variant<ParserError, ASTBaseNode*> parseStatement();
-    std::variant<ParserError, ASTBaseNode*> parseLetStatement();
-    std::variant<ParserError, ASTBaseNode*> parseReturnStatement();
-    std::variant<ParserError, ASTBaseNode*> parseAddativeExpression();
-    std::variant<ParserError, ASTBaseNode*> parseMultiplicativeExpression();
-    std::variant<ParserError, ASTBaseNode*> parseIdentifier();
-    std::variant<ParserError, ASTBaseNode*> parsePrimaryExpression();
-    std::variant<ParserError, ASTBaseNode*> parseComparisonExpression();
+    ParseExpect parseStatement();
+    // Pops the ';' that ends a simple statement and passes the statement on;
+    // `what` names the statement in the error message.
+    ParseExpect expectSemicolon(ASTBaseNode* statement, const char* what);
+    ParseExpect parseLetStatement();
+    ParseExpect parseReturnStatement();
+    ParseExpect parseAddativeExpression();
+    ParseExpect parseMultiplicativeExpression();
+    ParseExpect parseIdentifier();
+    ParseExpect parsePrimaryExpression();
+    ParseExpect parseComparisonExpression();
 
-    std::variant<ParserError, ASTBaseNode*> parseWhileStatement();
-    std::variant<ParserError, ASTBaseNode*> parseWhileCondition();
+    ParseExpect parseWhileStatement();
+    ParseExpect parseWhileCondition();
 
-    std::variant<ParserError, ASTBaseNode*> parseFunctionStatement();
-    std::variant<ParserError, ASTBaseNode*> parseFunctionParameters();
-    std::variant<ParserError, ASTBaseNode*> parseFunctionBody();
+    ParseExpect parseFunctionStatement();
+    ParseExpect parseFunctionParameters();
+    ParseExpect parseFunctionBody();
 
     // this assumption that I can reuse scope for while & function bodies might be flawed later...
-    std::variant<ParserError, ASTBaseNode*> parseScopeNode(ASTScopeNode* scopeNode);
+    ParseExpect parseScopeNode(ASTScopeNode* scopeNode);
 
     Lexar m_lexar;
 };

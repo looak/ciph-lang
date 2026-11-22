@@ -204,11 +204,10 @@ main(int argc, char* argv[]) {
     ASTBaseNode* abstract_program = nullptr;
     Parser parser(input);
     auto parse_result = parser.parse();
-    if (auto abstract_program_ptr = std::get_if<ASTBaseNode*>(&parse_result)) {
-        abstract_program = *abstract_program_ptr;
+    if (parse_result) {
+        abstract_program = *parse_result;
     }
     else {
-        auto parse_error = std::get<ParserError>(parse_result);
         // ErrorReport report = {.code = parse_error.code,
         //                       .line = parse_error.position.line,
         //                       .column = parse_error.position.column,

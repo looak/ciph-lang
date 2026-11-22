@@ -9,12 +9,12 @@ using namespace ciph;
 
 TEST(ParserTest, SimpleAddExpression) {
 	// setup
-	std::string code("1 + 2");
+	std::string code("1 + 2;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -28,12 +28,12 @@ TEST(ParserTest, SimpleAddExpression) {
 
 TEST(ParserTest, OrderOfOperations_MulBeforeAdd) {
 	// setup
-	std::string code("2 * 2 + 3");
+	std::string code("2 * 2 + 3;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -52,12 +52,12 @@ TEST(ParserTest, OrderOfOperations_MulBeforeAdd) {
 
 TEST(ParserTest, OrderOfOperations_ParenthaseseBeforeMul) {
 	// setup
-	std::string code("2 * (2 + 3)");
+	std::string code("2 * (2 + 3);");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -76,12 +76,12 @@ TEST(ParserTest, OrderOfOperations_ParenthaseseBeforeMul) {
 
 TEST(ParserTest, ReturnStatement_DefaultNumericNode_ValueZero) {
 	// setup
-	std::string code("return");
+	std::string code("return;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -98,12 +98,12 @@ TEST(ParserTest, ReturnStatement_DefaultNumericNode_ValueZero) {
 
 TEST(ParserTest, ReturnStatement_NumericNodeGivenValue) {
 	// setup
-	std::string code("return 5");
+	std::string code("return 5;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -120,12 +120,12 @@ TEST(ParserTest, ReturnStatement_NumericNodeGivenValue) {
 
 TEST(ParserTest, ReturnStatement_NumericNodeExpression) {
 	// setup
-	std::string code("return 5 + 2");
+	std::string code("return 5 + 2;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -140,12 +140,12 @@ TEST(ParserTest, ReturnStatement_NumericNodeExpression) {
 
 TEST(ParserTest, LetStatement) {
 	// setup
-	std::string code("let x = 5");
+	std::string code("let x = 5;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -160,24 +160,24 @@ TEST(ParserTest, LetStatement) {
 
 TEST(ParserTest, LetStatement_ErrorInExpression) {
 	// setup
-	std::string code("let x 42"); // should produce an error
+	std::string code("let x 42;"); // should produce an error
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto error = std::get<ParserError>(parser_result);
+	auto error = parser_result.error();
 
 	EXPECT_EQ(error.code, ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR);
 }
 
 TEST(ParserTest, LetStatement_Expression) {
 	// setup
-	std::string code("let x = 5 + 5");
+	std::string code("let x = 5 + 5;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -195,13 +195,13 @@ TEST(ParserTest, LetStatement_Expression) {
 
 TEST(ParserTest, IncStatement) {
 	// setup
-	std::string code(R"(let x = 5
-						x++)");
+	std::string code(R"(let x = 5;
+						x++;)");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -217,12 +217,12 @@ TEST(ParserTest, IncStatement) {
 
 TEST(ParserTest, EqualsOperator) {
 	// setup
-	std::string code("x == x");
+	std::string code("x == x;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -239,12 +239,12 @@ TEST(ParserTest, EqualsOperator) {
 // has no real assertion. Re-enable once the error exists.
 TEST(ParserTest, DISABLED_EqualsOperator_NotLegal) {
 	// setup
-	std::string code("x == x == x");
+	std::string code("x == x == x;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	// auto parser_result = parser.parse();
-	// auto program_node = std::get<ASTBaseNode*>(parser_result);
+	// auto program_node = parser_result.value();
 	// ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -255,16 +255,16 @@ TEST(ParserTest, WhileStatement_Legal) {
 	// setup
 	std::string code(
 		R"(
-			let i = 0
+			let i = 0;
 			while (i < 5) {
-				i++
+				i++;
 			}
-			return i)");
+			return i;)");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
-	auto program_node = std::get<ASTBaseNode*>(parser_result);
+	auto program_node = parser_result.value();
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
 	// validate
@@ -279,23 +279,14 @@ TEST(ParserTest, SimpleFunction_ReturnsConstant) {
 	std::string code(
 		R"(
 			fn number() {
-				return 42
+				return 42;
 			}
-			return number())");
+			return number();)");
 	Parser parser(code);
 
 	auto parser_result = parser.parse();
-	ASTProgramNode* program_node = nullptr;
-	try
-	{
-		program_node = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
-	}
-	catch (const std::bad_variant_access& ex)
-	{
-		auto error_result = std::get<ParserError>(parser_result);
-		// fmt::print("Parser error: {}:{}\n", error_result.code, error_result.additionalInfo);
-		FAIL() << "Parser produced an error.";
-	}
+	ASSERT_TRUE(parser_result.has_value()) << "Parser produced an error: " << parser_result.error().additionalInfo;
+	ASTProgramNode* program_node = static_cast<ASTProgramNode*>(parser_result.value());
 
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
 
@@ -306,4 +297,70 @@ TEST(ParserTest, SimpleFunction_ReturnsConstant) {
 	EXPECT_EQ(result->readStatements()[0]->readType(), ASTNodeType::FUNCTION);
 	EXPECT_EQ(result->readStatements()[1]->readType(), ASTNodeType::RETURN);
 	EXPECT_EQ(static_cast<const ASTReturnNode*>(result->readStatements()[1])->readExpression()->readType(), ASTNodeType::CALL_EXPRESSION);
+}
+
+// Simple statements must end with ';', including the last one in a block.
+// Block statements (while, fn) take none; the tests above cover that.
+
+TEST(ParserTest, MissingSemicolon_AfterLet) {
+	Parser parser("let x = 5");
+
+	auto parser_result = parser.parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON);
+}
+
+TEST(ParserTest, MissingSemicolon_AfterReturn) {
+	Parser parser("return 5");
+
+	auto parser_result = parser.parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON);
+}
+
+TEST(ParserTest, MissingSemicolon_AfterExpression) {
+	Parser parser("1 + 2");
+
+	auto parser_result = parser.parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON);
+}
+
+TEST(ParserTest, MissingSemicolon_BetweenStatements) {
+	Parser parser("let x = 5 return x;");
+
+	auto parser_result = parser.parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON);
+}
+
+TEST(ParserTest, MissingSemicolon_LastStatementInBlock) {
+	Parser parser("let i = 0; while (i < 5) { i++ } return i;");
+
+	auto parser_result = parser.parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON);
+}
+
+TEST(ParserTest, MissingSemicolon_InsideFunctionBody) {
+	Parser parser("fn number() { return 42 } return number();");
+
+	auto parser_result = parser.parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON);
+}
+
+TEST(ParserTest, LoneSemicolon_IsAnError) {
+	Parser parser("let x = 5;;");
+
+	auto parser_result = parser.parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
 }

@@ -92,11 +92,11 @@ TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
 TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_MulBeforeAdd)
 {
     // setup    
-    std::string code("2 * 2 + 3");
+    std::string code("2 * 2 + 3;");
     //std::string code("(1 + 2 * 3 + 2) / 3");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -122,10 +122,10 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_MulBeforeAdd)
 TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_PaarenthasesBeforeMul)
 {
     // setup    
-    std::string code("2 * (2 + 3)");    
+    std::string code("2 * (2 + 3);");    
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -150,10 +150,10 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_PaarenthasesBeforeMu
 TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression)
 {
     // setup    
-    std::string code("return 2 * (2 + 3)");
+    std::string code("return 2 * (2 + 3);");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -181,10 +181,10 @@ TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression)
 TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression_Simple)
 {
     // setup    
-    std::string code("return 2 + 3");
+    std::string code("return 2 + 3;");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -210,11 +210,11 @@ TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression_Simple)
 TEST_F(CodeGeneratorTestFixture, LetStatement_Expression)
 {
     // setup    
-    std::string code(R"(let x = 2 * (2 + 3)
-                        return x)");
+    std::string code(R"(let x = 2 * (2 + 3);
+                        return x;)");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -245,13 +245,13 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_Expression)
 TEST_F(CodeGeneratorTestFixture, LetStatement_MultipleVariables)
 {
     // setup    
-    std::string code(R"(let x = 2
-                        let y = 3
-                        let z = x + y
-                        return z + y)");
+    std::string code(R"(let x = 2;
+                        let y = 3;
+                        let z = x + y;
+                        return z + y;)");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -286,12 +286,12 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_MultipleVariables)
 TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
 {
     // setup    
-    std::string code(R"(let x = 10 + 20
-                        let y = 3
-                        return x / y)");
+    std::string code(R"(let x = 10 + 20;
+                        let y = 3;
+                        return x / y;)");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -325,10 +325,10 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
 TEST_F(CodeGeneratorTestFixture, Return_Equals)
 {
     // setup    
-    std::string code("return 5 == 2");
+    std::string code("return 5 == 2;");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -357,12 +357,12 @@ TEST_F(CodeGeneratorTestFixture, Return_Equals)
 TEST_F(CodeGeneratorTestFixture, Return_EqualsIdentifer)
 {
     // setup    
-    std::string code(R"(let x = 10
-                        return x == 10)");
+    std::string code(R"(let x = 10;
+                        return x == 10;)");
     
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -392,12 +392,12 @@ TEST_F(CodeGeneratorTestFixture, Return_EqualsIdentifer)
 TEST_F(CodeGeneratorTestFixture, IncIdentifierExpression)
 {
     // setup    
-    std::string code(R"(let x = 10
-                        x++
-                        return x)");
+    std::string code(R"(let x = 10;
+                        x++;
+                        return x;)");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
 
     // do
@@ -426,14 +426,14 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement) {
     // setup
     std::string code(
         R"(
-			let i = 0
+			let i = 0;
 			while (i < 5) {
-				i++
+				i++;
 			}
-			return i)");
+			return i;)");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
 
     CodeGenerator generator(programNode);
 
@@ -471,12 +471,12 @@ TEST_F(CodeGeneratorTestFixture, DISABLED_SimpleFunctionReturn) {
     std::string code(
         R"(
 			fn number() {
-                return 5+5
+                return 5+5;
             }
-            return number())");
+            return number();)");
     Parser parser(code);
     auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(std::get<ASTBaseNode*>(parser_result));
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
 
     CodeGenerator generator(programNode);
 

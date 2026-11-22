@@ -39,11 +39,11 @@ using ciph::studio::SourcePanel;
 
 // The script the slice starts with: the most involved program the compiler
 // and VM handle today. The loop body runs before the condition is checked.
-const char* const default_script = "let i = 0\n"
+const char* const default_script = "let i = 0;\n"
                                    "while (i < 5) {\n"
-                                   "    i++\n"
+                                   "    i++;\n"
                                    "}\n"
-                                   "return i\n";
+                                   "return i;\n";
 
 // Ids are arbitrary but must be unique per kind (node / pin / link).
 enum Node { node_begin = 1, node_script, node_end };

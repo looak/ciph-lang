@@ -10,59 +10,80 @@ Parser::Parser(const std::string& input)
     : m_lexar(input) {
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parse() {
     auto [success, error_code] = m_lexar.lex();
     if (success == false) {
         ParserError error{.code = error_code, .position = {}, .additionalInfo = "Error while lexing input"};
-        return error;
+        return std::unexpected(error);
     }
 
     return parseProgram();
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseProgram() {
     ASTProgramNode* program = new ASTProgramNode();
     auto token = m_lexar.peek();
 
     while (token.readType() != TokenType::END_OF_FILE) {
-
-        ASTBaseNode* statement = nullptr;
-        auto statement_result = parseStatement();
-        if (auto statement_ptr = std::get_if<ASTBaseNode*>(&statement_result)) {
-            statement = *statement_ptr;
-        }
-        else {
-            return std::get<ParserError>(statement_result);
+        auto statement = parseStatement();
+        if (!statement) {
+            return statement;
         }
 
-        program->addStatement(statement);
+        program->addStatement(*statement);
         token = m_lexar.peek();
     }
     return program;
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseStatement() {
+    // Simple statements end with a semicolon; block statements (while, fn) do
+    // not. and_then only runs the semicolon check when the statement itself
+    // parsed, otherwise the statement's own error is passed through.
+    auto semicolonAfter = [this](const char* what) {
+        return [this, what](ASTBaseNode* statement) { return expectSemicolon(statement, what); };
+    };
+
     auto token = m_lexar.peek();
     switch (token.readType()) {
         case TokenType::RETURN:
-            return parseReturnStatement();
+            return parseReturnStatement().and_then(semicolonAfter("return statement"));
         case TokenType::LET:
-            return parseLetStatement();
+            return parseLetStatement().and_then(semicolonAfter("let statement"));
         case TokenType::WHILE:
             return parseWhileStatement();
         case TokenType::FUNCTION:
             return parseFunctionStatement();
-        case TokenType::IDENTIFIER:
-
+        case TokenType::SEMICOLON: {
+            ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION,
+                              .position = token.readPosition(),
+                              .additionalInfo = "Found ';' with no statement before it"};
+            return std::unexpected(error);
+        }
         default:
-            return parseComparisonExpression();
+            return parseComparisonExpression().and_then(semicolonAfter("expression"));
     }
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
+Parser::expectSemicolon(ASTBaseNode* statement, const char* what) {
+    auto [success, token] = m_lexar.popExpect(TokenType::SEMICOLON);
+    if (success == false) {
+        // The position is that of the token found instead, which is often on
+        // the next line. Pointing at the end of the statement needs token
+        // lengths, which tokens do not carry yet.
+        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON,
+                          .position = token.readPosition(),
+                          .additionalInfo = fmt::format("Expected ';' after {}", what)};
+        return std::unexpected(error);
+    }
+    return statement;
+}
+
+ParseExpect
 Parser::parseWhileCondition() {
     auto [success, expected_token] = m_lexar.popExpect(TokenType::OPEN_PAREN);
     if (success == false) {
@@ -70,21 +91,16 @@ Parser::parseWhileCondition() {
             .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
             .position = expected_token.readPosition(),
             .additionalInfo = "Expecting a open parenthesis after while keyword which contains a expression"};
-        return error;
+        return std::unexpected(error);
     }
 
-    ASTExpressionNode* condition = nullptr;
-    auto condition_result = parseComparisonExpression();
-    if (auto condition_ptr = std::get_if<ASTBaseNode*>(&condition_result)) {
-        condition = static_cast<ASTExpressionNode*>(*condition_ptr);
-    }
-    else {
-        ParserError innerError = std::get<ParserError>(condition_result);
+    auto condition = parseComparisonExpression();
+    if (!condition) {
         ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION,
                           .position = expected_token.readPosition(),
                           .additionalInfo = "Expecting while loop to be defined with a expression.",
-                          .nestedError = {innerError}};
-        return error;
+                          .nestedError = {condition.error()}};
+        return std::unexpected(error);
     }
 
     auto [success2, expected_token2] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
@@ -93,40 +109,37 @@ Parser::parseWhileCondition() {
             .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
             .position = expected_token2.readPosition(),
             .additionalInfo = "Expecting a close parenthesis after while keyword which contains a expression"};
-        return error;
+        return std::unexpected(error);
     }
 
     return condition;
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseScopeNode(ASTScopeNode* scopeNode) {
     auto [success, expected_token] = m_lexar.popExpect(TokenType::OPEN_BRACE);
     if (success == false) {
         ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
                           .position = expected_token.readPosition(),
                           .additionalInfo = "Expecting a open brace after keyword which contains a expression"};
-        return error;
+        return std::unexpected(error);
     }
 
     Token token = m_lexar.peek();
     while (token.readType() != TokenType::CLOSE_BRACE) {
-        ASTBaseNode* statement = nullptr;
-        auto statement_result = parseStatement();
-        if (auto statement_ptr = std::get_if<ASTBaseNode*>(&statement_result)) {
-            statement = *statement_ptr;
-        }
-        else {
-            return std::get<ParserError>(statement_result);
+        auto statement = parseStatement();
+        if (!statement) {
+            return statement;
         }
 
-        scopeNode->addStatement(statement);
+        scopeNode->addStatement(*statement);
 
         token = m_lexar.peek();
         if (token.readType() == TokenType::END_OF_FILE) {
             ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
                               .position = m_lexar.peek().readPosition(),
                               .additionalInfo = "Expecting a close brace before end of file."};
+            return std::unexpected(error);
         }
     }
 
@@ -135,68 +148,59 @@ Parser::parseScopeNode(ASTScopeNode* scopeNode) {
         ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
                           .position = expected_token1.readPosition(),
                           .additionalInfo = "Expecting a close brace after open brance which contains statements"};
-        return error;
+        return std::unexpected(error);
     }
 
     return scopeNode;
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseWhileStatement() {
     m_lexar.pop();
 
-    ASTComparisonExpressionNode* condition = nullptr;
-    auto condition_result = parseWhileCondition();
-    if (auto condition_ptr = std::get_if<ASTBaseNode*>(&condition_result)) {
-        condition = static_cast<ASTComparisonExpressionNode*>(*condition_ptr);
-    }
-    else {
-        return std::get<ParserError>(condition_result);
+    auto condition = parseWhileCondition();
+    if (!condition) {
+        return condition;
     }
 
-    ASTWhileNode* whileNode = new ASTWhileNode(condition);
+    ASTWhileNode* whileNode = new ASTWhileNode(static_cast<ASTComparisonExpressionNode*>(*condition));
 
-    auto body_result = parseScopeNode(whileNode);
-    if (auto body_ptr = std::get_if<ParserError>(&body_result)) {
+    auto body = parseScopeNode(whileNode);
+    if (!body) {
         // create new error once we generalize while body into a scope parser
-        return body_result;
+        return body;
     }
 
     return whileNode;
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseReturnStatement() {
     m_lexar.pop();
     auto token = m_lexar.peek();
     ASTExpressionNode* expression = nullptr;
-    if (token.readType() == TokenType::END_OF_FILE) {
-        // return 0 as default;
+    if (token.readType() == TokenType::SEMICOLON) {
+        // `return;` returns 0 as default
         expression = new ASTNumericLiteralNode(0);
     }
     else {
         auto result = parseComparisonExpression();
-        if (auto expr_ptr = std::get_if<ASTBaseNode*>(&result))
-            expression = static_cast<ASTExpressionNode*>(*expr_ptr);
-        else
-            return std::get<ParserError>(result);
+        if (!result) {
+            return result;
+        }
+        expression = static_cast<ASTExpressionNode*>(*result);
     }
 
     return new ASTReturnNode(expression);
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseComparisonExpression() {
-    ASTExpressionNode* left = nullptr;
-    ASTExpressionNode* right = nullptr;
-
     auto left_result = parseAddativeExpression();
-    if (auto left_ptr = std::get_if<ASTBaseNode*>(&left_result)) {
-        left = static_cast<ASTExpressionNode*>(*left_ptr);
+    if (!left_result) {
+        return left_result;
     }
-    else {
-        return std::get<ParserError>(left_result);
-    }
+    auto left = static_cast<ASTExpressionNode*>(*left_result);
 
     auto op = m_lexar.peek();
     if (op.readOperator() == OperatorType::EQUAL || op.readOperator() == OperatorType::NOT_EQUAL ||
@@ -204,12 +208,10 @@ Parser::parseComparisonExpression() {
         m_lexar.pop();
 
         auto right_result = parseAddativeExpression();
-        if (auto right_ptr = std::get_if<ASTBaseNode*>(&right_result)) {
-            right = static_cast<ASTExpressionNode*>(*right_ptr);
+        if (!right_result) {
+            return right_result;
         }
-        else {
-            return std::get<ParserError>(right_result);
-        }
+        auto right = static_cast<ASTExpressionNode*>(*right_result);
 
         return new ASTComparisonExpressionNode(left, right, op.readOperator());
     }
@@ -217,58 +219,47 @@ Parser::parseComparisonExpression() {
     return left;
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseAddativeExpression() {
-    ASTExpressionNode* left = nullptr;
-    ASTExpressionNode* right = nullptr;
     auto left_result = parseMultiplicativeExpression();
-    if (auto left_ptr = std::get_if<ASTBaseNode*>(&left_result)) {
-        left = static_cast<ASTExpressionNode*>(*left_ptr);
+    if (!left_result) {
+        return left_result;
     }
-    else {
-        return std::get<ParserError>(left_result);
-    }
+    auto left = static_cast<ASTExpressionNode*>(*left_result);
 
     auto op = m_lexar.peek();
     if (op.readOperator() == OperatorType::ADDITION || op.readOperator() == OperatorType::SUBTRACTION) {
         m_lexar.pop();
+
         auto right_result = parseMultiplicativeExpression();
-        if (auto right_ptr = std::get_if<ASTBaseNode*>(&right_result)) {
-            right = static_cast<ASTExpressionNode*>(*right_ptr);
+        if (!right_result) {
+            return right_result;
         }
-        else {
-            return std::get<ParserError>(right_result);
-        }
+        auto right = static_cast<ASTExpressionNode*>(*right_result);
+
         return new ASTBinaryExpressionNode(left, right, op.readOperator());
     }
 
     return left;
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseMultiplicativeExpression() {
-    ASTExpressionNode* left = nullptr;
-    ASTExpressionNode* right = nullptr;
-
     auto left_result = parsePrimaryExpression();
-    if (auto left_ptr = std::get_if<ASTBaseNode*>(&left_result)) {
-        left = static_cast<ASTExpressionNode*>(*left_ptr);
+    if (!left_result) {
+        return left_result;
     }
-    else {
-        return std::get<ParserError>(left_result);
-    }
+    auto left = static_cast<ASTExpressionNode*>(*left_result);
 
     auto op = m_lexar.peek();
     if (op.readOperator() == OperatorType::MULTIPLICATION || op.readOperator() == OperatorType::DIVISION) {
         m_lexar.pop();
 
         auto right_result = parsePrimaryExpression();
-        if (auto right_ptr = std::get_if<ASTBaseNode*>(&right_result)) {
-            right = static_cast<ASTExpressionNode*>(*right_ptr);
+        if (!right_result) {
+            return right_result;
         }
-        else {
-            return std::get<ParserError>(right_result);
-        }
+        auto right = static_cast<ASTExpressionNode*>(*right_result);
 
         return new ASTBinaryExpressionNode(left, right, op.readOperator());
     }
@@ -276,7 +267,7 @@ Parser::parseMultiplicativeExpression() {
     return left;
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parsePrimaryExpression() {
     Token token = m_lexar.peek();
 
@@ -289,13 +280,9 @@ Parser::parsePrimaryExpression() {
         case TokenType::OPEN_PAREN: {
             m_lexar.pop();
 
-            ASTExpressionNode* expression = nullptr;
-            auto expression_result = parseAddativeExpression();
-            if (auto expression_ptr = std::get_if<ASTBaseNode*>(&expression_result)) {
-                expression = static_cast<ASTExpressionNode*>(*expression_ptr);
-            }
-            else {
-                return std::get<ParserError>(expression_result);
+            auto expression = parseAddativeExpression();
+            if (!expression) {
+                return expression;
             }
 
             auto [success, expected_token] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
@@ -303,7 +290,7 @@ Parser::parsePrimaryExpression() {
                 ParserError error{.code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
                                   .position = expected_token.readPosition(),
                                   .additionalInfo = "Missmatch between open and close parenthesis in expression."};
-                return error;
+                return std::unexpected(error);
             }
 
             return expression;
@@ -324,7 +311,7 @@ Parser::parsePrimaryExpression() {
     }
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseLetStatement() {
     m_lexar.pop();
     auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
@@ -332,7 +319,7 @@ Parser::parseLetStatement() {
         ParserError error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
                             .position = token.readPosition(),
                             .additionalInfo = "Expected identifier after let keyword"};
-        return error;
+        return std::unexpected(error);
     }
 
     std::string name = token.readValue();
@@ -343,29 +330,25 @@ Parser::parseLetStatement() {
             .code = ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR,
             .position = op_token.readPosition(),
             .additionalInfo = fmt::format("Expected assignment operator after identifier {} in let statement", name)};
-        return error;
+        return std::unexpected(error);
     }
 
-    ASTExpressionNode* expression = nullptr;
-    auto expression_result = parseComparisonExpression();
-    if (auto expression_ptr = std::get_if<ASTBaseNode*>(&expression_result)) {
-        expression = static_cast<ASTExpressionNode*>(*expression_ptr);
-    }
-    else {
-        return std::get<ParserError>(expression_result);
+    auto expression = parseComparisonExpression();
+    if (!expression) {
+        return expression;
     }
 
-    return new ASTLetNode(name, expression);
+    return new ASTLetNode(name, static_cast<ASTExpressionNode*>(*expression));
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseIdentifier() {
     auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
         ParserError error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
                             .position = token.readPosition(),
                             .additionalInfo = "Expected identifier in expression"};
-        return error;
+        return std::unexpected(error);
     }
 
     std::string name = token.readValue();
@@ -374,12 +357,12 @@ Parser::parseIdentifier() {
     if (token.readType() == TokenType::OPEN_PAREN) {
         m_lexar.pop(); // pop open paren
         // handle arguments later
-        auto [success, result] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
-        if (success == false) {
+        auto [close_success, result] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
+        if (close_success == false) {
             ParserError error{  .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
                                 .position = result.readPosition(),
                                 .additionalInfo = "Expected closing parenthesis for function call"};
-            return error;
+            return std::unexpected(error);
         }
         return new ASTCallNode(name);
     }
@@ -395,7 +378,7 @@ Parser::parseIdentifier() {
     return new ASTIdentifierNode(name, nullptr);
 }
 
-std::variant<ParserError, ASTBaseNode*>
+ParseExpect
 Parser::parseFunctionStatement() {
     m_lexar.pop();
     auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
@@ -403,7 +386,7 @@ Parser::parseFunctionStatement() {
         ParserError error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
                             .position = token.readPosition(),
                             .additionalInfo = "Expected function identifier after fn keyword"};
-        return error;
+        return std::unexpected(error);
     }
     auto name = token.readValue();
     auto functionNode = new ASTFunctionNode(name);
@@ -412,14 +395,18 @@ Parser::parseFunctionStatement() {
     // handle parameters later
     m_lexar.popExpect(TokenType::CLOSE_PAREN);
 
-    parseScopeNode(functionNode);
-    
-    bool hasReturn = functionNode->readStatements().back()->readType() == ASTNodeType::RETURN;
+    auto body = parseScopeNode(functionNode);
+    if (!body) {
+        return body;
+    }
+
+    const auto& statements = functionNode->readStatements();
+    bool hasReturn = !statements.empty() && statements.back()->readType() == ASTNodeType::RETURN;
     if (hasReturn == false) {
         ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_RETURN_STATEMENT,
                           .position = token.readPosition(),
                           .additionalInfo = "Expected function to have a return statement"};
-        return error;
+        return std::unexpected(error);
     }
 
     return functionNode;

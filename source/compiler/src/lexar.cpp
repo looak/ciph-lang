@@ -108,7 +108,11 @@ Lexar::lex() {
         std::string value = "";
         skipWhiteSpaces(cursorPosition);
         char cursor = popNextChar();
-        if (cursor == '(') {
+        if (cursor == ';') {
+            push(";", TokenType::SEMICOLON, cursorPosition);
+            continue;
+        }
+        else if (cursor == '(') {
             push("(", TokenType::OPEN_PAREN, cursorPosition);
             continue;
         }

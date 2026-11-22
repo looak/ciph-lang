@@ -13,6 +13,7 @@ enum class ErrorCode : uint16_t {
     SYNTAX_ERROR_EXPECTED_IDENTIFIER = 0xE003,
     SYNTAX_ERROR_EXPECTED_OPERATOR = 0xE004,
     SYNTAX_ERROR_EXPECTED_EXPRESSION = 0xE005,
+    SYNTAX_ERROR_EXPECTED_SEMICOLON = 0xE006,
 
     SYNTAX_ERROR_EXPECTED_RETURN_STATEMENT = 0xE101, // functions need return statements
 
@@ -32,7 +33,8 @@ const std::unordered_map<ErrorCode, std::string> error_codes_map = {
     {ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, "e0xe002: brace missmatch"},
     {ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, "e0xe002: expected identifier"},
     {ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR, "e0xe003: expected operator"},
-    {ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, "e0xe004: expected expression"}};
+    {ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, "e0xe004: expected expression"},
+    {ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON, "e0xe006: expected semicolon"}};
 
 
 // struct ErrorReport {

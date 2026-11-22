@@ -115,9 +115,9 @@ compile(const std::filesystem::path& source_path, const std::filesystem::path& o
 
     Parser parser(source.str());
     auto parse_result = parser.parse();
-    if (const auto* error = std::get_if<ParserError>(&parse_result)) {
+    if (!parse_result) {
         std::string message;
-        format_error(message, source_path, *error, 0);
+        format_error(message, source_path, parse_result.error(), 0);
 
         std::ofstream error_file(error_path, std::ios::binary);
         error_file << message;
@@ -125,7 +125,7 @@ compile(const std::filesystem::path& source_path, const std::filesystem::path& o
         return exit_compile_error;
     }
 
-    const auto* program = static_cast<const ASTProgramNode*>(std::get<ASTBaseNode*>(parse_result));
+    const auto* program = static_cast<const ASTProgramNode*>(*parse_result);
     CodeGenerator generator(program);
     generator.generateCode();
     auto [bytecode, size] = generator.readRawBytecode();
