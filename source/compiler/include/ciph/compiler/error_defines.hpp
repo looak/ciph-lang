@@ -17,6 +17,9 @@ enum class ErrorCode : uint16_t {
 
     SYNTAX_ERROR_EXPECTED_RETURN_STATEMENT = 0xE101, // functions need return statements
 
+    SEMANTIC_ERROR_UNDECLARED_IDENTIFIER = 0xE201,
+    SEMANTIC_ERROR_REDECLARED_IDENTIFIER = 0xE202,
+
     LEXAR_PERFORMED_ANALYSIS = 0xA001,
     LEXAR_UNKNOWN_CHARACTER = 0xA002,
     ERROR_UNKNOWN = 0xFFFF
@@ -34,7 +37,9 @@ const std::unordered_map<ErrorCode, std::string> error_codes_map = {
     {ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, "e0xe002: expected identifier"},
     {ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR, "e0xe003: expected operator"},
     {ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, "e0xe004: expected expression"},
-    {ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON, "e0xe006: expected semicolon"}};
+    {ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON, "e0xe006: expected semicolon"},
+    {ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER, "e0xe201: undeclared identifier"},
+    {ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, "e0xe202: redeclared identifier"}};
 
 
 // struct ErrorReport {

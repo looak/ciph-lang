@@ -3,6 +3,7 @@ ciph_add_library(compiler
     src/code_generator.cpp
     src/lexar.cpp
     src/parser.cpp
+    src/semantic_analyzer.cpp
   HEADERS
     include/ciph/compiler/ast.hpp
     include/ciph/compiler/code_generator.hpp
@@ -11,6 +12,7 @@ ciph_add_library(compiler
     include/ciph/compiler/lexar.hpp
     include/ciph/compiler/lexar_defines.hpp
     include/ciph/compiler/parser.hpp
+    include/ciph/compiler/semantic_analyzer.hpp
   DEPENDS
     ciph::shared
   PRIVATE_DEPENDS

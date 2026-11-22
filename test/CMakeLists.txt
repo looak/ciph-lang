@@ -20,6 +20,7 @@ ciph_add_test(compiler_tests
     compiler/tests_code_generator.cpp
     compiler/tests_lexar.cpp
     compiler/tests_parser.cpp
+    compiler/tests_semantic_analyzer.cpp
   DEPENDS
     ciph::compiler
     fmt::fmt
