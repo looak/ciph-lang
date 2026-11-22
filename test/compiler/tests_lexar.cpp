@@ -288,6 +288,37 @@ TEST(LexarTest, WindowsLineEndings_AreWhitespace) {
     EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
 }
 
+TEST(LexarTest, LineComments_AreSkipped) {
+    // setup
+    Lexar lx("let // the rest of this line is ignored: return 5 / 2\nx // comment at end of input");
+
+    // do
+    auto [success, error] = lx.lex();
+
+    // validate
+    ASSERT_TRUE(success);
+    EXPECT_EQ(lx.pop().readType(), TokenType::LET);
+    auto token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "x");
+    EXPECT_EQ(token.readPosition().line, 2u);
+    EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexarTest, Division_IsNotAComment) {
+    // setup
+    Lexar lx("6 / 2");
+
+    // do
+    auto [success, error] = lx.lex();
+
+    // validate
+    ASSERT_TRUE(success);
+    lx.pop(); // 6
+    EXPECT_TRUE(isOperator(lx.pop(), OperatorType::DIVISION));
+    EXPECT_EQ(lx.pop().readType(), TokenType::NUMBER);
+}
+
 TEST(LexarTest, FunctionSignatureTokens) {
     // setup
     Lexar lx("fn gcd_loop(mut a: i16, b: i16) -> i16");

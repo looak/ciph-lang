@@ -95,6 +95,13 @@ Lexar::skipWhiteSpaces(Position& cursorPos) {
             // line counting.
             m_position++;
         }
+        else if (m_input.compare(m_position, 2, "//") == 0) {
+            // A comment runs to the end of the line. The '\n' is left for the
+            // branch above, so lines are still counted.
+            while (m_position < m_input.size() && m_input[m_position] != '\n') {
+                m_position++;
+            }
+        }
         else {
             done = true;
         }

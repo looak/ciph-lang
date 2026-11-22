@@ -53,6 +53,7 @@ is_punctuation(ImWchar c) {
 
 SourcePanel::SourcePanel(const std::vector<std::string>& keywords) {
     m_language.name = "ciph";
+    m_language.singleLineComment = "//";
     m_language.keywords.insert(keywords.begin(), keywords.end());
     m_language.isPunctuation = is_punctuation;
     m_language.getIdentifier = get_identifier;
