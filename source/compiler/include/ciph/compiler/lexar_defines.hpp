@@ -18,6 +18,7 @@ enum class TokenType
     IF,
     ELSE,
     FUNCTION,
+    MUT,
 
     /*
 STRING,
@@ -33,6 +34,9 @@ BOOLEAN,*/
     OPEN_BRACKET,
     CLOSE_BRACKET,
     SEMICOLON,
+    COMMA,
+    COLON,
+    ARROW, // "->", before a function's return type
 
     END_OF_FILE,
     UNKNOWN
@@ -113,6 +117,7 @@ static OperatorMap
 const OperatorMap s_operators = generateOperatorMap();
 const std::map<std::string, TokenType> s_keywords = {
     {"let", TokenType::LET},
+    {"mut", TokenType::MUT},
     {"return", TokenType::RETURN},
     {"if", TokenType::IF},
     {"else", TokenType::ELSE},

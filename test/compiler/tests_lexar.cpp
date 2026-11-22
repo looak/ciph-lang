@@ -287,3 +287,88 @@ TEST(LexarTest, WindowsLineEndings_AreWhitespace) {
     EXPECT_EQ(token.readPosition().line, 2u);
     EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
 }
+
+TEST(LexarTest, FunctionSignatureTokens) {
+    // setup
+    Lexar lx("fn gcd_loop(mut a: i16, b: i16) -> i16");
+
+    // do
+    auto [success, error] = lx.lex();
+
+    // validate
+    ASSERT_TRUE(success);
+    EXPECT_EQ(lx.pop().readType(), TokenType::FUNCTION);
+
+    auto token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "gcd_loop");
+
+    EXPECT_EQ(lx.pop().readType(), TokenType::OPEN_PAREN);
+    EXPECT_EQ(lx.pop().readType(), TokenType::MUT);
+
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "a");
+
+    EXPECT_EQ(lx.pop().readType(), TokenType::COLON);
+
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "i16");
+
+    EXPECT_EQ(lx.pop().readType(), TokenType::COMMA);
+    EXPECT_EQ(lx.pop().readType(), TokenType::IDENTIFIER); // b
+    EXPECT_EQ(lx.pop().readType(), TokenType::COLON);
+    EXPECT_EQ(lx.pop().readType(), TokenType::IDENTIFIER); // i16
+    EXPECT_EQ(lx.pop().readType(), TokenType::CLOSE_PAREN);
+
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::ARROW);
+    EXPECT_EQ(token.readPosition().column, 33u);
+
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "i16");
+    EXPECT_EQ(token.readPosition().column, 36u);
+
+    EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
+}
+
+TEST(LexarTest, MinusAndDecrement_AreNotArrows) {
+    // setup
+    Lexar lx("a - b a--");
+
+    // do
+    auto [success, error] = lx.lex();
+
+    // validate
+    ASSERT_TRUE(success);
+    lx.pop(); // a
+    EXPECT_TRUE(isOperator(lx.pop(), OperatorType::SUBTRACTION));
+    lx.pop(); // b
+    lx.pop(); // a
+    EXPECT_TRUE(isOperator(lx.pop(), OperatorType::DECREMENT));
+}
+
+TEST(LexarTest, Identifier_MayContainDigitsAndUnderscores) {
+    // setup
+    Lexar lx("_tmp x1 9lives");
+
+    // do
+    auto [success, error] = lx.lex();
+
+    // validate
+    ASSERT_TRUE(success);
+    auto token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "_tmp");
+
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
+    EXPECT_EQ(token.readValue(), "x1");
+
+    // A leading digit still starts a number.
+    token = lx.pop();
+    EXPECT_EQ(token.readType(), TokenType::NUMBER);
+    EXPECT_EQ(token.readValue(), "9");
+}

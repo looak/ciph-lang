@@ -117,6 +117,22 @@ Lexar::lex() {
             push(";", TokenType::SEMICOLON, cursorPosition);
             continue;
         }
+        else if (cursor == ',') {
+            push(",", TokenType::COMMA, cursorPosition);
+            continue;
+        }
+        else if (cursor == ':') {
+            push(":", TokenType::COLON, cursorPosition);
+            continue;
+        }
+        else if (cursor == '-' && peekNextChar() == '>') {
+            // Checked before the operators, which would read '-' and '>'
+            // as two tokens.
+            popNextChar();
+            push("->", TokenType::ARROW, cursorPosition);
+            cursorPosition.column++; // two characters wide
+            continue;
+        }
         else if (cursor == '(') {
             push("(", TokenType::OPEN_PAREN, cursorPosition);
             continue;
@@ -168,7 +184,9 @@ Lexar::lex() {
             continue;
         }
 
-        if (isalpha(cursor)) {
+        // Identifiers and keywords start with a letter or '_' and continue
+        // with letters, digits and '_', so `gcd_loop` and `i16` are one token.
+        if (isalpha(cursor) || cursor == '_') {
             uint32_t start = cursorPosition.column;
             do {
                 value += cursor;
@@ -177,7 +195,7 @@ Lexar::lex() {
                 cursor = popNextChar();
                 cursorPosition.column++;
 
-            } while (isalpha(cursor));
+            } while (isalnum(cursor) || cursor == '_');
 
             m_position--;
             cursorPosition.column--;
