@@ -92,7 +92,13 @@ public:
 
 	// A scope node is created before its statements are parsed, when only its
 	// first token is known. The parser calls this once it reaches the end.
-	void closeSourceRange(uint32_t lastToken) { setSourceRange({readSourceRange().first, lastToken}); }
+	// Only `last` changes, so a focus set at creation survives.
+	void closeSourceRange(uint32_t lastToken)
+	{
+		SourceRange range = readSourceRange();
+		range.last = lastToken;
+		setSourceRange(range);
+	}
 
 private:
 	std::vector<ASTBaseNode*> m_statements;

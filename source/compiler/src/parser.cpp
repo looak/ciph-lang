@@ -429,7 +429,9 @@ Parser::parseFunctionStatement() {
         return std::unexpected(error);
     }
     auto name = token.readStringValue();
-    auto functionNode = new ASTFunctionNode(SourceRange{first, first}, name);
+    SourceRange range{first, first};
+    range.focus = token.readIndex(); // the name, not the `fn` keyword
+    auto functionNode = new ASTFunctionNode(range, name);
 
     m_lexar.popExpect(TokenType::OPEN_PAREN);
     // handle parameters later

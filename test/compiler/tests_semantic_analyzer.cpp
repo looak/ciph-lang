@@ -172,3 +172,23 @@ TEST(SemanticAnalyzerTest, UndeclaredNameInWhileCondition_IsAnError) {
     ASSERT_EQ(errors.size(), 1);
     EXPECT_EQ(errors[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
 }
+
+TEST(SemanticAnalyzerTest, RedefinedFunction_PointsAtTheName) {
+    // The function's range is closed at its '}', after the focus is set, so
+    // this also checks that closing a range keeps the focus.
+    auto errors = analyze("fn a() { return 1; }\nfn a() { return 2; } return a();");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].position.line, 2);
+    EXPECT_EQ(errors[0].position.column, 4);
+    EXPECT_NE(errors[0].additionalInfo.find("line 1, column 4"), std::string::npos) << errors[0].additionalInfo;
+}
+
+TEST(SemanticAnalyzerTest, RedeclaredVariable_PointsAtTheName) {
+    auto errors = analyze("let x = 5;\nlet x = 6; return x;");
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0].position.line, 2);
+    EXPECT_EQ(errors[0].position.column, 5);
+    EXPECT_NE(errors[0].additionalInfo.find("line 1, column 5"), std::string::npos) << errors[0].additionalInfo;
+}

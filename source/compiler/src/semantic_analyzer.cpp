@@ -56,8 +56,8 @@ SemanticAnalyzer::collectFunctions(const ASTScopeNode* scope) {
 
         // A function from an enclosing block counts too: no shadowing.
         if (const ASTFunctionNode* earlier = findFunction(name)) {
-            const Position first = positionOf(earlier, 1);
-            report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, positionOf(function, 1),
+            const Position first = positionOf(earlier);
+            report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, positionOf(function),
                    fmt::format("function '{}' is already defined at line {}, column {}", name, first.line,
                                first.column));
             continue;
@@ -144,8 +144,8 @@ SemanticAnalyzer::declareVariable(const ASTLetNode* let) {
 
     // Searches every open block, not only the innermost: no shadowing.
     if (const ASTLetNode* earlier = findVariable(name)) {
-        const Position first = positionOf(earlier, 1);
-        report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, positionOf(let, 1),
+        const Position first = positionOf(earlier);
+        report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, positionOf(let),
                fmt::format("'{}' is already declared at line {}, column {}", name, first.line, first.column));
         return;
     }
@@ -189,12 +189,13 @@ SemanticAnalyzer::findFunction(std::string_view name) const {
 }
 
 Position
-SemanticAnalyzer::positionOf(const ASTBaseNode* node, uint32_t offset) const {
+SemanticAnalyzer::positionOf(const ASTBaseNode* node) const {
     const SourceRange range = node->readSourceRange();
-    if (!range.hasTokens() || range.first + offset >= m_tokens.size()) {
+    const uint32_t token = range.focusToken();
+    if (!range.hasTokens() || token >= m_tokens.size()) {
         return Position{0, 0};
     }
-    return m_tokens[range.first + offset].readPosition();
+    return m_tokens[token].readPosition();
 }
 
 void
