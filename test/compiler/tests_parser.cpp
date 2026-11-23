@@ -7,73 +7,6 @@
 
 using namespace ciph;
 
-TEST(ParserTest, SimpleAddExpression) {
-	// setup
-	std::string code("1 + 2;");
-	Parser parser(code);
-
-	// do - we know the node type returned is a program
-	auto parser_result = parser.parse();
-	auto program_node = parser_result.value();
-	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
-
-	// validate
-	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
-
-	EXPECT_EQ(result->readStatements().size(), 1);
-	ASSERT_EQ(result->readStatements()[0]->readType(), ASTNodeType::BINARY_EXPRESSION);
-	auto binaryExpression = static_cast<ASTBinaryExpressionNode*>(result->readStatements()[0]);
-	EXPECT_EQ(binaryExpression->readOperator(), OperatorType::ADDITION);
-}
-
-TEST(ParserTest, OrderOfOperations_MulBeforeAdd) {
-	// setup
-	std::string code("2 * 2 + 3;");
-	Parser parser(code);
-
-	// do - we know the node type returned is a program
-	auto parser_result = parser.parse();
-	auto program_node = parser_result.value();
-	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
-
-	// validate
-	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
-
-	EXPECT_EQ(result->readStatements().size(), 1);
-	EXPECT_EQ(result->readStatements()[0]->readType(), ASTNodeType::BINARY_EXPRESSION);
-	auto addExpression = static_cast<const ASTBinaryExpressionNode*>(result->readStatements()[0]);
-	EXPECT_EQ(addExpression->readOperator(), OperatorType::ADDITION);
-
-	auto left = addExpression->readLeft();
-	EXPECT_EQ(left->readType(), ASTNodeType::BINARY_EXPRESSION);
-	auto mulExpression = static_cast<const ASTBinaryExpressionNode*>(left);
-	EXPECT_EQ(mulExpression->readOperator(), OperatorType::MULTIPLICATION);
-}
-
-TEST(ParserTest, OrderOfOperations_ParenthaseseBeforeMul) {
-	// setup
-	std::string code("2 * (2 + 3);");
-	Parser parser(code);
-
-	// do - we know the node type returned is a program
-	auto parser_result = parser.parse();
-	auto program_node = parser_result.value();
-	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
-
-	// validate
-	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
-
-	EXPECT_EQ(result->readStatements().size(), 1);
-	EXPECT_EQ(result->readStatements()[0]->readType(), ASTNodeType::BINARY_EXPRESSION);
-	auto mulExpression = static_cast<const ASTBinaryExpressionNode*>(result->readStatements()[0]);
-	EXPECT_EQ(mulExpression->readOperator(), OperatorType::MULTIPLICATION);
-
-	auto right = mulExpression->readRight();
-	EXPECT_EQ(right->readType(), ASTNodeType::BINARY_EXPRESSION);
-	auto addExpression = static_cast<const ASTBinaryExpressionNode*>(right);
-	EXPECT_EQ(addExpression->readOperator(), OperatorType::ADDITION);
-}
-
 TEST(ParserTest, ReturnStatement_DefaultNumericNode_ValueZero) {
 	// setup
 	std::string code("return;");
@@ -217,7 +150,7 @@ TEST(ParserTest, IncStatement) {
 
 TEST(ParserTest, EqualsOperator) {
 	// setup
-	std::string code("x == x;");
+	std::string code("return x == x;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
@@ -228,9 +161,11 @@ TEST(ParserTest, EqualsOperator) {
 	// validate
 	EXPECT_EQ(result->readType(), ASTNodeType::PROGRAM);
 
-	EXPECT_EQ(result->readStatements().size(), 1);
-	EXPECT_EQ(result->readStatements()[0]->readType(), ASTNodeType::COMPARISON_EXPRESSION);
-	auto compare_expression = static_cast<const ASTComparisonExpressionNode*>(result->readStatements()[0]);
+	ASSERT_EQ(result->readStatements().size(), 1);
+	ASSERT_EQ(result->readStatements()[0]->readType(), ASTNodeType::RETURN);
+	auto expression = static_cast<const ASTReturnNode*>(result->readStatements()[0])->readExpression();
+	ASSERT_EQ(expression->readType(), ASTNodeType::COMPARISON_EXPRESSION);
+	auto compare_expression = static_cast<const ASTComparisonExpressionNode*>(expression);
 	EXPECT_EQ(compare_expression->readOperator(), OperatorType::EQUAL);
 }
 
@@ -239,7 +174,7 @@ TEST(ParserTest, EqualsOperator) {
 // has no real assertion. Re-enable once the error exists.
 TEST(ParserTest, DISABLED_EqualsOperator_NotLegal) {
 	// setup
-	std::string code("x == x == x;");
+	std::string code("return x == x == x;");
 	Parser parser(code);
 
 	// do - we know the node type returned is a program
@@ -321,12 +256,76 @@ TEST(ParserTest, MissingSemicolon_AfterReturn) {
 }
 
 TEST(ParserTest, MissingSemicolon_AfterExpression) {
-	Parser parser("1 + 2");
+	Parser parser("number()");
 
 	auto parser_result = parser.parse();
 
 	ASSERT_FALSE(parser_result.has_value());
 	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON);
+}
+
+// An expression can stand alone as a statement only when it does something:
+// a call, or `++` / `--`. Anything else computes a value that nobody uses,
+// and is a syntax error.
+//
+// Rejected statements report SYNTAX_ERROR_UNUSED_EXPRESSION.
+
+namespace {
+
+void
+expectUnusedExpression(const char* code) {
+	auto parser_result = Parser(code).parse();
+	ASSERT_FALSE(parser_result.has_value()) << "Parsed without error: " << code;
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_UNUSED_EXPRESSION) << code;
+}
+
+} // namespace
+
+TEST(ParserTest, ExpressionStatement_CallIsAllowed) {
+	Parser parser("fn number() { return 42; } number(); return 0;");
+
+	auto parser_result = parser.parse();
+
+	ASSERT_TRUE(parser_result.has_value());
+	auto program = static_cast<const ASTProgramNode*>(*parser_result);
+	ASSERT_EQ(program->readStatements().size(), 3u);
+	EXPECT_EQ(program->readStatements()[1]->readType(), ASTNodeType::CALL_EXPRESSION);
+}
+
+TEST(ParserTest, ExpressionStatement_IncrementAndDecrementAreAllowed) {
+	Parser parser("let i = 0; i++; i--; return i;");
+
+	auto parser_result = parser.parse();
+
+	ASSERT_TRUE(parser_result.has_value());
+	auto program = static_cast<const ASTProgramNode*>(*parser_result);
+	EXPECT_EQ(program->readStatements().size(), 4u);
+}
+
+TEST(ParserTest, ExpressionStatement_ArithmeticIsRejected) {
+	expectUnusedExpression("1 + 2;");
+	expectUnusedExpression("2 * (2 + 3);");
+}
+
+TEST(ParserTest, ExpressionStatement_ComparisonIsRejected) {
+	expectUnusedExpression("let x = 1; x == x;");
+}
+
+TEST(ParserTest, ExpressionStatement_LoneValueIsRejected) {
+	expectUnusedExpression("5;");
+	expectUnusedExpression("let x = 1; x;");
+	expectUnusedExpression("(5);");
+}
+
+TEST(ParserTest, ExpressionStatement_CallOrIncrementInsideALargerExpressionIsRejected) {
+	// The statement as a whole has to be the call or the increment.
+	expectUnusedExpression("fn number() { return 42; } number() + 1;");
+	expectUnusedExpression("let i = 0; i++ + 1;");
+}
+
+TEST(ParserTest, ExpressionStatement_RejectedInsideABlock) {
+	expectUnusedExpression("let i = 0; while (i < 5) { i + 1; i++; } return i;");
+	expectUnusedExpression("fn number() { 1 + 2; return 42; } return number();");
 }
 
 TEST(ParserTest, MissingSemicolon_BetweenStatements) {
@@ -375,6 +374,82 @@ TEST(ParserTest, MissingSemicolon_PointsJustPastTheStatement) {
 	ASSERT_FALSE(parser_result.has_value());
 	EXPECT_EQ(parser_result.error().position.line, 1u);
 	EXPECT_EQ(parser_result.error().position.column, 10u);
+}
+
+// ---- Missing operands: a token that cannot start an expression is an error ----
+//
+// These used to parse "successfully" with a null node where the operand
+// belonged, which later stages would then dereference.
+
+namespace {
+
+void
+expectMissingExpression(const char* code) {
+	auto parser_result = Parser(code).parse();
+	ASSERT_FALSE(parser_result.has_value()) << "Parsed without error: " << code;
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION) << code;
+}
+
+} // namespace
+
+TEST(ParserTest, MissingOperand_AfterAdditiveOperator) {
+	expectMissingExpression("return 1 + ;");
+	expectMissingExpression("return 1 - ;");
+	expectMissingExpression("return 1 + 2 + ;");
+}
+
+TEST(ParserTest, MissingOperand_AfterMultiplicativeOperator) {
+	expectMissingExpression("return 2 * ;");
+	expectMissingExpression("return 2 / ;");
+	expectMissingExpression("return 1 + 2 * ;");
+}
+
+TEST(ParserTest, MissingOperand_AfterComparisonOperator) {
+	expectMissingExpression("return 1 < ;");
+	expectMissingExpression("return 1 == ;");
+}
+
+TEST(ParserTest, MissingOperand_BeforeBinaryOperator) {
+	expectMissingExpression("return * 2;");
+	expectMissingExpression("return + 2;");
+}
+
+TEST(ParserTest, MissingOperand_LetWithoutValue) {
+	expectMissingExpression("let x = ;");
+	expectMissingExpression("let x = 1 + ;");
+}
+
+TEST(ParserTest, MissingOperand_InsideParentheses) {
+	expectMissingExpression("return ();");
+	expectMissingExpression("return (1 + );");
+}
+
+TEST(ParserTest, MissingOperand_AtEndOfFile) {
+	expectMissingExpression("let x = 1 +");
+	expectMissingExpression("return");
+}
+
+TEST(ParserTest, MissingOperand_StatementThatCannotStartAnExpression) {
+	expectMissingExpression("}");
+	expectMissingExpression("* 2;");
+}
+
+TEST(ParserTest, MissingOperand_PointsAtTheTokenFoundInstead) {
+	// The ';' at column 12 is where the right-hand side should have started.
+	auto parser_result = Parser("return 1 + ;").parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().position.line, 1u);
+	EXPECT_EQ(parser_result.error().position.column, 12u);
+}
+
+TEST(ParserTest, MissingOperand_EmptyWhileConditionKeepsTheCauseAsANestedError) {
+	auto parser_result = Parser("let i = 0; while () { i++; } return i;").parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
+	ASSERT_EQ(parser_result.error().nestedError.size(), 1u);
+	EXPECT_EQ(parser_result.error().nestedError[0].code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
 }
 
 // ---- Source ranges: which tokens each node was built from ----

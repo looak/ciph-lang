@@ -38,13 +38,13 @@ return i;
 - `let` declares a variable. `return` ends the program with a value.
 - `while` loops. The body runs before the condition is first checked.
 - Expressions use `+ - * /`, parentheses, and the comparisons `==`, `!=`, `<`
-  and `>`.
+  and `>`. `*` and `/` bind tighter than `+` and `-`, and operators of the
+  same kind group from the left: `10 - 4 - 3` is 3.
+- An expression on its own is only a statement if it does something: `i++;`
+  or a call. `1 + 2;` is an error, because nothing uses the result.
 - Simple statements end with `;`, including the last one in a block. Blocks
   (`while`, `fn`) take no `;` after the `}`.
 - `//` starts a comment that runs to the end of the line.
-
-- An expression takes one operator per level: `2 * 2 + 3` works, `1 + 2 + 3`
-  does not yet.
 
 Functions are in progress: `fn name() { ... }` and calls to it are parsed and
 checked, but the compiler then stops with `not supported yet`, because

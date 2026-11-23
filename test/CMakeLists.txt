@@ -22,6 +22,7 @@ ciph_add_test(compiler_tests
     compiler/tests_error_defines.cpp
     compiler/tests_lexar.cpp
     compiler/tests_parser.cpp
+    compiler/tests_parser_expressions.cpp
     compiler/tests_semantic_analyzer.cpp
   DEPENDS
     ciph::compiler

@@ -58,8 +58,8 @@ SemanticAnalyzer::collectFunctions(const ASTScopeNode* scope) {
         if (const ASTFunctionNode* earlier = findFunction(name)) {
             const Position first = positionOf(earlier);
             report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, positionOf(function),
-                   fmt::format("function '{}' is already defined at line {}, column {}", name, first.line,
-                               first.column));
+                    fmt::format("function '{}' is already defined at line {}, column {}", name, first.line,
+                                first.column));
             continue;
         }
         functions.emplace(name, function);
@@ -146,7 +146,7 @@ SemanticAnalyzer::declareVariable(const ASTLetNode* let) {
     if (const ASTLetNode* earlier = findVariable(name)) {
         const Position first = positionOf(earlier);
         report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, positionOf(let),
-               fmt::format("'{}' is already declared at line {}, column {}", name, first.line, first.column));
+                fmt::format("'{}' is already declared at line {}, column {}", name, first.line, first.column));
         return;
     }
     m_variableScopes.back().emplace(name, let);

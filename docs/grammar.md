@@ -13,18 +13,22 @@ let            = "let" identifier "=" comparison ";" ;
 return         = "return" [ comparison ] ";" ;
 while          = "while" "(" comparison ")" block ;
 function       = "fn" identifier "(" ")" block ;
-expression-stmt = comparison ";" ;
+expression-stmt = ( call | inc-dec ) ";" ;
 
 block          = "{" { statement } "}" ;
 
 comparison     = additive [ ( "==" | "!=" | "<" | ">" ) additive ] ;
-additive       = multiplicative [ ( "+" | "-" ) multiplicative ] ;
-multiplicative = primary [ ( "*" | "/" ) primary ] ;
+additive       = multiplicative { ( "+" | "-" ) multiplicative } ;
+multiplicative = primary { ( "*" | "/" ) primary } ;
 
 primary        = number
-               | identifier [ "++" | "--" ]
-               | identifier "(" ")"
+               | identifier
+               | inc-dec
+               | call
                | "(" additive ")" ;
+
+inc-dec        = identifier ( "++" | "--" ) ;
+call           = identifier "(" ")" ;
 
 identifier     = ( letter | "_" ) { letter | digit | "_" } ;
 number         = digit { digit } ;
@@ -37,11 +41,15 @@ number         = digit { digit } ;
 - `return;` with no value returns 0.
 - The last statement of a function body has to be a `return`.
 - A `while` body runs before its condition is first checked.
+- A chain of `+ -` or of `* /` groups from the left: `10 - 4 - 3` is
+  `(10 - 4) - 3`. `*` and `/` bind tighter than `+` and `-`.
+- A comparison does not chain: `a == b == c` is an error.
+- An expression can stand alone as a statement only when it does something: a
+  call, or `++` / `--`. Anything else, such as `1 + 2;` or `x == y;`, is
+  reported as `e0xe060`, because its result is not used.
 
 ## Known gaps
 
-- Each level takes one operator at most, so `1 + 2 + 3` and `2 * 3 * 4` do not
-  parse. Mixing levels works: `2 * 2 + 3`, `2 * (2 + 3)`.
 - A parenthesised expression cannot hold a comparison.
 - Functions take no parameters and calls no arguments.
 - `if`, `else`, `mut`, `<=`, `>=` and assignment to an existing variable are

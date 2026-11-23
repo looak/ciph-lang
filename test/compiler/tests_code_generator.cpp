@@ -92,7 +92,7 @@ TEST_F(CodeGeneratorTestFixture, BinaryExpression_ExpectArray)
 TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_MulBeforeAdd)
 {
     // setup    
-    std::string code("2 * 2 + 3;");
+    std::string code("return 2 * 2 + 3;");
     //std::string code("(1 + 2 * 3 + 2) / 3");
     Parser parser(code);
     auto parser_result = parser.parse();
@@ -112,6 +112,8 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_MulBeforeAdd)
                                     +instruction::def::MUL,
                                     +instruction::def::PSH_LIT, 0, 3,
                                     +instruction::def::ADD,
+                                    +instruction::def::POP_REG, +registers::def::ret,
+                                    +instruction::def::RET,
                                     +instruction::def::HALT };
     uint32_t expectedSize = sizeof(expectedProgram);
 
@@ -119,34 +121,7 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_MulBeforeAdd)
     EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
 }
 
-TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_PaarenthasesBeforeMul)
-{
-    // setup    
-    std::string code("2 * (2 + 3);");    
-    Parser parser(code);
-    auto parser_result = parser.parse();
-    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
-    CodeGenerator generator(programNode);
-
-    // do
-    generator.generateCode();    
-    auto [actualProgram, actualSize] = generator.readRawBytecode();
-
-    // validate
-    uint8_t expectedProgram[] = { // every program starts by jumping to main, which follows the jump
-                                    +instruction::def::JMP, 0x00, 0x03,
-                                    +instruction::def::PSH_LIT, 0, 2,
-                                    +instruction::def::PSH_LIT, 0, 2,
-                                    +instruction::def::PSH_LIT, 0, 3,
-                                    +instruction::def::ADD,
-                                    +instruction::def::MUL,
-                                    +instruction::def::HALT };
-    uint32_t expectedSize = sizeof(expectedProgram);
-
-    EXPECT_EQ(expectedSize, actualSize);
-    EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));    
-}
-
+// Parentheses before multiplication: `return 2 * (2 + 3);`
 TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression)
 {
     // setup    
@@ -600,5 +575,32 @@ TEST_F(CodeGeneratorTestFixture, DISABLED_SimpleFunctionReturn) {
     uint32_t expectedSize = sizeof(expectedProgram);
 
     EXPECT_EQ(expectedSize, actualSize);
+    EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
+}
+// A chain groups from the left: (10 - 4) - 3. Grouped from the right the
+// bytecode would push all three values before the first SUB.
+TEST_F(CodeGeneratorTestFixture, ChainedSubtraction_SubtractsLeftToRight)
+{
+    std::string code("return 10 - 4 - 3;");
+    Parser parser(code);
+    auto parser_result = parser.parse();
+    ASSERT_TRUE(parser_result.has_value());
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
+    CodeGenerator generator(programNode, parser.readTokens());
+
+    EXPECT_TRUE(generator.generateCode().empty());
+    auto [actualProgram, actualSize] = generator.readRawBytecode();
+
+    uint8_t expectedProgram[] = { +instruction::def::JMP, 0x00, 0x03,
+                                    +instruction::def::PSH_LIT, 0, 10,
+                                    +instruction::def::PSH_LIT, 0, 4,
+                                    +instruction::def::SUB,
+                                    +instruction::def::PSH_LIT, 0, 3,
+                                    +instruction::def::SUB,
+                                    +instruction::def::POP_REG, +registers::def::ret,
+                                    +instruction::def::RET,
+                                    +instruction::def::HALT };
+
+    ASSERT_EQ(sizeof(expectedProgram), actualSize);
     EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
 }
