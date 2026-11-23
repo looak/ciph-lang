@@ -224,24 +224,37 @@ instruction::dec_handler(ExecutionContext& context) {
     }
 }
 
-void
-instruction::jump_eq_handler(ExecutionContext&) {
+// The conditional jumps all work the same way. They follow a CMP, which left
+// (a - b) in imm, and read a 16-bit distance. When `taken` says yes to imm,
+// pc moves that many bytes back, counted from the end of the jump instruction.
+// They can only jump backwards, which is all a loop needs.
+static void
+jump_back_if(ExecutionContext& context, bool (*taken)(int16_t)) {
+    uint16_t& pc = context.registry[+registers::def::pc];
+    int16_t distance = instruction::read_word(context.bytecode, ++pc);
+    if (taken(i16(context.registry[+registers::def::imm]))) {
+        pc -= distance;
+    }
 }
+
 void
-instruction::jump_nz_handler(ExecutionContext&) {
+instruction::jump_eq_handler(ExecutionContext& context) {
+    jump_back_if(context, [](int16_t difference) { return difference == 0; });
 }
+
 void
-instruction::jump_gt_handler(ExecutionContext&) {
+instruction::jump_nz_handler(ExecutionContext& context) {
+    jump_back_if(context, [](int16_t difference) { return difference != 0; });
+}
+
+void
+instruction::jump_gt_handler(ExecutionContext& context) {
+    jump_back_if(context, [](int16_t difference) { return difference > 0; });
 }
 
 void
 instruction::jump_lt_handler(ExecutionContext& context) {
-    uint16_t& pc = context.registry[+registers::def::pc];
-    int16_t value = read_word(context.bytecode, ++pc);
-    int16_t result = i16(context.registry[+registers::def::imm]);
-    if (result < 0) {
-        pc -= value;
-    }
+    jump_back_if(context, [](int16_t difference) { return difference < 0; });
 }
 
 void

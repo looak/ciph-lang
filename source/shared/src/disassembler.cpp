@@ -11,6 +11,9 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
     switch (instr)
     {
         case instruction::def::JMP:
+        case instruction::def::JNZ:
+        case instruction::def::JEQ:
+        case instruction::def::JGT:
         case instruction::def::JLT:
         case instruction::def::PSH_LIT:
             result += dissassembleNumericLiteral(program_count);

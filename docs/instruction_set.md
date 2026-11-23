@@ -65,9 +65,10 @@ Move instructions, first bit is dictating that we are using memory addresses or 
 | *mnemonic and input* | *hex* | *description* |
 |--|--|--|
 JMP, address | `0xC0` | Unconditionally jump to address.
-JNZ, address | `0xC1` | Jump to address if `imm` is not zero.
-JEQ, address | `0xC2` | Jump to address if `imm` is zero.
-JGT, address | `0xC3` | Jump to address if `imm` is positive.
+JNZ, distance | `0xC1` | Jump back by distance if `imm` is not zero.
+JEQ, distance | `0xC2` | Jump back by distance if `imm` is zero.
+JGT, distance | `0xC3` | Jump back by distance if `imm` is positive.
+JLT, distance | `0xC4` | Jump back by distance if `imm` is negative.
 RET, address | `0xCF` | Returns value in `ret` and terminates the program.
 CMP, rX, rY | `0xCC` | Subtracts rX from rY and puts result in `imm`, if reg:sp is passed as rX we pop the compared elements from the stack
 

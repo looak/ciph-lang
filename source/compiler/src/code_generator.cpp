@@ -176,18 +176,36 @@ CodeGenerator::generateWhileStatement(const ASTWhileNode* node) {
 
     generateScope(node);
 
+    // Leaves (left - right) in imm for the jump to test.
     generateComparisonExpression(node->readCondition(), registers::def::sp);
 
-    uint16_t end = static_cast<uint16_t>(m_bytecode.size());
-    switch (node->readCondition()->readOperator())
-    {
-    case OperatorType::LESS_THAN:
-        m_bytecode.push_back(static_cast<uint8_t>(instruction::def::JLT));
-        // since JLT is 3 bytes long, we need to add that to the end.
-        uint16_t offset = (end + 3) - start;
-        encode(offset);
-        break;
+    instruction::def jump = instruction::def::NOP;
+    switch (node->readCondition()->readOperator()) {
+        case OperatorType::LESS_THAN:
+            jump = instruction::def::JLT;
+            break;
+        case OperatorType::GREATER_THAN:
+            jump = instruction::def::JGT;
+            break;
+        case OperatorType::EQUAL:
+            jump = instruction::def::JEQ;
+            break;
+        case OperatorType::NOT_EQUAL:
+            jump = instruction::def::JNZ;
+            break;
+        default:
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node->readCondition()),
+                   fmt::format("no jump instruction for comparison operator {}",
+                               static_cast<int>(node->readCondition()->readOperator())));
+            return;
     }
+
+    // The jump goes back to the start of the body while the condition holds.
+    // Its distance counts from the end of the jump instruction, which is
+    // three bytes long.
+    uint16_t end = static_cast<uint16_t>(m_bytecode.size());
+    emit(jump);
+    encode(static_cast<int16_t>((end + 3) - start));
 }
 
 void

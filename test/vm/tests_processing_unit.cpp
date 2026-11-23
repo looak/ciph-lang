@@ -196,6 +196,69 @@ TEST(ProcessingUnitTest, While) {
     EXPECT_EQ(result, 10);
 }
 
+TEST(ProcessingUnitTest, While_GreaterThan) {
+    // let x = 10
+    // while (x > 5) {
+    //     x--
+    // }
+    // return x
+    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 10,
+                            +instruction::def::DEC, +registers::def::sp, 0,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                            +instruction::def::PSH_LIT, 0, 5,
+                            +instruction::def::CMP, +registers::def::sp,
+                            +instruction::def::JGT, 0x00, 0x0E, // jump back fourteen bytes
+                            +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                            +instruction::def::RET
+                            };
+
+    uint16_t result = testProcessingUnit(program, sizeof(program));
+    EXPECT_EQ(result, 5);
+}
+
+TEST(ProcessingUnitTest, While_NotEqual) {
+    // let x = 0
+    // while (x != 5) {
+    //     x++
+    // }
+    // return x
+    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 0,
+                            +instruction::def::INC, +registers::def::sp, 0,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                            +instruction::def::PSH_LIT, 0, 5,
+                            +instruction::def::CMP, +registers::def::sp,
+                            +instruction::def::JNZ, 0x00, 0x0E, // jump back fourteen bytes
+                            +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                            +instruction::def::RET
+                            };
+
+    uint16_t result = testProcessingUnit(program, sizeof(program));
+    EXPECT_EQ(result, 5);
+}
+
+TEST(ProcessingUnitTest, While_Equal) {
+    // let x = 0
+    // while (x == 1) {
+    //     x++
+    // }
+    // return x
+    //
+    // The body runs before the first check: x becomes 1, the condition holds
+    // once, x becomes 2 and the loop ends.
+    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 0,
+                            +instruction::def::INC, +registers::def::sp, 0,
+                            +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                            +instruction::def::PSH_LIT, 0, 1,
+                            +instruction::def::CMP, +registers::def::sp,
+                            +instruction::def::JEQ, 0x00, 0x0E, // jump back fourteen bytes
+                            +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                            +instruction::def::RET
+                            };
+
+    uint16_t result = testProcessingUnit(program, sizeof(program));
+    EXPECT_EQ(result, 2);
+}
+
 TEST(ProcessingUnitTest, Jump_SkipsToAddressFromProgramStart) {
     // The jump at address 0 targets address 9, skipping the first return.
     uint8_t program[] = {   +instruction::def::JMP, 0x00, 0x09,

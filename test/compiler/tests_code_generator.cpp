@@ -463,6 +463,45 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement) {
     EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
 }
 
+TEST_F(CodeGeneratorTestFixture, WhileStatement_JumpMatchesTheComparison) {
+    struct Case {
+        const char* comparison;
+        instruction::def jump;
+    };
+    const Case cases[] = {
+        {"<", instruction::def::JLT},
+        {">", instruction::def::JGT},
+        {"==", instruction::def::JEQ},
+        {"!=", instruction::def::JNZ},
+    };
+
+    for (const Case& c : cases) {
+        std::string code = fmt::format("let i = 0; while (i {} 5) {{ i++; }} return i;", c.comparison);
+        Parser parser(code);
+        auto parser_result = parser.parse();
+        auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
+        CodeGenerator generator(programNode, parser.readTokens());
+
+        EXPECT_TRUE(generator.generateCode().empty()) << c.comparison;
+        auto [actualProgram, actualSize] = generator.readRawBytecode();
+
+        // Same layout as the WhileStatement test; only the jump differs.
+        uint8_t expectedProgram[] = { +instruction::def::JMP, 0x00, 0x03,
+                                      +instruction::def::PSH_LIT, 0, 0,
+                                      +instruction::def::INC, +registers::def::sp, 0,
+                                      +instruction::def::PEK_OFF, +registers::def::sp, 0,
+                                      +instruction::def::PSH_LIT, 0, 5,
+                                      +instruction::def::CMP, +registers::def::sp,
+                                      +c.jump, 0x00, 0x0E,
+                                      +instruction::def::PEK_OFF, +registers::def::ret, 0,
+                                      +instruction::def::RET,
+                                      +instruction::def::HALT };
+
+        ASSERT_EQ(sizeof(expectedProgram), actualSize) << c.comparison;
+        EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize)) << c.comparison;
+    }
+}
+
 TEST_F(CodeGeneratorTestFixture, ValidProgram_ReportsNoErrors) {
     std::string code("let x = 2; return x + 3;");
     Parser parser(code);
