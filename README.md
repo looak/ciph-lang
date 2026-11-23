@@ -43,8 +43,14 @@ return i;
   (`while`, `fn`) take no `;` after the `}`.
 - `//` starts a comment that runs to the end of the line.
 
-Functions are in progress: `fn name() { ... }` parses, but bodies are not
-compiled yet and there are no parameters.
+- An expression takes one operator per level: `2 * 2 + 3` works, `1 + 2 + 3`
+  does not yet.
+
+Functions are in progress: `fn name() { ... }` and calls to it are parsed and
+checked, but the compiler then stops with `not supported yet`, because
+function bodies are not compiled. There are no parameters.
+
+The full grammar is in [docs/grammar.md](docs/grammar.md).
 
 ## How source becomes a running program
 
@@ -52,14 +58,17 @@ compiled yet and there are no parameters.
 source text
   -> lexer              tokens, each with a line, column and length
   -> parser             a tree (AST); each node records its tokens
-  -> semantic analyzer  checks the tree (being written)
+  -> semantic analyzer  checks names: declared before use, not declared twice
   -> code generator     bytecode
   -> ciph-vm            runs the bytecode
 ```
 
 The compiler and the VM are separate programs that pass files to each other.
-The compiler stops at the first syntax error and reports it as
-`<file>:<line>:<column>: error: <what>`.
+
+Every stage reports its errors the same way, as
+`<file>:<line>:<column>: error: <what>`, and a stage only runs if the one
+before it found none. The parser stops at the first syntax error; the
+analyzer and the code generator report everything they find.
 
 ## Building
 
