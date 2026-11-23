@@ -1,5 +1,7 @@
 #include <ciph/compiler/code_generator.hpp>
 
+#include <utility>
+
 #include <fmt/core.h>
 
 #include <ciph/shared/disassembler.hpp>
@@ -15,11 +17,11 @@ CodeGenerator::disassemble() const {
     return disassembler.disassemble();
 }
 
-void
+std::vector<Diagnostic>
 CodeGenerator::generateCode() {
     m_bytecode.clear();
-    
-    
+    m_errors.clear();
+
     emit(instruction::def::JMP);
     encode(0x0000); // placeholder for address, patched below
 
@@ -38,6 +40,8 @@ CodeGenerator::generateCode() {
     patch(1, m_functions["main"].address);
 
     resolveUnresolvedCalls();
+
+    return m_errors;
 }
 
 void
@@ -46,19 +50,11 @@ CodeGenerator::generateProgram(const ASTProgramNode* node) {
 }
 
 void
-CodeGenerator::generateFunction(const ASTBaseNode* node) {
-    const ASTFunctionNode* functionNode = static_cast<const ASTFunctionNode*>(node);
-    if (m_functions.contains(functionNode->readName()) == false) {
-        m_functions.emplace(functionNode->readName(),
-                            FunctionContext{std::string(functionNode->readName()),
-                                            static_cast<uint16_t>(m_bytecode.size())});
-    }
-    else {
-        fmt::print("Function {} already exists\n", functionNode->readName());
-        return;
-    }
-
-    generateScope(functionNode);
+CodeGenerator::generateFunction(const ASTFunctionNode* node) {
+    // Function bodies are not generated yet. Say so instead of emitting a
+    // program whose calls have nowhere to go.
+    report(ErrorCode::CODEGEN_ERROR_UNSUPPORTED, positionOf(node),
+           fmt::format("function '{}': functions cannot be compiled yet", node->readName()));
 }
 
 void
@@ -78,6 +74,11 @@ CodeGenerator::generateScope(const ASTScopeNode* node) {
             case ASTNodeType::WHILE: {
                 const auto* whileNode = static_cast<const ASTWhileNode*>(statement);
                 generateWhileStatement(whileNode);
+                break;
+            }
+            case ASTNodeType::FUNCTION: {
+                const auto* functionNode = static_cast<const ASTFunctionNode*>(statement);
+                generateFunction(functionNode);
                 break;
             }
             default: {
@@ -120,7 +121,8 @@ CodeGenerator::generateExpression(const ASTBaseNode* node, registers::def reg) {
             break;
         }
         default: {
-            fmt::print("Unknown node type\n");
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+                   fmt::format("no code generation for node type {}", static_cast<int>(node->readType())));
             break;
         }
     }
@@ -192,7 +194,9 @@ void
 CodeGenerator::generateLetStatement(const ASTLetNode* node) {
     if (m_identifiers.find(node->readIdentifier()) == m_identifiers.end()) {
         if (m_stackSize >= UINT8_MAX) {
-            fmt::print("Stack overflow\n");
+            report(ErrorCode::CODEGEN_ERROR_TOO_MANY_VALUES, positionOf(node),
+                   fmt::format("no room left for '{}': a variable's stack offset has to fit in one byte",
+                               node->readIdentifier()));
             return;
         }
         m_identifiers.emplace(  std::string(node->readIdentifier()),
@@ -200,7 +204,11 @@ CodeGenerator::generateLetStatement(const ASTLetNode* node) {
         generateExpression(node->readExpression(), registers::def::sp);
     }
     else {
-        fmt::print("Identifier already exists\n");
+        // The analyzer lets sibling blocks reuse a name, but variables here
+        // are still kept in one list for the whole program.
+        report(ErrorCode::CODEGEN_ERROR_UNSUPPORTED, positionOf(node),
+               fmt::format("'{}' is declared in more than one block, which cannot be compiled yet",
+                           node->readIdentifier()));
     }
 }
 
@@ -216,7 +224,8 @@ CodeGenerator::generateIdentifier(const ASTIdentifierNode* node, registers::def 
             return;
         }
         else {
-            fmt::print("Identifier not found\n");
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+                   fmt::format("no stack slot for '{}'", node->readName()));
             return;
         }
     }
@@ -225,13 +234,14 @@ CodeGenerator::generateIdentifier(const ASTIdentifierNode* node, registers::def 
             m_registers[+reg].value = std::make_optional(identifier->second);
     }
     else {
-        fmt::print("Identifier not found\n");
+        report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+               fmt::format("no stack slot for '{}'", node->readName()));
     }
 }
 
 void
-CodeGenerator::encodeOperator(OperatorType op) {
-    switch (op) {
+CodeGenerator::encodeOperator(const ASTBinaryExpressionNode* node) {
+    switch (node->readOperator()) {
         case OperatorType::ADDITION: {
             m_bytecode.push_back(static_cast<uint8_t>(instruction::def::ADD));
             break;
@@ -249,7 +259,8 @@ CodeGenerator::encodeOperator(OperatorType op) {
             break;
         }
         default: {
-            fmt::print("Unknown operator\n");
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+                   fmt::format("no instruction for operator {}", static_cast<int>(node->readOperator())));
             break;
         }
     }
@@ -258,7 +269,7 @@ CodeGenerator::encodeOperator(OperatorType op) {
 void
 CodeGenerator::generateOperatorReg( const ASTBinaryExpressionNode* node, registers::def regA,
                                     [[maybe_unused]] std::optional<registers::def> regB) {
-    encodeOperator(node->readOperator());
+    encodeOperator(node);
 
     if (regA == registers::def::ret) {
         m_bytecode.push_back(static_cast<uint8_t>(instruction::def::POP_REG));
@@ -274,13 +285,13 @@ CodeGenerator::generateOperator(const ASTBinaryExpressionNode* node, std::option
         generateOperatorReg(node, regA.value(), regB);
     }
     else {
-        encodeOperator(node->readOperator());
+        encodeOperator(node);
         m_stackSize--; // poped twice & pushed once
     }
 }
 
 void
-CodeGenerator::generateCompareOperator( [[maybe_unused]] const ASTComparisonExpressionNode* node, registers::def regA,
+CodeGenerator::generateCompareOperator(const ASTComparisonExpressionNode* node, registers::def regA,
                                         std::optional<registers::def> regB) {
     m_bytecode.push_back(static_cast<uint8_t>(instruction::def::CMP));
     encodeRegister(regA);
@@ -288,7 +299,8 @@ CodeGenerator::generateCompareOperator( [[maybe_unused]] const ASTComparisonExpr
         encodeRegister(regB.value());
     }
     else if (regA != registers::def::sp) {
-        fmt::print("Error: compare operator\n");
+        report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+               "a compare between registers needs two registers, got one");
     }
     else {
         m_stackSize -= 2; // poped twice
@@ -356,8 +368,26 @@ void CodeGenerator::resolveUnresolvedCalls() {
                 patch(pos, function->second.address);
             }
         }
-        else {
-            fmt::print("Unresolved function call to {}\n", functionName);
+        else if (m_errors.empty()) {
+            // With an earlier error, such as the function not being compiled,
+            // the missing target is already explained.
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, Position{0, 0},
+                   fmt::format("call to '{}' has no address to jump to", functionName));
         }
     }
+}
+
+Position
+CodeGenerator::positionOf(const ASTBaseNode* node) const {
+    const SourceRange range = node->readSourceRange();
+    const uint32_t token = range.focusToken();
+    if (!range.hasTokens() || token >= m_tokens.size()) {
+        return Position{0, 0};
+    }
+    return m_tokens[token].readPosition();
+}
+
+void
+CodeGenerator::report(ErrorCode code, Position position, std::string message) {
+    m_errors.push_back(Diagnostic{.code = code, .position = position, .additionalInfo = std::move(message)});
 }

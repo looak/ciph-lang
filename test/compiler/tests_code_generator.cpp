@@ -463,6 +463,67 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement) {
     EXPECT_TRUE(compareBytecode(expectedProgram, actualProgram, actualSize));
 }
 
+TEST_F(CodeGeneratorTestFixture, ValidProgram_ReportsNoErrors) {
+    std::string code("let x = 2; return x + 3;");
+    Parser parser(code);
+    auto parser_result = parser.parse();
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
+    CodeGenerator generator(programNode, parser.readTokens());
+
+    EXPECT_TRUE(generator.generateCode().empty());
+}
+
+TEST_F(CodeGeneratorTestFixture, Function_ReportedAsUnsupportedAtItsName) {
+    std::string code("fn number() {\n"
+                     "    return 5;\n"
+                     "}\n"
+                     "return number();");
+    Parser parser(code);
+    auto parser_result = parser.parse();
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
+    CodeGenerator generator(programNode, parser.readTokens());
+
+    std::vector<Diagnostic> errors = generator.generateCode();
+
+    // One error for the function; the call that has nowhere to jump to is a
+    // consequence of it and is not reported separately.
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].code, ErrorCode::CODEGEN_ERROR_UNSUPPORTED);
+    EXPECT_EQ(errors[0].position.line, 1u);
+    EXPECT_EQ(errors[0].position.column, 4u);
+}
+
+TEST_F(CodeGeneratorTestFixture, NameReusedInSiblingBlocks_ReportedAsUnsupported) {
+    std::string code("let i = 0;\n"
+                     "while (i < 1) { let a = 1; i++; }\n"
+                     "while (i < 2) { let a = 2; i++; }\n"
+                     "return i;");
+    Parser parser(code);
+    auto parser_result = parser.parse();
+    auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
+    CodeGenerator generator(programNode, parser.readTokens());
+
+    std::vector<Diagnostic> errors = generator.generateCode();
+
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].code, ErrorCode::CODEGEN_ERROR_UNSUPPORTED);
+    EXPECT_EQ(errors[0].position.line, 3u);
+}
+
+TEST_F(CodeGeneratorTestFixture, HandBuiltTree_ErrorsHaveZeroPosition) {
+    // A use of a variable nothing declared: the analyzer would have caught
+    // it, so here it is the generator's own error.
+    m_program.addStatement(new ASTIdentifierNode(SourceRange{}, "ghost", nullptr));
+    CodeGenerator generator(&m_program);
+
+    std::vector<Diagnostic> errors = generator.generateCode();
+
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].code, ErrorCode::CODEGEN_ERROR_INTERNAL);
+    EXPECT_EQ(errors[0].position.line, 0u);
+    EXPECT_EQ(errors[0].position.column, 0u);
+}
+
 // DISABLED: placeholder. Function bodies are not generated yet, and the expected
 // bytes below were copied from the while test. Re-enable with real expectations
 // once function support is designed and built.

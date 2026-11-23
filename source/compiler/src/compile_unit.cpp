@@ -56,8 +56,14 @@ CompileUnit::generateCode() {
         return false;
     }
 
-    CodeGenerator generator(static_cast<const ASTProgramNode*>(m_astRoot.get()));
-    generator.generateCode();
+    CodeGenerator generator(static_cast<const ASTProgramNode*>(m_astRoot.get()), m_tokens);
+    auto diagnostics = generator.generateCode();
+    if (!diagnostics.empty()) {
+        // Keep nothing: bytecode generated with errors is not a program.
+        m_diagnostics.insert(m_diagnostics.end(), std::make_move_iterator(diagnostics.begin()),
+                             std::make_move_iterator(diagnostics.end()));
+        return false;
+    }
 
     // readRawBytecode() hands over a new[] copy; take ownership of it so it
     // is freed once the bytes are in m_bytecode.

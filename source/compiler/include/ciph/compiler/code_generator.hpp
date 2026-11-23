@@ -4,10 +4,13 @@
 #include <cstdint>
 #include <optional>
 #include <ciph/shared/shared_defines.hpp>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <variant>
 #include <vector>
+#include <ciph/compiler/error_defines.hpp>
+#include <ciph/compiler/lexar.hpp>
 #include <ciph/compiler/lexar_defines.hpp>
 
 namespace ciph {
@@ -23,6 +26,7 @@ class ASTReturnNode;
 class ASTScopeNode;
 class ASTWhileNode;
 class ASTCallNode;
+class ASTFunctionNode;
 
 struct IdentifierContext {
     IdentifierContext(std::string_view _name, uint8_t _offset)
@@ -56,13 +60,24 @@ struct RegisterValue {
 };
 
 
+// Turns a checked program into bytecode.
+//
+// Runs after the semantic analyzer and trusts it: a name that is used has been
+// declared. What it reports itself are things it cannot compile yet, limits it
+// ran into, and its own mistakes.
 class CodeGenerator {
 public:
-    explicit CodeGenerator(const ASTProgramNode* program)
-        : m_program(program) {}
+    // `tokens` is the parser's token list (Parser::readTokens()); errors use
+    // it to point into the source. Without it, such as for a tree built by
+    // hand, errors carry a zero position.
+    explicit CodeGenerator(const ASTProgramNode* program, std::span<const Token> tokens = {})
+        : m_program(program)
+        , m_tokens(tokens) {}
     ~CodeGenerator() = default;
 
-    void generateCode();
+    // Generates the whole program and returns every error found. An empty
+    // result means the bytecode is complete; otherwise it should not be run.
+    std::vector<Diagnostic> generateCode();
 
     const std::pair<uint8_t*, size_t> readRawBytecode() const;
     std::string outputBytecode();
@@ -73,7 +88,7 @@ private:
 
     void generateProgram(const ASTProgramNode* node);
     void generateScope(const ASTScopeNode* node);
-    void generateFunction(const ASTBaseNode* node);
+    void generateFunction(const ASTFunctionNode* node);
 
     // expressions
     void generateExpression(const ASTBaseNode* node);
@@ -113,7 +128,12 @@ private:
     void patch(uint16_t position, uint16_t byte);
     void encode(int16_t value);
     void encodeRegister(registers::def reg);
-    void encodeOperator(OperatorType op);
+    void encodeOperator(const ASTBinaryExpressionNode* node);
+
+    // Where `node`'s focus token starts. Nodes without a range (built by hand,
+    // not parsed) give a zero position.
+    [[nodiscard]] Position positionOf(const ASTBaseNode* node) const;
+    void report(ErrorCode code, Position position, std::string message);
 
     std::array<RegisterValue, static_cast<int>(registers::def::reg_cnt)> m_registers;
 
@@ -132,6 +152,8 @@ private:
     std::unordered_map<std::string, std::vector<uint8_t>, IdentifierHash, std::equal_to<>> m_unresolvedCalls;
 
     const ASTProgramNode* m_program = nullptr;
+    std::span<const Token> m_tokens;
+    std::vector<Diagnostic> m_errors;
     std::vector<uint8_t> m_bytecode = {};
     std::string m_resultBytecode = "";
 };

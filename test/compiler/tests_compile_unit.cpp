@@ -76,6 +76,20 @@ TEST(CompileUnitTest, SemanticError_StopsCodeGeneration) {
     EXPECT_EQ(unit.readDiagnostics()[0].code, ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER);
 }
 
+TEST(CompileUnitTest, CodeGeneratorError_IsReportedAndLeavesNoBytecode) {
+    // Functions pass the analyzer but cannot be compiled yet.
+    CompileUnit unit("fn five() { return 5; }");
+
+    ASSERT_TRUE(unit.parse());
+    ASSERT_TRUE(unit.semanticAnalyze());
+    EXPECT_FALSE(unit.generateCode());
+
+    EXPECT_FALSE(unit.hasGenerated());
+    EXPECT_TRUE(unit.readBytecode().empty());
+    ASSERT_EQ(unit.readDiagnostics().size(), 1u);
+    EXPECT_EQ(unit.readDiagnostics()[0].code, ErrorCode::CODEGEN_ERROR_UNSUPPORTED);
+}
+
 TEST(CompileUnitTest, StagesOutOfOrder_DoNothing) {
     CompileUnit unit("let x = 5; return x;");
 
