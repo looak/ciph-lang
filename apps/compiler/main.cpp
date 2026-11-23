@@ -28,12 +28,9 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
-#include <ciph/compiler/ast.hpp>
-#include <ciph/compiler/code_generator.hpp>
+#include <ciph/compiler/compile_unit.hpp>
 #include <ciph/compiler/error_defines.hpp>
 #include <ciph/compiler/lexar_defines.hpp>
-#include <ciph/compiler/parser.hpp>
-#include <ciph/compiler/semantic_analyzer.hpp>
 #include <ciph/shared/disassembler.hpp>
 
 using namespace ciph;
@@ -60,7 +57,7 @@ with_suffix(const std::filesystem::path& path, std::string_view suffix) {
 // One error as "<source>:<line>:<column>: error: <what>", followed by any
 // extra detail and nested errors, indented.
 void
-format_error(std::string& out, const std::filesystem::path& source, const ParserError& error, int depth) {
+format_error(std::string& out, const std::filesystem::path& source, const Diagnostic& error, int depth) {
     const std::string indent(static_cast<std::size_t>(depth) * 2, ' ');
 
     std::string what;
@@ -76,7 +73,7 @@ format_error(std::string& out, const std::filesystem::path& source, const Parser
     if (!error.additionalInfo.empty()) {
         out += fmt::format("{}  {}\n", indent, error.additionalInfo);
     }
-    for (const ParserError& nested : error.nestedError) {
+    for (const Diagnostic& nested : error.nestedError) {
         format_error(out, source, nested, depth + 1);
     }
 }
@@ -85,9 +82,9 @@ format_error(std::string& out, const std::filesystem::path& source, const Parser
 // code for a failed compile.
 int
 report_errors(const std::filesystem::path& source, const std::filesystem::path& error_path,
-              std::span<const ParserError> errors) {
+              std::span<const Diagnostic> errors) {
     std::string message;
-    for (const ParserError& error : errors) {
+    for (const Diagnostic& error : errors) {
         format_error(message, source, error, 0);
     }
 
@@ -131,26 +128,18 @@ compile(const std::filesystem::path& source_path, const std::filesystem::path& o
     std::stringstream source;
     source << source_file.rdbuf();
 
-    Parser parser(source.str());
-    auto parse_result = parser.parse();
-    if (!parse_result) {
-        return report_errors(source_path, error_path, std::span(&parse_result.error(), 1));
-    }
-    const auto* program = static_cast<const ASTProgramNode*>(*parse_result);
+    CompileUnit unit(source.str());
 
-    SemanticAnalyzer analyzer(program, parser.readTokens());
-    if (const std::vector<ParserError> errors = analyzer.analyze(); !errors.empty()) {
-        return report_errors(source_path, error_path, errors);
+    // Each stage only runs if the one before it passed.
+    if (!unit.parse() || !unit.semanticAnalyze() || !unit.generateCode()) {
+        return report_errors(source_path, error_path, unit.readDiagnostics());
     }
-
-    CodeGenerator generator(program);
-    generator.generateCode();
-    auto [bytecode, size] = generator.readRawBytecode();
+    const std::vector<uint8_t>& bytecode = unit.readBytecode();
 
     std::ofstream output_file(output_path, std::ios::binary);
-    output_file.write(reinterpret_cast<const char*>(bytecode), static_cast<std::streamsize>(size));
+    output_file.write(reinterpret_cast<const char*>(bytecode.data()), static_cast<std::streamsize>(bytecode.size()));
 
-    Disassembler disassembler(bytecode, size);
+    Disassembler disassembler(bytecode.data(), bytecode.size());
     disassembler.disassemble();
     std::ofstream listing_file(listing_path, std::ios::binary);
     for (const auto& [address, instruction] : disassembler.disassembledInstructions()) {
@@ -159,7 +148,6 @@ compile(const std::filesystem::path& source_path, const std::filesystem::path& o
     }
 
     const bool written = output_file.good() && listing_file.good();
-    delete[] bytecode;
 
     if (!written) {
         fmt::print(stderr, "ciph-compiler: could not write '{}'\n", output_path.string());

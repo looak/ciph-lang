@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <stack>
 #include <vector>
 
@@ -204,14 +205,14 @@ private:
 class ASTIdentifierNode : public ASTExpressionNode
 {
 public:
-	ASTIdentifierNode(SourceRange range, const std::string& name, const ASTExpressionNode* op) : ASTExpressionNode(ASTNodeType::IDENTIFIER, range), m_name(name), m_operator(op) {}
+	ASTIdentifierNode(SourceRange range, std::string_view name, const ASTExpressionNode* op) : ASTExpressionNode(ASTNodeType::IDENTIFIER, range), m_name(name), m_operator(op) {}
 	~ASTIdentifierNode() override = default;
 
-	[[nodiscard]] const std::string& readName() const { return m_name; }
+	[[nodiscard]] std::string_view readName() const { return m_name; }
 	[[nodiscard]] const ASTExpressionNode* readOperator() const { return m_operator; }
 
 private:
-	std::string m_name;
+	std::string_view m_name;
 	const ASTExpressionNode* m_operator;
 };
 
@@ -231,32 +232,32 @@ private:
 class ASTLetNode : public ASTBaseNode
 {
 public:
-	ASTLetNode(SourceRange range, const std::string& identifier, ASTExpressionNode* expression)
+	ASTLetNode(SourceRange range, std::string_view identifier, ASTExpressionNode* expression)
 		: ASTBaseNode(ASTNodeType::LET, range)
 		, m_identifier(identifier)
 		, m_expression(expression)
 		{}
 	~ASTLetNode() override = default;
 
-	[[nodiscard]] const std::string& readIdentifier() const { return m_identifier; }
+	[[nodiscard]] std::string_view readIdentifier() const { return m_identifier; }
 	[[nodiscard]] const ASTExpressionNode* readExpression() const { return m_expression; }
 
 private:
-	std::string m_identifier;
+	std::string_view m_identifier;
 	ASTExpressionNode* m_expression;
 };
 
 class ASTFunctionNode : public ASTScopeNode {
 private:
-	std::string m_name;
+	std::string_view m_name;
 public:
-	ASTFunctionNode(SourceRange range, std::string name)
+	ASTFunctionNode(SourceRange range, std::string_view name)
 		: ASTScopeNode(ASTNodeType::FUNCTION, range)
-		, m_name(std::move(name))
+		, m_name(name)
 		{}
 	~ASTFunctionNode() final = default;
 
-	[[nodiscard]] const std::string&
+	[[nodiscard]] std::string_view
 	readName() const {
 		return m_name;
 	}
@@ -264,15 +265,15 @@ public:
 
 class ASTCallNode : public ASTExpressionNode {
 	private:
-		std::string m_functionName;
+		std::string_view m_functionName;
 	public:
-		ASTCallNode(SourceRange range, const std::string& functionName)
+		ASTCallNode(SourceRange range, std::string_view functionName)
 			: ASTExpressionNode(ASTNodeType::CALL_EXPRESSION, range)
 			, m_functionName(functionName)
 			{}
 		~ASTCallNode() override = default;
 
-		[[nodiscard]] const std::string&
+		[[nodiscard]] std::string_view
 		readFunctionName() const {
 			return m_functionName;
 		}

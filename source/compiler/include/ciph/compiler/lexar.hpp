@@ -2,6 +2,8 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -10,44 +12,40 @@
 
 namespace ciph {
 
-struct Position
-{
-    uint32_t line;
-    uint32_t column;
-};
-
 class Token {
 public:
+    Token(std::string_view stringValue, TokenType type, Position position, uint32_t length, uint32_t index)
+        : m_type(type), m_stringValue(stringValue), m_position(position), m_length(length), m_index(index) {}
+    Token(OperatorType operatorValue, TokenType type, Position position, uint32_t length, uint32_t index)
+        : m_type(type), m_operatorValue(operatorValue), m_position(position), m_length(length), m_index(index) {}
     // `length` is how many characters of source the token covers, starting at
     // `position`. Together they give the token's extent on its line.
-    Token(const std::string& value, TokenType type, Position position, uint32_t length, uint32_t index);
-    Token(const OperatorType& value, TokenType type, Position position, uint32_t length, uint32_t index);
-    Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position, uint32_t length, uint32_t index);
-
-    ~Token() = default;
-
-    Token(const Token& other) = default;
-    Token operator=(const Token& other);
-
-    std::string readValue() const;
-    OperatorType readOperator() const;
     TokenType readType() const;
+    std::string_view readStringValue() const;
+    OperatorType readOperatorValue() const;
     Position readPosition() const;
-    uint32_t readLength() const;
-    bool hasValue() const;
+    uint32_t readLength() const;    
     uint32_t readIndex() const;
 
 private:
-    std::variant<std::string, OperatorType> m_value;
     TokenType m_type;
+    
+    std::string_view m_stringValue;
+    OperatorType m_operatorValue = OperatorType::INVALID;
+    
     Position m_position;
     uint32_t m_length;
     uint32_t m_index;
 };
 
+// A token is copied around freely (peek and pop return it by value), so it
+// must stay a plain block of bytes. This fails if a member that owns
+// something, such as a std::string, is added.
+static_assert(std::is_trivially_copyable_v<Token>);
+
 class Lexar {
 public:
-    explicit Lexar(const std::string& input);
+    explicit Lexar(std::string_view input);
     ~Lexar() = default;
 
     /**
@@ -120,7 +118,7 @@ public:
 private:
     // Adds a token starting at `position` and covering `length` characters,
     // then moves `position` one column on.
-    void push(std::variant<std::string, OperatorType> value, TokenType type, Position& position, uint32_t length);
+    void push(std::variant<std::string_view, OperatorType> value, TokenType type, Position& position, uint32_t length);
     char popNextChar();
     char peekNextChar();
 
@@ -129,7 +127,7 @@ private:
     bool identifyOperator(char cursor, Position& cursorPos);
     bool isOperator(char cursor);
 
-    std::string m_input;
+    std::string_view m_input;
     uint32_t m_position;
 
     std::vector<Token> m_tokens;

@@ -1,66 +1,26 @@
 #include <ciph/compiler/lexar.hpp>
-
 #include <ciph/shared/shared_defines.hpp>
-
 #include <ciph/compiler/lexar_defines.hpp>
 
 using namespace ciph;
 
-Token::Token(const std::string& value, TokenType type, Position position, uint32_t length, uint32_t index)
-    : m_value(value)
-    , m_type(type)
-    , m_position(position)
-    , m_length(length)
-    , m_index(index) {
-}
 
-Token::Token(const OperatorType& value, TokenType type, Position position, uint32_t length, uint32_t index)
-    : m_value(value)
-    , m_type(type)
-    , m_position(position)
-    , m_length(length)
-    , m_index(index) {
-}
-
-Token::Token(const std::variant<std::string, OperatorType>& value, TokenType type, Position position, uint32_t length, uint32_t index)
-    : m_value(value)
-    , m_type(type)
-    , m_position(position)
-    , m_length(length)
-    , m_index(index) {
-}
-
-Token
-Token::operator=(const Token& other) {
-    m_value = other.m_value;
-    m_type = other.m_type;
-    m_position = other.m_position;
-    m_length = other.m_length;
-    m_index = other.m_index;
-    return *this;
-}
-
-std::string
-Token::readValue() const {
-    return std::get<std::string>(m_value);
+std::string_view
+Token::readStringValue() const {
+    return m_stringValue;
 }
 
 OperatorType
-Token::readOperator() const {
+Token::readOperatorValue() const {
     if (m_type != TokenType::OPERATOR)
         return OperatorType::UNKNOWN;
 
-    return std::get<OperatorType>(m_value);
+    return m_operatorValue;
 }
 
 TokenType
 Token::readType() const {
     return m_type;
-}
-
-bool
-Token::hasValue() const {
-    return m_type != TokenType::UNKNOWN;
 }
 
 Position
@@ -78,7 +38,7 @@ Token::readIndex() const {
     return m_index;
 }
 
-Lexar::Lexar(const std::string& input)
+Lexar::Lexar(std::string_view input)
     : m_input(input)
     , m_position(0)
     , m_tokens()
@@ -87,8 +47,14 @@ Lexar::Lexar(const std::string& input)
 }
 
 void
-Lexar::push(std::variant<std::string, OperatorType> value, TokenType type, Position& position, uint32_t length) {
-    m_tokens.emplace_back(value, type, position, length, m_index);
+Lexar::push(std::variant<std::string_view, OperatorType> value, TokenType type, Position& position, uint32_t length) {
+    if (std::holds_alternative<std::string_view>(value)) {
+        m_tokens.emplace_back(std::get<std::string_view>(value), type, position, length, m_index);
+    }
+    else {
+        m_tokens.emplace_back(std::get<OperatorType>(value), type, position, length, m_index);
+    }
+    
     position.column++;
     m_index++;
 }
@@ -97,7 +63,12 @@ void
 Lexar::skipWhiteSpaces(Position& cursorPos) {
     bool done = false;
     do {
-        if (m_input[m_position] == '\n') {
+        // m_input is a string_view: unlike std::string, it has no '\0' at
+        // size(), so stop before indexing past the end.
+        if (m_position >= m_input.size()) {
+            done = true;
+        }
+        else if (m_input[m_position] == '\n') {
             cursorPos.line++;
             cursorPos.column = 1;
             m_position++;
@@ -137,7 +108,6 @@ Lexar::lex() {
 
     while (m_position < m_input.size()) {
         TokenType type = TokenType::UNKNOWN;
-        std::string value = "";
         skipWhiteSpaces(cursorPosition);
         char cursor = popNextChar();
         if (cursor == ';') {
@@ -188,9 +158,9 @@ Lexar::lex() {
             break;
 
         if (isdigit(cursor)) {
+            const std::size_t first = m_position - 1; // `cursor` was already popped
             uint32_t start = cursorPosition.column;
             do {
-                value += cursor;
                 type = TokenType::NUMBER;
 
                 cursor = popNextChar();
@@ -206,6 +176,7 @@ Lexar::lex() {
             // pointing the user to the beginning of the digit.
             uint32_t difference = cursorPosition.column - start;
             cursorPosition.column -= difference;
+            std::string_view value = m_input.substr(first, m_position - first);
             push(value, type, cursorPosition, static_cast<uint32_t>(value.size()));
             cursorPosition.column += difference;
             continue;
@@ -214,9 +185,9 @@ Lexar::lex() {
         // Identifiers and keywords start with a letter or '_' and continue
         // with letters, digits and '_', so `gcd_loop` and `i16` are one token.
         if (isalpha(cursor) || cursor == '_') {
+            const std::size_t first = m_position - 1; // `cursor` was already popped
             uint32_t start = cursorPosition.column;
-            do {
-                value += cursor;
+            do {                
                 type = TokenType::IDENTIFIER;
 
                 cursor = popNextChar();
@@ -226,6 +197,7 @@ Lexar::lex() {
 
             m_position--;
             cursorPosition.column--;
+            std::string_view value = m_input.substr(first, m_position - first);
 
             if (s_keywords.find(value) != s_keywords.end()) {
                 type = s_keywords.at(value);
@@ -238,7 +210,6 @@ Lexar::lex() {
             cursorPosition.column -= difference;
             push(value, type, cursorPosition, static_cast<uint32_t>(value.size()));
             cursorPosition.column += difference;
-            
 
             continue;
         }
@@ -263,7 +234,7 @@ Lexar::popOperator(OperatorType op) {
     Token token = pop();
     if (token.readType() != TokenType::OPERATOR)
         return {false, token};
-    if (token.readOperator() != op)
+    if (token.readOperatorValue() != op)
         return {false, token};
 
     return {true, token};
@@ -290,9 +261,14 @@ Lexar::pop() {
     return token;
 }
 
+// Returns '\0' once the input is used up, which the lexing loops treat as the
+// end. m_position still advances, because those loops step back one character
+// after reading past the end of a number or name.
 char
 Lexar::popNextChar() {
-    return m_input[m_position++];
+    const char c = m_position < m_input.size() ? m_input[m_position] : '\0';
+    ++m_position;
+    return c;
 }
 
 char

@@ -1,12 +1,15 @@
 #include <ciph/compiler/parser.hpp>
 
+#include <charconv>
+#include <string_view>
+
 #include <fmt/core.h>
 
 #include <ciph/compiler/ast.hpp>
 
 using namespace ciph;
 
-Parser::Parser(const std::string& input)
+Parser::Parser(std::string_view input)
     : m_lexar(input) {
 }
 
@@ -14,7 +17,7 @@ ParseExpect
 Parser::parse() {
     auto [success, error_code] = m_lexar.lex();
     if (success == false) {
-        ParserError error{.code = error_code, .position = {}, .additionalInfo = "Error while lexing input"};
+        Diagnostic error{.code = error_code, .position = {}, .additionalInfo = "Error while lexing input"};
         return std::unexpected(error);
     }
 
@@ -70,7 +73,7 @@ Parser::parseStatement() {
         case TokenType::FUNCTION:
             return parseFunctionStatement();
         case TokenType::SEMICOLON: {
-            ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION,
+            Diagnostic error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION,
                               .position = token.readPosition(),
                               .additionalInfo = "Found ';' with no statement before it"};
             return std::unexpected(error);
@@ -94,7 +97,7 @@ Parser::expectSemicolon(ASTBaseNode* statement, const char* what) {
             position.column += last.readLength();
         }
 
-        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON,
+        Diagnostic error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON,
                           .position = position,
                           .additionalInfo = fmt::format("Expected ';' after {}", what)};
         return std::unexpected(error);
@@ -106,7 +109,7 @@ ParseExpect
 Parser::parseWhileCondition() {
     auto [success, expected_token] = m_lexar.popExpect(TokenType::OPEN_PAREN);
     if (success == false) {
-        ParserError error{
+        Diagnostic error{
             .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
             .position = expected_token.readPosition(),
             .additionalInfo = "Expecting a open parenthesis after while keyword which contains a expression"};
@@ -115,7 +118,7 @@ Parser::parseWhileCondition() {
 
     auto condition = parseComparisonExpression();
     if (!condition) {
-        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION,
+        Diagnostic error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION,
                           .position = expected_token.readPosition(),
                           .additionalInfo = "Expecting while loop to be defined with a expression.",
                           .nestedError = {condition.error()}};
@@ -124,7 +127,7 @@ Parser::parseWhileCondition() {
 
     auto [success2, expected_token2] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
     if (success2 == false) {
-        ParserError error{
+        Diagnostic error{
             .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
             .position = expected_token2.readPosition(),
             .additionalInfo = "Expecting a close parenthesis after while keyword which contains a expression"};
@@ -138,7 +141,7 @@ ParseExpect
 Parser::parseScopeNode(ASTScopeNode* scopeNode) {
     auto [success, expected_token] = m_lexar.popExpect(TokenType::OPEN_BRACE);
     if (success == false) {
-        ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
+        Diagnostic error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
                           .position = expected_token.readPosition(),
                           .additionalInfo = "Expecting a open brace after keyword which contains a expression"};
         return std::unexpected(error);
@@ -155,7 +158,7 @@ Parser::parseScopeNode(ASTScopeNode* scopeNode) {
 
         token = m_lexar.peek();
         if (token.readType() == TokenType::END_OF_FILE) {
-            ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
+            Diagnostic error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
                               .position = m_lexar.peek().readPosition(),
                               .additionalInfo = "Expecting a close brace before end of file."};
             return std::unexpected(error);
@@ -164,7 +167,7 @@ Parser::parseScopeNode(ASTScopeNode* scopeNode) {
 
     auto [success1, expected_token1] = m_lexar.popExpect(TokenType::CLOSE_BRACE);
     if (success1 == false) {
-        ParserError error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
+        Diagnostic error{.code = ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH,
                           .position = expected_token1.readPosition(),
                           .additionalInfo = "Expecting a close brace after open brance which contains statements"};
         return std::unexpected(error);
@@ -226,8 +229,8 @@ Parser::parseComparisonExpression() {
     auto left = static_cast<ASTExpressionNode*>(*left_result);
 
     auto op = m_lexar.peek();
-    if (op.readOperator() == OperatorType::EQUAL || op.readOperator() == OperatorType::NOT_EQUAL ||
-        op.readOperator() == OperatorType::LESS_THAN || op.readOperator() == OperatorType::GREATER_THAN) {
+    if (op.readOperatorValue() == OperatorType::EQUAL || op.readOperatorValue() == OperatorType::NOT_EQUAL ||
+        op.readOperatorValue() == OperatorType::LESS_THAN || op.readOperatorValue() == OperatorType::GREATER_THAN) {
         m_lexar.pop();
 
         auto right_result = parseAddativeExpression();
@@ -236,7 +239,7 @@ Parser::parseComparisonExpression() {
         }
         auto right = static_cast<ASTExpressionNode*>(*right_result);
 
-        return new ASTComparisonExpressionNode(rangeFrom(first), left, right, op.readOperator());
+        return new ASTComparisonExpressionNode(rangeFrom(first), left, right, op.readOperatorValue());
     }
 
     return left;
@@ -252,7 +255,7 @@ Parser::parseAddativeExpression() {
     auto left = static_cast<ASTExpressionNode*>(*left_result);
 
     auto op = m_lexar.peek();
-    if (op.readOperator() == OperatorType::ADDITION || op.readOperator() == OperatorType::SUBTRACTION) {
+    if (op.readOperatorValue() == OperatorType::ADDITION || op.readOperatorValue() == OperatorType::SUBTRACTION) {
         m_lexar.pop();
 
         auto right_result = parseMultiplicativeExpression();
@@ -261,7 +264,7 @@ Parser::parseAddativeExpression() {
         }
         auto right = static_cast<ASTExpressionNode*>(*right_result);
 
-        return new ASTBinaryExpressionNode(rangeFrom(first), left, right, op.readOperator());
+        return new ASTBinaryExpressionNode(rangeFrom(first), left, right, op.readOperatorValue());
     }
 
     return left;
@@ -277,7 +280,7 @@ Parser::parseMultiplicativeExpression() {
     auto left = static_cast<ASTExpressionNode*>(*left_result);
 
     auto op = m_lexar.peek();
-    if (op.readOperator() == OperatorType::MULTIPLICATION || op.readOperator() == OperatorType::DIVISION) {
+    if (op.readOperatorValue() == OperatorType::MULTIPLICATION || op.readOperatorValue() == OperatorType::DIVISION) {
         m_lexar.pop();
 
         auto right_result = parsePrimaryExpression();
@@ -286,7 +289,7 @@ Parser::parseMultiplicativeExpression() {
         }
         auto right = static_cast<ASTExpressionNode*>(*right_result);
 
-        return new ASTBinaryExpressionNode(rangeFrom(first), left, right, op.readOperator());
+        return new ASTBinaryExpressionNode(rangeFrom(first), left, right, op.readOperatorValue());
     }
 
     return left;
@@ -298,9 +301,15 @@ Parser::parsePrimaryExpression() {
     Token token = m_lexar.peek();
 
     switch (token.readType()) {
-        case TokenType::NUMBER:
+        case TokenType::NUMBER: {
             m_lexar.pop();
-            return new ASTNumericLiteralNode(rangeFrom(first), static_cast<int16_t>(std::stoi(token.readValue())));
+            // Reads the digits straight from the source text. A literal too
+            // large for an int leaves the value at 0.
+            const std::string_view digits = token.readStringValue();
+            int numericValue = 0;
+            std::from_chars(digits.data(), digits.data() + digits.size(), numericValue);
+            return new ASTNumericLiteralNode(rangeFrom(first), static_cast<int16_t>(numericValue));
+        }
         case TokenType::IDENTIFIER:
             return parseIdentifier();
         case TokenType::OPEN_PAREN: {
@@ -313,7 +322,7 @@ Parser::parsePrimaryExpression() {
 
             auto [success, expected_token] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
             if (success == false) {
-                ParserError error{.code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
+                Diagnostic error{.code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
                                   .position = expected_token.readPosition(),
                                   .additionalInfo = "Missmatch between open and close parenthesis in expression."};
                 return std::unexpected(error);
@@ -322,11 +331,11 @@ Parser::parsePrimaryExpression() {
             return expression;
         }
         case TokenType::OPERATOR: {
-            if (token.readOperator() == OperatorType::INCREMENT) {
+            if (token.readOperatorValue() == OperatorType::INCREMENT) {
                 m_lexar.pop();
                 return new ASTIncDecNode(rangeFrom(first), true);
             }
-            else if (token.readOperator() == OperatorType::DECREMENT) {
+            else if (token.readOperatorValue() == OperatorType::DECREMENT) {
                 m_lexar.pop();
                 return new ASTIncDecNode(rangeFrom(first), false);
             }
@@ -343,17 +352,17 @@ Parser::parseLetStatement() {
     m_lexar.pop();
     auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
-        ParserError error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
+        Diagnostic error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
                             .position = token.readPosition(),
                             .additionalInfo = "Expected identifier after let keyword"};
         return std::unexpected(error);
     }
 
-    std::string name = token.readValue();
+    auto name = token.readStringValue();
 
     auto [op_success, op_token] = m_lexar.popOperator(OperatorType::ASSIGNMENT);
     if (op_success == false) {
-        ParserError error{
+        Diagnostic error{
             .code = ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR,
             .position = op_token.readPosition(),
             .additionalInfo = fmt::format("Expected assignment operator after identifier {} in let statement", name)};
@@ -375,13 +384,13 @@ Parser::parseIdentifier() {
     const uint32_t first = m_lexar.nextIndex(); // first token of this construct
     auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
-        ParserError error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
+        Diagnostic error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
                             .position = token.readPosition(),
                             .additionalInfo = "Expected identifier in expression"};
         return std::unexpected(error);
     }
 
-    std::string name = token.readValue();
+    std::string_view name = token.readStringValue();
     token = m_lexar.peek();
 
     if (token.readType() == TokenType::OPEN_PAREN) {
@@ -389,18 +398,18 @@ Parser::parseIdentifier() {
         // handle arguments later
         auto [close_success, result] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
         if (close_success == false) {
-            ParserError error{  .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
+            Diagnostic error{  .code = ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH,
                                 .position = result.readPosition(),
                                 .additionalInfo = "Expected closing parenthesis for function call"};
             return std::unexpected(error);
         }
         return new ASTCallNode(rangeFrom(first), name);
     }
-    else if (token.readOperator() == OperatorType::INCREMENT) {
+    else if (token.readOperatorValue() == OperatorType::INCREMENT) {
         m_lexar.pop();
         return new ASTIdentifierNode(rangeFrom(first), name, new ASTIncDecNode(rangeFrom(first + 1), true));
     }
-    else if (token.readOperator() == OperatorType::DECREMENT) {
+    else if (token.readOperatorValue() == OperatorType::DECREMENT) {
         m_lexar.pop();
         return new ASTIdentifierNode(rangeFrom(first), name, new ASTIncDecNode(rangeFrom(first + 1), false));
     }
@@ -414,12 +423,12 @@ Parser::parseFunctionStatement() {
     m_lexar.pop();
     auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
-        ParserError error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
+        Diagnostic error{  .code = ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER,
                             .position = token.readPosition(),
                             .additionalInfo = "Expected function identifier after fn keyword"};
         return std::unexpected(error);
     }
-    auto name = token.readValue();
+    auto name = token.readStringValue();
     auto functionNode = new ASTFunctionNode(SourceRange{first, first}, name);
 
     m_lexar.popExpect(TokenType::OPEN_PAREN);
@@ -434,7 +443,7 @@ Parser::parseFunctionStatement() {
     const auto& statements = functionNode->readStatements();
     bool hasReturn = !statements.empty() && statements.back()->readType() == ASTNodeType::RETURN;
     if (hasReturn == false) {
-        ParserError error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_RETURN_STATEMENT,
+        Diagnostic error{.code = ErrorCode::SYNTAX_ERROR_EXPECTED_RETURN_STATEMENT,
                           .position = token.readPosition(),
                           .additionalInfo = "Expected function to have a return statement"};
         return std::unexpected(error);

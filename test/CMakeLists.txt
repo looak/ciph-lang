@@ -18,6 +18,7 @@ endfunction()
 ciph_add_test(compiler_tests
   SOURCES
     compiler/tests_code_generator.cpp
+    compiler/tests_compile_unit.cpp
     compiler/tests_error_defines.cpp
     compiler/tests_lexar.cpp
     compiler/tests_parser.cpp

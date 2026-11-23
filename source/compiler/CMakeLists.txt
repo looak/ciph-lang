@@ -1,12 +1,14 @@
 ciph_add_library(compiler
   SOURCES
     src/code_generator.cpp
+    src/compile_unit.cpp
     src/lexar.cpp
     src/parser.cpp
     src/semantic_analyzer.cpp
   HEADERS
     include/ciph/compiler/ast.hpp
     include/ciph/compiler/code_generator.hpp
+    include/ciph/compiler/compile_unit.hpp
     include/ciph/compiler/error_defines.hpp
     include/ciph/compiler/error_reporter.hpp
     include/ciph/compiler/lexar.hpp

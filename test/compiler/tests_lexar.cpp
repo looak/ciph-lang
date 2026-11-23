@@ -13,13 +13,13 @@ TEST(LexarTest, PrimitiveTokens) {
     auto token = lx.pop();
 
     // validate
-    EXPECT_EQ(token.readValue(), "12345");
+    EXPECT_EQ(token.readStringValue(), "12345");
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
 }
 
 bool
 isOperator(const Token& token, OperatorType type) {
-    return token.readType() == TokenType::OPERATOR && token.readOperator() == type;
+    return token.readType() == TokenType::OPERATOR && token.readOperatorValue() == type;
 }
 
 bool
@@ -92,12 +92,12 @@ TEST(LexarTest, SimpleAddExpression) {
     auto token3 = lx.pop();
 
     // validate
-    EXPECT_EQ(token1.readValue(), "1");
+    EXPECT_EQ(token1.readStringValue(), "1");
     EXPECT_EQ(token1.readType(), TokenType::NUMBER);
 
     EXPECT_TRUE(isOperator(token2, OperatorType::ADDITION));
 
-    EXPECT_EQ(token3.readValue(), "2");
+    EXPECT_EQ(token3.readStringValue(), "2");
     EXPECT_EQ(token3.readType(), TokenType::NUMBER);
 }
 
@@ -117,23 +117,23 @@ TEST(LexarTest, SimpleAssignmentExpression) {
     } while (!eofOrError);
 
     EXPECT_EQ(tokens[0].readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(tokens[0].readValue(), "myVar");
+    EXPECT_EQ(tokens[0].readStringValue(), "myVar");
     EXPECT_TRUE(isOperator(tokens[1], OperatorType::ASSIGNMENT));
     EXPECT_EQ(tokens[2].readType(), TokenType::NUMBER);
-    EXPECT_EQ(tokens[2].readValue(), "10");
+    EXPECT_EQ(tokens[2].readStringValue(), "10");
     EXPECT_TRUE(isOperator(tokens[3], OperatorType::ADDITION));
     EXPECT_EQ(tokens[4].readType(), TokenType::NUMBER);
-    EXPECT_EQ(tokens[4].readValue(), "5");
+    EXPECT_EQ(tokens[4].readStringValue(), "5");
     EXPECT_TRUE(isOperator(tokens[5], OperatorType::SUBTRACTION));
     EXPECT_EQ(tokens[6].readType(), TokenType::OPEN_PAREN);
-    EXPECT_EQ(tokens[6].readValue(), "(");
+    EXPECT_EQ(tokens[6].readStringValue(), "(");
     EXPECT_EQ(tokens[7].readType(), TokenType::NUMBER);
-    EXPECT_EQ(tokens[7].readValue(), "3");
+    EXPECT_EQ(tokens[7].readStringValue(), "3");
     EXPECT_TRUE(isOperator(tokens[8], OperatorType::MULTIPLICATION));
     EXPECT_EQ(tokens[9].readType(), TokenType::NUMBER);
-    EXPECT_EQ(tokens[9].readValue(), "2");
+    EXPECT_EQ(tokens[9].readStringValue(), "2");
     EXPECT_EQ(tokens[10].readType(), TokenType::CLOSE_PAREN);
-    EXPECT_EQ(tokens[10].readValue(), ")");
+    EXPECT_EQ(tokens[10].readStringValue(), ")");
     EXPECT_EQ(tokens[11].readType(), TokenType::END_OF_FILE);
 }
 
@@ -165,7 +165,7 @@ TEST(LexarTest, IdentifierLiteral) {
     Lexar lx("myVar");
     lx.lex();
     auto token = lx.pop();
-    EXPECT_EQ(token.readValue(), "myVar");
+    EXPECT_EQ(token.readStringValue(), "myVar");
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
 }
 
@@ -173,15 +173,15 @@ TEST(LexarTest, LetExpression) {
     Lexar lx("let x = 5");
     lx.lex();
     auto token = lx.pop();
-    EXPECT_EQ(token.readValue(), "let");
+    EXPECT_EQ(token.readStringValue(), "let");
     EXPECT_EQ(token.readType(), TokenType::LET);
     token = lx.pop();
-    EXPECT_EQ(token.readValue(), "x");
+    EXPECT_EQ(token.readStringValue(), "x");
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_TRUE(isOperator(lx.pop(), OperatorType::ASSIGNMENT));
 
     token = lx.pop();
-    EXPECT_EQ(token.readValue(), "5");
+    EXPECT_EQ(token.readStringValue(), "5");
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
 }
 
@@ -189,25 +189,25 @@ TEST(LexarTest, BraceTokens) {
     Lexar lx("{");
     lx.lex();
     auto token = lx.pop();
-    EXPECT_EQ(token.readValue(), "{");
+    EXPECT_EQ(token.readStringValue(), "{");
     EXPECT_EQ(token.readType(), TokenType::OPEN_BRACE);
 
     lx = Lexar("}");
     lx.lex();
     token = lx.pop();
-    EXPECT_EQ(token.readValue(), "}");
+    EXPECT_EQ(token.readStringValue(), "}");
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
 
     lx = Lexar("[");
     lx.lex();
     token = lx.pop();
-    EXPECT_EQ(token.readValue(), "[");
+    EXPECT_EQ(token.readStringValue(), "[");
     EXPECT_EQ(token.readType(), TokenType::OPEN_BRACKET);
 
     lx = Lexar("]");
     lx.lex();
     token = lx.pop();
-    EXPECT_EQ(token.readValue(), "]");
+    EXPECT_EQ(token.readStringValue(), "]");
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACKET);
 }
 
@@ -219,7 +219,7 @@ TEST(LexarTest, FunctionAndScope) {
     EXPECT_EQ(token.readType(), TokenType::FUNCTION);
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "myFunction");
+    EXPECT_EQ(token.readStringValue(), "myFunction");
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
     token = lx.pop();
@@ -230,7 +230,7 @@ TEST(LexarTest, FunctionAndScope) {
     EXPECT_EQ(token.readType(), TokenType::RETURN);
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
-    EXPECT_EQ(token.readValue(), "0");
+    EXPECT_EQ(token.readStringValue(), "0");
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
     token = lx.pop();
@@ -245,7 +245,7 @@ TEST(LexarTest, FunctionAndScopeAndCall) {
     EXPECT_EQ(token.readType(), TokenType::FUNCTION);
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "myFunction");
+    EXPECT_EQ(token.readStringValue(), "myFunction");
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
     token = lx.pop();
@@ -256,14 +256,14 @@ TEST(LexarTest, FunctionAndScopeAndCall) {
     EXPECT_EQ(token.readType(), TokenType::RETURN);
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
-    EXPECT_EQ(token.readValue(), "0");
+    EXPECT_EQ(token.readStringValue(), "0");
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::RETURN);
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "myFunction");
+    EXPECT_EQ(token.readStringValue(), "myFunction");
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
     token = lx.pop();
@@ -330,7 +330,7 @@ TEST(LexarTest, LineComments_AreSkipped) {
     EXPECT_EQ(lx.pop().readType(), TokenType::LET);
     auto token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "x");
+    EXPECT_EQ(token.readStringValue(), "x");
     EXPECT_EQ(token.readPosition().line, 2u);
     EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
 }
@@ -362,20 +362,20 @@ TEST(LexarTest, FunctionSignatureTokens) {
 
     auto token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "gcd_loop");
+    EXPECT_EQ(token.readStringValue(), "gcd_loop");
 
     EXPECT_EQ(lx.pop().readType(), TokenType::OPEN_PAREN);
     EXPECT_EQ(lx.pop().readType(), TokenType::MUT);
 
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "a");
+    EXPECT_EQ(token.readStringValue(), "a");
 
     EXPECT_EQ(lx.pop().readType(), TokenType::COLON);
 
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "i16");
+    EXPECT_EQ(token.readStringValue(), "i16");
 
     EXPECT_EQ(lx.pop().readType(), TokenType::COMMA);
     EXPECT_EQ(lx.pop().readType(), TokenType::IDENTIFIER); // b
@@ -389,7 +389,7 @@ TEST(LexarTest, FunctionSignatureTokens) {
 
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "i16");
+    EXPECT_EQ(token.readStringValue(), "i16");
     EXPECT_EQ(token.readPosition().column, 36u);
 
     EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
@@ -422,14 +422,14 @@ TEST(LexarTest, Identifier_MayContainDigitsAndUnderscores) {
     ASSERT_TRUE(success);
     auto token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "_tmp");
+    EXPECT_EQ(token.readStringValue(), "_tmp");
 
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_EQ(token.readValue(), "x1");
+    EXPECT_EQ(token.readStringValue(), "x1");
 
     // A leading digit still starts a number.
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
-    EXPECT_EQ(token.readValue(), "9");
+    EXPECT_EQ(token.readStringValue(), "9");
 }

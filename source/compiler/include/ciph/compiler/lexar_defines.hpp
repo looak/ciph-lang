@@ -77,7 +77,8 @@ enum class OperatorType : uint8_t
     XOR_ASSIGNMENT,
     INCREMENT,
     DECREMENT,
-    UNKNOWN
+    UNKNOWN,
+    INVALID
 };
 
 
@@ -115,7 +116,13 @@ static OperatorMap
 }
 
 const OperatorMap s_operators = generateOperatorMap();
-const std::map<std::string, TokenType> s_keywords = {
+struct KeywordHash {
+    using is_transparent = void;
+    std::size_t operator()(std::string_view text) const noexcept {
+        return std::hash<std::string_view>{}(text);
+    }
+};
+const std::unordered_map<std::string_view, TokenType, KeywordHash, std::equal_to<>> s_keywords = {
     {"let", TokenType::LET},
     {"mut", TokenType::MUT},
     {"return", TokenType::RETURN},

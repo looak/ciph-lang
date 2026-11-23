@@ -25,9 +25,9 @@ class ASTWhileNode;
 class ASTCallNode;
 
 struct IdentifierContext {
-    IdentifierContext(const std::string& name, uint8_t offset)
-        : name(name)
-        , offset(offset) {}
+    IdentifierContext(std::string_view _name, uint8_t _offset)
+        : name(_name)
+        , offset(_offset) {}
     bool
     operator==(const std::string& _name) const {
         return this->name == _name;
@@ -117,12 +117,19 @@ private:
 
     std::array<RegisterValue, static_cast<int>(registers::def::reg_cnt)> m_registers;
 
+    struct IdentifierHash {
+        using is_transparent = void;
+        std::size_t operator()(std::string_view key) const noexcept {
+            return std::hash<std::string_view>{}(key);
+        }
+    };
+
     // program
     uint16_t m_stackSize = 0;
-    std::unordered_map<std::string, IdentifierContext> m_identifiers;
+    std::unordered_map<std::string, IdentifierContext, IdentifierHash, std::equal_to<>> m_identifiers;
     std::unordered_map<uint16_t, PointerContext> m_pointers;
-    std::unordered_map<std::string, FunctionContext> m_functions;
-    std::unordered_map<std::string, std::vector<uint8_t>> m_unresolvedCalls;
+    std::unordered_map<std::string, FunctionContext, IdentifierHash, std::equal_to<>> m_functions;
+    std::unordered_map<std::string, std::vector<uint8_t>, IdentifierHash, std::equal_to<>> m_unresolvedCalls;
 
     const ASTProgramNode* m_program = nullptr;
     std::vector<uint8_t> m_bytecode = {};

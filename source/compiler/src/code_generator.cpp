@@ -50,7 +50,7 @@ CodeGenerator::generateFunction(const ASTBaseNode* node) {
     const ASTFunctionNode* functionNode = static_cast<const ASTFunctionNode*>(node);
     if (m_functions.contains(functionNode->readName()) == false) {
         m_functions.emplace(functionNode->readName(),
-                            FunctionContext{functionNode->readName(),
+                            FunctionContext{std::string(functionNode->readName()),
                                             static_cast<uint16_t>(m_bytecode.size())});
     }
     else {
@@ -133,18 +133,15 @@ CodeGenerator::generateCall(const ASTCallNode* callNode) {
         encode(function->second.address);
     }
     else {
-        if (m_unresolvedCalls.find(callNode->readFunctionName()) == m_unresolvedCalls.end()) {
-            auto [iter, inserted] = m_unresolvedCalls.emplace(callNode->readFunctionName(), std::vector<uint8_t>{});
-            emit(instruction::def::JMP);
-            iter->second.push_back(static_cast<uint8_t>(m_bytecode.size())); // position to patch later
-            encode(0x0000); // placeholder
+        // Look the name up as a view; it is only copied into an owning key
+        // the first time the function is called.
+        auto unresolved = m_unresolvedCalls.find(callNode->readFunctionName());
+        if (unresolved == m_unresolvedCalls.end()) {
+            unresolved = m_unresolvedCalls.emplace(callNode->readFunctionName(), std::vector<uint8_t>{}).first;
         }
-        else {
-            auto& positions = m_unresolvedCalls[callNode->readFunctionName()];
-            emit(instruction::def::JMP);
-            positions.push_back(static_cast<uint8_t>(m_bytecode.size())); // position to patch later
-            encode(0x0000); // placeholder
-        }        
+        emit(instruction::def::JMP);
+        unresolved->second.push_back(static_cast<uint8_t>(m_bytecode.size())); // position to patch later
+        encode(0x0000); // placeholder
     }
 }
 
@@ -198,7 +195,7 @@ CodeGenerator::generateLetStatement(const ASTLetNode* node) {
             fmt::print("Stack overflow\n");
             return;
         }
-        m_identifiers.emplace(  node->readIdentifier(),
+        m_identifiers.emplace(  std::string(node->readIdentifier()),
                                 IdentifierContext(node->readIdentifier(), static_cast<uint8_t>(m_stackSize)));
         generateExpression(node->readExpression(), registers::def::sp);
     }

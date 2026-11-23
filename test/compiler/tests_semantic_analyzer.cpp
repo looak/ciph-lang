@@ -11,7 +11,7 @@ namespace {
 
 // Parses `code`, which must be syntactically valid, and returns what the
 // analyzer reports for it.
-std::vector<ParserError>
+std::vector<Diagnostic>
 analyze(const std::string& code) {
     Parser parser(code);
     auto parser_result = parser.parse();

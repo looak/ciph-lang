@@ -4,8 +4,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <ciph/compiler/error_defines.hpp>
 #include <ciph/compiler/lexar.hpp>
-#include <ciph/compiler/parser.hpp> // ParserError, until errors get a shared type
 
 namespace ciph {
 
@@ -44,13 +44,13 @@ public:
 
     // Walks the whole program and returns every error found, in source order.
     // An empty result means the program passed.
-    std::vector<ParserError> analyze();
+    std::vector<Diagnostic> analyze();
 
 private:
     // One open block: the names declared in it so far, each mapped to the
     // node that declared it.
-    using VariableScope = std::unordered_map<std::string, const ASTLetNode*>;
-    using FunctionScope = std::unordered_map<std::string, const ASTFunctionNode*>;
+    using VariableScope = std::unordered_map<std::string_view, const ASTLetNode*>;
+    using FunctionScope = std::unordered_map<std::string_view, const ASTFunctionNode*>;
 
     // Opens a block for `scope`'s statements, checks them, and closes it.
     void analyzeScope(const ASTScopeNode* scope);
@@ -66,8 +66,8 @@ private:
     void checkCall(const ASTCallNode* call);
 
     // Searches the open blocks, innermost first. nullptr if not found.
-    [[nodiscard]] const ASTLetNode* findVariable(const std::string& name) const;
-    [[nodiscard]] const ASTFunctionNode* findFunction(const std::string& name) const;
+    [[nodiscard]] const ASTLetNode* findVariable(const std::string_view name) const;
+    [[nodiscard]] const ASTFunctionNode* findFunction(std::string_view name) const;
 
     // Where the token at `offset` within `node`'s source range starts. Nodes
     // without a range (built by hand, not parsed) give a zero position.
@@ -77,7 +77,7 @@ private:
 
     const ASTProgramNode* m_program;
     const std::vector<Token>& m_tokens;
-    std::vector<ParserError> m_errors;
+    std::vector<Diagnostic> m_errors;
 
     // The open blocks, outermost first. Entering a block pushes, leaving pops.
     std::vector<VariableScope> m_variableScopes;

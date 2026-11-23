@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace ciph {
 
@@ -43,11 +44,27 @@ const std::unordered_map<ErrorCode, std::string> error_codes_map = {
     {ErrorCode::ERROR_UNKNOWN, "e0xffff: unknown_error"}};
 
 
-// struct ErrorReport {
-//     ErrorCode code;
-//     std::string message;
-//     uint32_t line;
-//     uint32_t column;
-// };
+// A place in the source text: a line and a column on it.
+struct Position
+{
+    uint32_t line;
+    uint32_t column;
+};
+
+// One problem found in the program being compiled. Every stage reports its
+// errors as these; `code` tells which stage it came from and what went wrong.
+//
+// A diagnostic owns everything it holds, so it stays valid after the compile
+// unit it came from is gone.
+struct Diagnostic {
+    ErrorCode code;
+    Position position;
+    // Populated when the diagnostic is created, if needed. Default messages
+    // come with the error code, and this is appended to those.
+    std::string additionalInfo;
+    // The errors that led to this one, such as the bad expression inside a
+    // while condition.
+    std::vector<Diagnostic> nestedError = {};
+};
 
 } // namespace ciph

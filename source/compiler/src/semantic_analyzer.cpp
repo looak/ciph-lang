@@ -9,7 +9,7 @@
 
 using namespace ciph;
 
-std::vector<ParserError>
+std::vector<Diagnostic>
 SemanticAnalyzer::analyze() {
     m_errors.clear();
     m_variableScopes.clear();
@@ -19,7 +19,7 @@ SemanticAnalyzer::analyze() {
 
     // Function definitions are checked before the statements around them, so
     // the walk does not quite report in source order. Sort to restore it.
-    std::stable_sort(m_errors.begin(), m_errors.end(), [](const ParserError& a, const ParserError& b) {
+    std::stable_sort(m_errors.begin(), m_errors.end(), [](const Diagnostic& a, const Diagnostic& b) {
         if (a.position.line != b.position.line) {
             return a.position.line < b.position.line;
         }
@@ -52,7 +52,7 @@ SemanticAnalyzer::collectFunctions(const ASTScopeNode* scope) {
             continue;
         }
         const auto* function = static_cast<const ASTFunctionNode*>(statement);
-        const std::string& name = function->readName();
+        std::string_view name = function->readName();
 
         // A function from an enclosing block counts too: no shadowing.
         if (const ASTFunctionNode* earlier = findFunction(name)) {
@@ -140,7 +140,7 @@ SemanticAnalyzer::analyzeExpression(const ASTBaseNode* expression) {
 
 void
 SemanticAnalyzer::declareVariable(const ASTLetNode* let) {
-    const std::string& name = let->readIdentifier();
+    std::string_view name = let->readIdentifier();
 
     // Searches every open block, not only the innermost: no shadowing.
     if (const ASTLetNode* earlier = findVariable(name)) {
@@ -169,7 +169,7 @@ SemanticAnalyzer::checkCall(const ASTCallNode* call) {
 }
 
 const ASTLetNode*
-SemanticAnalyzer::findVariable(const std::string& name) const {
+SemanticAnalyzer::findVariable(std::string_view name) const {
     for (auto scope = m_variableScopes.rbegin(); scope != m_variableScopes.rend(); ++scope) {
         if (auto found = scope->find(name); found != scope->end()) {
             return found->second;
@@ -179,7 +179,7 @@ SemanticAnalyzer::findVariable(const std::string& name) const {
 }
 
 const ASTFunctionNode*
-SemanticAnalyzer::findFunction(const std::string& name) const {
+SemanticAnalyzer::findFunction(std::string_view name) const {
     for (auto scope = m_functionScopes.rbegin(); scope != m_functionScopes.rend(); ++scope) {
         if (auto found = scope->find(name); found != scope->end()) {
             return found->second;
@@ -199,5 +199,5 @@ SemanticAnalyzer::positionOf(const ASTBaseNode* node, uint32_t offset) const {
 
 void
 SemanticAnalyzer::report(ErrorCode code, Position position, std::string message) {
-    m_errors.push_back(ParserError{.code = code, .position = position, .additionalInfo = std::move(message)});
+    m_errors.push_back(Diagnostic{.code = code, .position = position, .additionalInfo = std::move(message)});
 }

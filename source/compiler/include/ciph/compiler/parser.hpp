@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <expected>
 
 #include <ciph/compiler/error_defines.hpp>
@@ -11,20 +12,16 @@ namespace ciph {
 class ASTBaseNode;
 class ASTScopeNode;
 struct SourceRange;
-struct ParserError {
-    ErrorCode code;
-    Position position;
-    // this string is supposed to be populated when the error is created, if needed.
-    // default error messages are provided with the error code, and this will be appended to those.
-    std::string additionalInfo;
-    std::vector<ParserError> nestedError = {};
-};
 
-using ParseExpect = std::expected<ASTBaseNode*, ParserError>;
+using ParseExpect = std::expected<ASTBaseNode*, Diagnostic>;
 
 class Parser {
 public:
-    explicit Parser(const std::string& input);
+    // The parser and its lexer keep string_views into `input` (tokens point
+    // at their text), so the characters must outlive the Parser. A string
+    // literal or a CompileUnit's source is fine; a temporary std::string
+    // is not.
+    explicit Parser(std::string_view input);
     ~Parser() = default;
 
     ParseExpect parse();
