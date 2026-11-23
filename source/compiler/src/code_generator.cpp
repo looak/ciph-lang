@@ -232,10 +232,10 @@ CodeGenerator::generateLetStatement(const ASTLetNode* node) {
 
 void
 CodeGenerator::generateIdentifier(const ASTIdentifierNode* node, registers::def reg) {
-    if (node->readOperator() != nullptr) {
+    if (node->readIncDec() != IncDec::None) {
         if (auto identifier = m_identifiers.find(node->readName()); identifier != m_identifiers.end()) {
-            const auto* op = static_cast<const ASTIncDecNode*>(node->readOperator());
-            instruction::def opInstruction = op->readIsIncrement() ? instruction::def::INC : instruction::def::DEC;
+            instruction::def opInstruction =
+                node->readIncDec() == IncDec::PostIncrement ? instruction::def::INC : instruction::def::DEC;
             m_bytecode.push_back(static_cast<uint8_t>(opInstruction));
             m_bytecode.push_back(+registers::def::sp);
             m_bytecode.push_back(identifier->second.offset);

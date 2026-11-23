@@ -106,7 +106,6 @@ private:
     void generateCompareOperator(   const ASTComparisonExpressionNode* node, registers::def regA,
                                     std::optional<registers::def> regB = std::nullopt);
     void generateIdentifier(const ASTIdentifierNode* node, registers::def reg = registers::def::imm);
-    void generateIncDec(const ASTIdentifierNode* node, bool isIncrement);
 
     // statements
     void generateReturnStatement(const ASTReturnNode* node);

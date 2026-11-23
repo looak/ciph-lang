@@ -98,14 +98,9 @@ Parser::parseExpressionStatement() {
         return expression;
     }
 
-    // An expression can stand alone only when it does something: a call, or
-    // `++` / `--`, which the parser stores as an identifier node holding the
-    // operator.
-    const ASTBaseNode* node = *expression;
-    const bool isCall = node->readType() == ASTNodeType::CALL_EXPRESSION;
-    const bool isIncDec = node->readType() == ASTNodeType::IDENTIFIER &&
-                        static_cast<const ASTIdentifierNode*>(node)->readOperator() != nullptr;
-    if (isCall || isIncDec) {
+    // An expression can stand alone only when it does something itself: a
+    // call, or `x++` / `x--`.
+    if ((*expression)->readHasSideEffect()) {
         return expression;
     }
 
@@ -217,6 +212,7 @@ Parser::parseReturnStatement() {
     if (token.readType() == TokenType::SEMICOLON) {
         // `return;` returns 0 as default
         expression = new ASTNumericLiteralNode(SourceRange{}, 0);
+        expression->setOrigin(Origin::Synthesized);
     }
     else {
         auto result = parseComparisonExpression();
@@ -327,18 +323,6 @@ Parser::parsePrimaryExpression() {
 
             return expression;
         }
-        case TokenType::OPERATOR: {
-            if (token.readOperatorValue() == OperatorType::INCREMENT) {
-                m_lexar.pop();
-                return new ASTIncDecNode(rangeFrom(first), true);
-            }
-            else if (token.readOperatorValue() == OperatorType::DECREMENT) {
-                m_lexar.pop();
-                return new ASTIncDecNode(rangeFrom(first), false);
-            }
-            // Any other operator cannot start an expression.
-            [[fallthrough]];
-        }
 
         default: {
             // Operator tokens carry no text, so only name what was found when
@@ -403,14 +387,14 @@ Parser::parseIdentifier() {
     }
     else if (token.readOperatorValue() == OperatorType::INCREMENT) {
         m_lexar.pop();
-        return new ASTIdentifierNode(rangeFrom(first), name, new ASTIncDecNode(rangeFrom(first + 1), true));
+        return new ASTIdentifierNode(rangeFrom(first), name, IncDec::PostIncrement);
     }
     else if (token.readOperatorValue() == OperatorType::DECREMENT) {
         m_lexar.pop();
-        return new ASTIdentifierNode(rangeFrom(first), name, new ASTIncDecNode(rangeFrom(first + 1), false));
+        return new ASTIdentifierNode(rangeFrom(first), name, IncDec::PostDecrement);
     }
 
-    return new ASTIdentifierNode(rangeFrom(first), name, nullptr);
+    return new ASTIdentifierNode(rangeFrom(first), name);
 }
 
 ParseExpect

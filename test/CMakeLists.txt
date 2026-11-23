@@ -17,6 +17,8 @@ endfunction()
 
 ciph_add_test(compiler_tests
   SOURCES
+    compiler/tests_ast.cpp
+    compiler/tests_bit_field.cpp
     compiler/tests_code_generator.cpp
     compiler/tests_compile_unit.cpp
     compiler/tests_error_defines.cpp

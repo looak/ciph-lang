@@ -7,6 +7,7 @@ ciph_add_library(compiler
     src/semantic_analyzer.cpp
   HEADERS
     include/ciph/compiler/ast.hpp
+    include/ciph/compiler/bit_field.hpp
     include/ciph/compiler/code_generator.hpp
     include/ciph/compiler/compile_unit.hpp
     include/ciph/compiler/error_defines.hpp

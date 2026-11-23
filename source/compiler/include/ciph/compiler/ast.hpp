@@ -6,6 +6,7 @@
 #include <stack>
 #include <vector>
 
+#include <ciph/compiler/bit_field.hpp>
 #include <ciph/compiler/lexar_defines.hpp>
 
 namespace ciph {
@@ -30,7 +31,6 @@ enum class ASTNodeType
 
 	// scope and operators
 	BINARY_EXPRESSION,
-	INC_DEC_EXPRESSION,
 	COMPARISON_EXPRESSION,
 
 	CALL_EXPRESSION,
@@ -60,20 +60,50 @@ struct SourceRange
 	[[nodiscard]] uint32_t focusToken() const { return focus != no_token ? focus : first; }
 };
 
+// Where a node came from. `Graph` joins when the graph frontend builds AST.
+enum class Origin : uint8_t
+{
+	Text,        // parsed from source text
+	Synthesized, // made up by the compiler, such as the 0 behind `return;`
+};
+
 class ASTBaseNode
 {
 public:
+	// Every node carries 64 bits of packed fields. Bits below kBaseBitsEnd
+	// mean the same on every node; a subclass packs its own fields from
+	// kBaseBitsEnd up, so the same upper bits mean different things on
+	// different node types.
+	using OriginField = BitField<Origin, 0, 2>;
+	using HasSideEffectField = OriginField::Next<bool, 1>;
+	static constexpr unsigned kBaseBitsEnd = 12;
+	static_assert(HasSideEffectField::kEnd <= kBaseBitsEnd, "the base node's fields have outgrown their 12 bits");
+
 	ASTBaseNode(ASTNodeType type, SourceRange range) : m_type(type), m_range(range) {}
 	virtual ~ASTBaseNode() = default;
 	ASTNodeType readType() const { return m_type; }
 	[[nodiscard]] SourceRange readSourceRange() const { return m_range; }
 
+	[[nodiscard]] Origin readOrigin() const { return readField<OriginField>(); }
+	void setOrigin(Origin origin) { writeField<OriginField>(origin); }
+
+	// True when evaluating this node itself changes state: a call, `x++`.
+	// It says nothing about the children, so for `x++ + 1` the `+` is false.
+	[[nodiscard]] bool readHasSideEffect() const { return readField<HasSideEffectField>(); }
+
 protected:
 	void setSourceRange(SourceRange range) { m_range = range; }
+	void setHasSideEffect(bool hasSideEffect) { writeField<HasSideEffectField>(hasSideEffect); }
+
+	template <class Field>
+	[[nodiscard]] typename Field::Type readField() const { return Field::get(m_bits); }
+	template <class Field>
+	void writeField(typename Field::Type value) { m_bits = Field::set(m_bits, value); }
 
 private:
 	ASTNodeType m_type;
 	SourceRange m_range;
+	uint64_t m_bits = 0;
 };
 
 class ASTScopeNode : public ASTBaseNode
@@ -184,18 +214,6 @@ private:
     ASTComparisonExpressionNode* m_condition;
 };
 
-class ASTIncDecNode : public ASTExpressionNode
-{
-public:
-	ASTIncDecNode(SourceRange range, bool isIncrement) : ASTExpressionNode(ASTNodeType::INC_DEC_EXPRESSION, range), m_isIncrement(isIncrement) {}
-	~ASTIncDecNode() override = default;
-
-	[[nodiscard]] bool readIsIncrement() const { return m_isIncrement; }
-
-private:
-	bool m_isIncrement;
-};
-
 class ASTNumericLiteralNode : public ASTExpressionNode
 {
 public:
@@ -208,18 +226,34 @@ private:
 	int16_t m_value;
 };
 
+// `++` or `--` written after a variable. Three bits leave room for the
+// prefix forms.
+enum class IncDec : uint8_t
+{
+	None,
+	PostIncrement,
+	PostDecrement,
+};
+
 class ASTIdentifierNode : public ASTExpressionNode
 {
 public:
-	ASTIdentifierNode(SourceRange range, std::string_view name, const ASTExpressionNode* op) : ASTExpressionNode(ASTNodeType::IDENTIFIER, range), m_name(name), m_operator(op) {}
+	using IncDecField = BitField<IncDec, kBaseBitsEnd, 3>;
+
+	ASTIdentifierNode(SourceRange range, std::string_view name, IncDec incDec = IncDec::None)
+		: ASTExpressionNode(ASTNodeType::IDENTIFIER, range)
+		, m_name(name)
+	{
+		writeField<IncDecField>(incDec);
+		setHasSideEffect(incDec != IncDec::None);
+	}
 	~ASTIdentifierNode() override = default;
 
 	[[nodiscard]] std::string_view readName() const { return m_name; }
-	[[nodiscard]] const ASTExpressionNode* readOperator() const { return m_operator; }
+	[[nodiscard]] IncDec readIncDec() const { return readField<IncDecField>(); }
 
 private:
 	std::string_view m_name;
-	const ASTExpressionNode* m_operator;
 };
 
 class ASTReturnNode : public ASTBaseNode
@@ -276,7 +310,9 @@ class ASTCallNode : public ASTExpressionNode {
 		ASTCallNode(SourceRange range, std::string_view functionName)
 			: ASTExpressionNode(ASTNodeType::CALL_EXPRESSION, range)
 			, m_functionName(functionName)
-			{}
+		{
+			setHasSideEffect(true); // calling a function may change state
+		}
 		~ASTCallNode() override = default;
 
 		[[nodiscard]] std::string_view

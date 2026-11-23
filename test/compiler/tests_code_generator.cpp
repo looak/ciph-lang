@@ -527,7 +527,7 @@ TEST_F(CodeGeneratorTestFixture, NameReusedInSiblingBlocks_ReportedAsUnsupported
 TEST_F(CodeGeneratorTestFixture, HandBuiltTree_ErrorsHaveZeroPosition) {
     // A use of a variable nothing declared: the analyzer would have caught
     // it, so here it is the generator's own error.
-    m_program.addStatement(new ASTIdentifierNode(SourceRange{}, "ghost", nullptr));
+    m_program.addStatement(new ASTIdentifierNode(SourceRange{}, "ghost"));
     CodeGenerator generator(&m_program);
 
     std::vector<Diagnostic> errors = generator.generateCode();

@@ -143,9 +143,8 @@ TEST(ParserTest, IncStatement) {
 	EXPECT_EQ(result->readStatements().size(), 2);
 	EXPECT_EQ(result->readStatements()[1]->readType(), ASTNodeType::IDENTIFIER);
 	auto identifier = static_cast<const ASTIdentifierNode*>(result->readStatements()[1]);
-	EXPECT_EQ(identifier->readOperator()->readType(), ASTNodeType::INC_DEC_EXPRESSION);
-	auto incDecNode = static_cast<const ASTIncDecNode*>(identifier->readOperator());
-	EXPECT_EQ(incDecNode->readIsIncrement(), true);
+	EXPECT_EQ(identifier->readIncDec(), IncDec::PostIncrement);
+	EXPECT_TRUE(identifier->readHasSideEffect());
 }
 
 TEST(ParserTest, EqualsOperator) {
@@ -328,6 +327,55 @@ TEST(ParserTest, ExpressionStatement_RejectedInsideABlock) {
 	expectUnusedExpression("fn number() { 1 + 2; return 42; } return number();");
 }
 
+TEST(ParserTest, IncDec_PostDecrementIsRecorded) {
+	auto parser_result = Parser("let i = 0; i--; return i;").parse();
+
+	ASSERT_TRUE(parser_result.has_value());
+	auto program = static_cast<const ASTProgramNode*>(*parser_result);
+	auto decrement = static_cast<const ASTIdentifierNode*>(program->readStatements()[1]);
+	EXPECT_EQ(decrement->readIncDec(), IncDec::PostDecrement);
+	EXPECT_TRUE(decrement->readHasSideEffect());
+}
+
+TEST(ParserTest, IncDec_PlainIdentifierHasNone) {
+	auto parser_result = Parser("let i = 0; return i;").parse();
+
+	ASSERT_TRUE(parser_result.has_value());
+	auto program = static_cast<const ASTProgramNode*>(*parser_result);
+	auto returnNode = static_cast<const ASTReturnNode*>(program->readStatements()[1]);
+	auto identifier = static_cast<const ASTIdentifierNode*>(returnNode->readExpression());
+	EXPECT_EQ(identifier->readIncDec(), IncDec::None);
+	EXPECT_FALSE(identifier->readHasSideEffect());
+}
+
+TEST(ParserTest, IncDec_PrefixFormIsNotSupported) {
+	// Only `x++` / `x--` exist; `++` cannot start an expression.
+	for (const char* code : {"let i = 0; ++i; return i;", "let i = 0; return --i;"}) {
+		auto parser_result = Parser(code).parse();
+		ASSERT_FALSE(parser_result.has_value()) << code;
+		EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION) << code;
+	}
+}
+
+TEST(ParserTest, Origin_ReturnWithoutValueIsSynthesized) {
+	auto parser_result = Parser("return;").parse();
+
+	ASSERT_TRUE(parser_result.has_value());
+	auto program = static_cast<const ASTProgramNode*>(*parser_result);
+	auto returnNode = static_cast<const ASTReturnNode*>(program->readStatements()[0]);
+	EXPECT_EQ(returnNode->readOrigin(), Origin::Text);
+	EXPECT_EQ(returnNode->readExpression()->readOrigin(), Origin::Synthesized);
+}
+
+TEST(ParserTest, Origin_ParsedValueIsText) {
+	auto parser_result = Parser("return 5;").parse();
+
+	ASSERT_TRUE(parser_result.has_value());
+	auto program = static_cast<const ASTProgramNode*>(*parser_result);
+	auto returnNode = static_cast<const ASTReturnNode*>(program->readStatements()[0]);
+	EXPECT_EQ(returnNode->readExpression()->readOrigin(), Origin::Text);
+}
+
 TEST(ParserTest, MissingSemicolon_BetweenStatements) {
 	Parser parser("let x = 5 return x;");
 
@@ -502,10 +550,10 @@ TEST(ParserTest, SourceRange_BlockRunsToItsClosingBrace) {
 	expectRange(loop, 5, 15);
 	expectRange(loop->readCondition(), 7, 9);
 
-	// `i++` is an identifier node holding its operator
+	// `i++` is one identifier node whose range covers the name and the `++`
 	auto increment = static_cast<const ASTIdentifierNode*>(loop->readStatements()[0]);
 	expectRange(increment, 12, 13);
-	expectRange(increment->readOperator(), 13, 13);
+	EXPECT_EQ(increment->readIncDec(), IncDec::PostIncrement);
 }
 
 TEST(ParserTest, SourceRange_LeadsBackToLineAndColumn) {
