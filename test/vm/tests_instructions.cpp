@@ -21,14 +21,14 @@ void write_word(uint8_t* bytecode, uint16_t& pc, int16_t value)
 
 int16_t pop_helper(ExecutionContext& context)
 {
-    uint16_t& sp = context.registry[+registers::def::sp]; 
+    uint16_t& sp = context.reg(registers::def::sp); 
     auto value = pop_word(context.bytecode, sp);
     return value;
 }
 
 void push_helper(ExecutionContext& context, int16_t value)
 {
-    uint16_t& sp = context.registry[+registers::def::sp];
+    uint16_t& sp = context.reg(registers::def::sp);
     write_word(context.bytecode, sp, value);
 }
 
@@ -102,7 +102,7 @@ TEST_F(InstructionsTest, PeekHandler_Reg)
     EXPECT_EQ(instruction, instruction::def::PEK_REG);
     instruction::handlers[instruction](context);
 
-    int16_t value = context.registry[+registers::def::r0];
+    int16_t value = context.reg(registers::def::r0);
     EXPECT_EQ(value, 42);
 
     value = pop_helper(context);
@@ -136,7 +136,7 @@ TEST_F(InstructionsTest, PeekHandler_Offset)
     EXPECT_EQ(instruction, instruction::def::PEK_OFF);
     instruction::handlers[instruction](context);
 
-    int16_t value = context.registry[+registers::def::r0];
+    int16_t value = context.reg(registers::def::r0);
     EXPECT_EQ(value, 17);
 
     pop_helper(context); // pop twice
@@ -157,7 +157,7 @@ int16_t BinaryExpressionHandlerTest(int16_t a, int16_t b, instruction::def _inst
 
     for (int i = 0; i < 3; i++)
     {
-        uint16_t& pc = context.registry[+registers::def::pc];
+        uint16_t& pc = context.reg(registers::def::pc);
         auto instr = static_cast<instruction::def>(context.bytecode[pc]);
 		instruction::handlers[instr](context);
         pc++;
@@ -212,7 +212,7 @@ TEST_F(InstructionsTest, PopReg_ExpectValueInReturnRegister)
     EXPECT_EQ(instruction, instruction::def::POP_REG);
     instruction::handlers[instruction](context);
 
-    int16_t value = context.registry[+registers::def::ret];
+    int16_t value = context.reg(registers::def::ret);
     EXPECT_EQ(value, 19);
 }
 
@@ -248,7 +248,7 @@ TEST_F(InstructionsTest, IncHandler_RegAndStack)
     instruction::handlers[instruction](context);
     EXPECT_EQ(instruction, instruction::def::INC);
 
-    int16_t value = context.registry[+registers::def::r0];
+    int16_t value = context.reg(registers::def::r0);
     EXPECT_EQ(value, 44);
 
     value = pop_helper(context);
@@ -287,7 +287,7 @@ TEST_F(InstructionsTest, DecHandler_RegAndStack)
     instruction::handlers[instruction](context);
     EXPECT_EQ(instruction, instruction::def::DEC);
 
-    int16_t value = context.registry[+registers::def::r0];
+    int16_t value = context.reg(registers::def::r0);
     EXPECT_EQ(value, 40);
 
     value = pop_helper(context);
@@ -317,7 +317,7 @@ TEST_F(InstructionsTest, MoveHandler_RegToReg)
     }
 
     EXPECT_EQ(instruction, instruction::def::MOV);
-    int16_t value = context.registry[+registers::def::r0];
+    int16_t value = context.reg(registers::def::r0);
     EXPECT_EQ(value, 42);
 }
 
@@ -343,5 +343,5 @@ TEST_F(InstructionsTest, CompareHandler_Stack_ResultInImm)
     }
 
     EXPECT_EQ(instruction, instruction::def::CMP);
-    EXPECT_EQ(context.registry[+registers::def::imm], 0);
+    EXPECT_EQ(context.reg(registers::def::imm), 0);
 }

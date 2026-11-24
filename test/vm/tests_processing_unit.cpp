@@ -17,6 +17,8 @@ TEST(ProcessingUnitTest, LoadAndExecuteSimpleProgram_Returns42)
     ProcessingUnit unit;
     //unit.reset();
     uint8_t program[] = { 
+        +instruction::def::CALL, 0, 4, // main
+        +instruction::def::HALT,
         +instruction::def::PSH_LIT, 0, 26,
         +instruction::def::PSH_LIT, 0, 16,
         +instruction::def::ADD,
@@ -38,6 +40,8 @@ TEST(ProcessingUnitTest, Variables_Expression)
     // let y = 10
     // return x + y
     uint8_t program[] = {
+        +instruction::def::CALL, 0, 4, // main
+        +instruction::def::HALT,
         +instruction::def::PSH_LIT, 0, 25,
         +instruction::def::PSH_LIT, 0, 10,
         +instruction::def::PEK_OFF, 0, 0,
@@ -56,6 +60,8 @@ TEST(ProcessingUnitTest, Variables_Expression)
 TEST(ProcessingUnitTest, AddingTwoIntegers)
 {
     uint8_t program[] = {
+        +instruction::def::CALL, 0, 4, // main
+        +instruction::def::HALT,
         +instruction::def::PSH_LIT, 0, 25,
         +instruction::def::PSH_LIT, 0, 16,
         +instruction::def::ADD,
@@ -71,6 +77,8 @@ TEST(ProcessingUnitTest, OrderOfOperation_MulBeforeAdd)
 {
     // return (2 * 2 + 3)    
     uint8_t program[] = {
+        +instruction::def::CALL, 0, 4, // main
+        +instruction::def::HALT,
         +instruction::def::PSH_LIT, 0, 2,
         +instruction::def::PSH_LIT, 0, 2,
         +instruction::def::MUL,
@@ -89,6 +97,8 @@ TEST(VirtualMachineTest, OrderOfOperation_ParenthasesBeforeMul)
 {
     // return (2 * (2 + 3)) should be 10    
     uint8_t program[] = {
+        +instruction::def::CALL, 0, 4, // main
+        +instruction::def::HALT,
         +instruction::def::PSH_LIT, 0, 2,
         +instruction::def::PSH_LIT, 0, 2,
         +instruction::def::PSH_LIT, 0, 3,
@@ -106,6 +116,8 @@ TEST(VirtualMachineTest, ReturnStatment_Default)
 {
     // return 
     uint8_t program[] = {         
+        +instruction::def::CALL, 0, 4, // main
+        +instruction::def::HALT,
         +instruction::def::PSH_LIT, 0, 0,
         +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET }; // should return 0;
@@ -118,6 +130,8 @@ TEST(VirtualMachineTest, Return_ReturnNumericLiteral)
 {
     // return 25
     uint8_t program[] = {
+        +instruction::def::CALL, 0, 4, // main
+        +instruction::def::HALT,
         +instruction::def::PSH_LIT, 0, 25,
         +instruction::def::POP_REG, +registers::def::ret,
         +instruction::def::RET
@@ -132,6 +146,8 @@ TEST(VirtualMachineTest, Return_Variable)
     // let x = 25 
     // return x
     uint8_t program[] = {
+        +instruction::def::CALL, 0, 4, // main
+        +instruction::def::HALT,
         +instruction::def::PSH_LIT, 0, 25,
         +instruction::def::PEK_OFF, 0, 0,
         +instruction::def::POP_REG, +registers::def::ret,
@@ -148,7 +164,9 @@ TEST(ProcessingUnitTest, LetStatement_MultipleVariables)
     // let y = 3
     // let z = x + y
     // return z + y
-    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 2,
+    uint8_t program[] = {   +instruction::def::CALL, 0, 4, // main
+                            +instruction::def::HALT,
+                            +instruction::def::PSH_LIT, 0, 2,
                             +instruction::def::PSH_LIT, 0, 3,
                             +instruction::def::PEK_OFF, +registers::def::sp, 0,
                             +instruction::def::PEK_OFF, +registers::def::sp, 1,
@@ -165,7 +183,9 @@ TEST(ProcessingUnitTest, LetStatement_MultipleVariables)
 
 TEST(ProcessingUnitTest, Return_Equals)
 {
-    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 10,
+    uint8_t program[] = {   +instruction::def::CALL, 0, 4, // main
+                            +instruction::def::HALT,
+                            +instruction::def::PSH_LIT, 0, 10,
                             +instruction::def::PEK_OFF, +registers::def::sp, 0,
                             +instruction::def::PSH_LIT, 0, 10,
                             +instruction::def::CMP, +registers::def::sp,
@@ -182,7 +202,9 @@ TEST(ProcessingUnitTest, While) {
     //     x++
     // }
     // return x
-    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 0,
+    uint8_t program[] = {   +instruction::def::CALL, 0, 4, // main
+                            +instruction::def::HALT,
+                            +instruction::def::PSH_LIT, 0, 0,
                             +instruction::def::INC, +registers::def::sp, 0,
                             +instruction::def::PEK_OFF, +registers::def::sp, 0,
                             +instruction::def::PSH_LIT, 0, 10,                            
@@ -202,7 +224,9 @@ TEST(ProcessingUnitTest, While_GreaterThan) {
     //     x--
     // }
     // return x
-    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 10,
+    uint8_t program[] = {   +instruction::def::CALL, 0, 4, // main
+                            +instruction::def::HALT,
+                            +instruction::def::PSH_LIT, 0, 10,
                             +instruction::def::DEC, +registers::def::sp, 0,
                             +instruction::def::PEK_OFF, +registers::def::sp, 0,
                             +instruction::def::PSH_LIT, 0, 5,
@@ -222,7 +246,9 @@ TEST(ProcessingUnitTest, While_NotEqual) {
     //     x++
     // }
     // return x
-    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 0,
+    uint8_t program[] = {   +instruction::def::CALL, 0, 4, // main
+                            +instruction::def::HALT,
+                            +instruction::def::PSH_LIT, 0, 0,
                             +instruction::def::INC, +registers::def::sp, 0,
                             +instruction::def::PEK_OFF, +registers::def::sp, 0,
                             +instruction::def::PSH_LIT, 0, 5,
@@ -245,7 +271,9 @@ TEST(ProcessingUnitTest, While_Equal) {
     //
     // The body runs before the first check: x becomes 1, the condition holds
     // once, x becomes 2 and the loop ends.
-    uint8_t program[] = {   +instruction::def::PSH_LIT, 0, 0,
+    uint8_t program[] = {   +instruction::def::CALL, 0, 4, // main
+                            +instruction::def::HALT,
+                            +instruction::def::PSH_LIT, 0, 0,
                             +instruction::def::INC, +registers::def::sp, 0,
                             +instruction::def::PEK_OFF, +registers::def::sp, 0,
                             +instruction::def::PSH_LIT, 0, 1,
@@ -260,8 +288,11 @@ TEST(ProcessingUnitTest, While_Equal) {
 }
 
 TEST(ProcessingUnitTest, Jump_SkipsToAddressFromProgramStart) {
-    // The jump at address 0 targets address 9, skipping the first return.
-    uint8_t program[] = {   +instruction::def::JMP, 0x00, 0x09,
+    // main starts at address 4. Its jump targets address 13, skipping the
+    // first return.
+    uint8_t program[] = {   +instruction::def::CALL, 0, 4, // main
+                            +instruction::def::HALT,
+                            +instruction::def::JMP, 0x00, 0x0D,
                             +instruction::def::PSH_LIT, 0, 1,
                             +instruction::def::POP_REG, +registers::def::ret,
                             +instruction::def::RET,
@@ -290,12 +321,13 @@ TEST(ProcessingUnitTest, Halt_StopsWithoutReturning) {
     EXPECT_EQ(unit.registries()[+registers::def::ret], 7);
 }
 
-TEST(ProcessingUnitTest, CompilerLayout_JumpToMainThenWhile) {
-    // What the compiler emits today for:
+TEST(ProcessingUnitTest, CompilerLayout_CallMainThenWhile) {
+    // The layout a compiled program has: call main, halt when it returns.
     //   let i = 0
     //   while (i < 5) { i++ }
     //   return i
-    uint8_t program[] = {   +instruction::def::JMP, 0x00, 0x03,
+    uint8_t program[] = {   +instruction::def::CALL, 0x00, 0x04, // main
+                            +instruction::def::HALT,
                             +instruction::def::PSH_LIT, 0, 0,
                             +instruction::def::INC, +registers::def::sp, 0,
                             +instruction::def::PEK_OFF, +registers::def::sp, 0,
@@ -303,8 +335,7 @@ TEST(ProcessingUnitTest, CompilerLayout_JumpToMainThenWhile) {
                             +instruction::def::CMP, +registers::def::sp,
                             +instruction::def::JLT, 0x00, 0x0E,
                             +instruction::def::PEK_OFF, +registers::def::ret, 0,
-                            +instruction::def::RET,
-                            +instruction::def::HALT
+                            +instruction::def::RET
                             };
 
     uint16_t result = testProcessingUnit(program, sizeof(program));

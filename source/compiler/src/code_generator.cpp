@@ -22,10 +22,13 @@ CodeGenerator::generateCode() {
     m_bytecode.clear();
     m_errors.clear();
 
-    emit(instruction::def::JMP);
-    encode(0x0000); // placeholder for address, patched below
+    // Every program starts by calling main and halts when main returns. The
+    // top-level statements are main's body.
+    emit(instruction::def::CALL);
+    encode(0x0000); // placeholder for main's address, patched below
+    emit(instruction::def::HALT);
 
-    // Main starts right after the jump. This only holds while function bodies
+    // Main starts right after the halt. This only holds while function bodies
     // are not generated; once they are, main starts after them and this
     // address has to be set when the first top-level statement is emitted.
     uint16_t main_addrs = static_cast<uint16_t>(m_bytecode.size());
@@ -33,10 +36,15 @@ CodeGenerator::generateCode() {
 
     generateProgram(m_program);
 
-    emit(instruction::def::HALT);
+    // Main has to return to the halt. A program whose last statement is not
+    // a `return` gets one here, so execution never runs off the end.
+    const auto& statements = m_program->readStatements();
+    if (statements.empty() || statements.back()->readType() != ASTNodeType::RETURN) {
+        emit(instruction::def::RET);
+    }
 
-    // patch jump to main
-    // jmp is at position 0, address is at position 1
+    // patch the call to main
+    // the call is at position 0, its address is at position 1
     patch(1, m_functions["main"].address);
 
     resolveUnresolvedCalls();

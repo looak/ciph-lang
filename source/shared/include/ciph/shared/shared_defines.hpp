@@ -48,6 +48,7 @@ enum class def : uint8_t {
 	JEQ 	=		0xC2,  	// Jump back by the given distance if imm is zero.
 	JGT 	=		0xC3,  	// Jump back by the given distance if imm is positive.
 	JLT 	=		0xC4,  	// Jump back by the given distance if imm is negative.
+	CALL	=		0xCA, 	// Pushes the return address and fp, points fp at the new frame and jumps to address.
 	CMP 	= 		0xCC, 	// Subtracts rX from rY and puts result in imm, if reg:sp is passed as rX we pop the compared elements from the stack
 	RET	 	=		0xCF, 	// Returns value in imm.
 	HALT	=		0xFE, 	// Terminates the program.
@@ -85,6 +86,7 @@ const std::unordered_map<def, std::string> mnemonics = {
 	{def::JEQ, "JEQ"},
 	{def::JGT, "JGT"},
 	{def::JLT, "JLT"},
+	{def::CALL, "CALL"},
 	{def::CMP, "CMP"},
 	{def::RET, "RET"},
 	{def::HALT, "HALT"},

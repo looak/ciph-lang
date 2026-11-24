@@ -36,7 +36,7 @@ int16_t ProcessingUnit::execute()
         pc++;
 
     }
-    while (instr != instruction::def::RET && instr != instruction::def::HALT);
+    while (instr != instruction::def::HALT);
 
     return m_context.return_value;
 }
@@ -49,5 +49,5 @@ bool ProcessingUnit::step()
     instruction::handlers[instr](m_context);
     pc++;
 
-    return instr != instruction::def::RET && instr != instruction::def::HALT;
+    return instr != instruction::def::HALT;
 }

@@ -11,6 +11,7 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
     switch (instr)
     {
         case instruction::def::JMP:
+        case instruction::def::CALL:
         case instruction::def::JNZ:
         case instruction::def::JEQ:
         case instruction::def::JGT:

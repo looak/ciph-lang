@@ -40,6 +40,7 @@ void jump_nz_handler(ExecutionContext& context);
 void jump_gt_handler(ExecutionContext& context);
 void jump_lt_handler(ExecutionContext& context);
 void jump_handler(ExecutionContext& context);
+void call_handler(ExecutionContext& context);
 void halt_handler(ExecutionContext& context);
 
 static std::unordered_map<def, handler> handlers = {
@@ -63,6 +64,7 @@ static std::unordered_map<def, handler> handlers = {
 	{def::JGT, jump_gt_handler},
 	{def::JLT, jump_lt_handler},
 	{def::JMP, jump_handler},
+	{def::CALL, call_handler},
 	{def::HALT, halt_handler}
 
 }; // handlers

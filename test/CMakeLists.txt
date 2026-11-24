@@ -34,6 +34,7 @@ ciph_add_test(compiler_tests
 ciph_add_test(vm_tests
   SOURCES
     vm/tests_instructions.cpp
+    vm/tests_calls.cpp
     vm/tests_processing_unit.cpp
   DEPENDS
     ciph::vm

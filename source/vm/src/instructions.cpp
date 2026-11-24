@@ -41,7 +41,7 @@ instruction::write_int16(uint8_t* bytecode, uint16_t& pc, int16_t value) {
 
 int16_t
 instruction::pop_helper(ExecutionContext& context) {
-    uint16_t& sp = context.registry[+registers::def::sp];
+    uint16_t& sp = context.reg(registers::def::sp);
     int16_t value = 0;
     value = (value << 8) | context.bytecode[--sp];
     value = (value << 8) | context.bytecode[--sp];
@@ -58,13 +58,13 @@ instruction::peek_helper(uint8_t* bytecode, uint16_t sp) {
 
 void
 instruction::push_helper(ExecutionContext& context, int16_t value) {
-    uint16_t& sp = context.registry[+registers::def::sp];
+    uint16_t& sp = context.reg(registers::def::sp);
     write_int16(context.bytecode, sp, value);
 }
 
 void
 instruction::push_helper_reg(ExecutionContext& context, registers::def reg) {
-    uint16_t& value = context.registry[+reg];
+    uint16_t& value = context.reg(reg);
     push_helper(context, i16(value));
 }
 
@@ -106,11 +106,11 @@ instruction::div_handler(ExecutionContext& context) {
 
 void
 instruction::peek_handler(ExecutionContext& context) {
-    uint16_t& pc = context.registry[+registers::def::pc];
-    uint8_t reg = context.bytecode[++pc];
-    uint16_t sp = context.registry[+registers::def::sp];
+    uint16_t& pc = context.reg(registers::def::pc);
+    auto reg = static_cast<registers::def>(context.bytecode[++pc]);
+    uint16_t sp = context.reg(registers::def::sp);
     int16_t value = peek_helper(context.bytecode, sp); // peek top of stack.
-    context.registry[reg] = static_cast<uint16_t>(value);
+    context.reg(reg) = static_cast<uint16_t>(value);
 }
 
 void
@@ -120,107 +120,108 @@ instruction::push_handler(ExecutionContext& context) {
 
 void
 instruction::push_reg_handler(ExecutionContext& context) {
-    uint16_t& pc = context.registry[+registers::def::pc];
-    uint8_t reg = context.bytecode[++pc];
-    instruction::push_helper(context, i16(context.registry[reg]));
+    uint16_t& pc = context.reg(registers::def::pc);
+    auto reg = static_cast<registers::def>(context.bytecode[++pc]);
+    instruction::push_helper(context, i16(context.reg(reg)));
 }
 
 void
 instruction::push_literal_handler(ExecutionContext& context) {
-    uint16_t& programCnt = context.registry[+registers::def::pc];
+    uint16_t& programCnt = context.reg(registers::def::pc);
     int16_t value = read_word(context.bytecode, ++programCnt);
     instruction::push_helper(context, value);
 }
 
 void
 instruction::cmp_handler(ExecutionContext& context) {
-    uint16_t& programCnt = context.registry[+registers::def::pc];
-    uint8_t reg = context.bytecode[++programCnt];
-    if (reg == +registers::def::sp) {
+    uint16_t& programCnt = context.reg(registers::def::pc);
+    auto reg = static_cast<registers::def>(context.bytecode[++programCnt]);
+    if (reg == registers::def::sp) {
         int16_t b = pop_helper(context);
         int16_t a = pop_helper(context);
-        context.registry[+registers::def::imm] = a - b;
+        context.reg(registers::def::imm) = a - b;
     }
 }
 
 void
 instruction::mov_handler(ExecutionContext& context) {
-    uint16_t& programCnt = context.registry[+registers::def::pc];
-    uint8_t regX = context.bytecode[++programCnt];
-    uint8_t regY = context.bytecode[++programCnt];
-    context.registry[regX] = context.registry[regY];
+    uint16_t& programCnt = context.reg(registers::def::pc);
+    auto regX = static_cast<registers::def>(context.bytecode[++programCnt]);
+    auto regY = static_cast<registers::def>(context.bytecode[++programCnt]);
+    context.reg(regX) = context.reg(regY);
 }
 
 void
 instruction::return_handler(ExecutionContext& context) {
-    context.return_value = context.registry[+registers::def::ret];
+    context.return_value = context.reg(registers::def::ret);
 
-    uint16_t& pc = context.registry[+registers::def::pc];
-    uint16_t& fp = context.registry[+registers::def::fp];
-    uint16_t& sp = context.registry[+registers::def::sp];
-    pc = fp - 1; // setting the pc to the end of the program
+    uint16_t& pc = context.reg(registers::def::pc);
+    uint16_t& fp = context.reg(registers::def::fp);
+    uint16_t& sp = context.reg(registers::def::sp);    
     sp = fp;
+    fp = static_cast<uint16_t>(pop_helper(context));
+    pc = static_cast<uint16_t>(pop_helper(context));
 }
 
 struct peek_offset_instrction {
-    uint8_t reg;
-    uint8_t offset;
+    registers::def reg;
+    int8_t offset;
 };
 
 void
 instruction::peek_offset_handler(ExecutionContext& context) {
-    auto peek = read<peek_offset_instrction>(context.bytecode, context.registry[+registers::def::pc]);
-    uint16_t sp = context.registry[+registers::def::fp] + (peek.offset * 2) + 2;
+    auto peek = read<peek_offset_instrction>(context.bytecode, context.reg(registers::def::pc));
+    uint16_t sp = context.reg(registers::def::fp) + (peek.offset * 2) + 2;
     int16_t value = instruction::stack_read_at_offset(context.bytecode, sp);
     
 
-    if (peek.reg == +registers::def::sp)
+    if (peek.reg == registers::def::sp)
         push_helper(context, value);
     else
-        context.registry[peek.reg] = value;
+        context.reg(peek.reg) = value;
 }
 
 void
 instruction::pop_reg_handler(ExecutionContext& context) {
-    uint16_t& pc = context.registry[+registers::def::pc];
-    uint8_t reg = context.bytecode[++pc];
-    context.registry[reg] = pop_helper(context);
+    uint16_t& pc = context.reg(registers::def::pc);
+    auto reg = static_cast<registers::def>(context.bytecode[++pc]);
+    context.reg(reg) = pop_helper(context);
 }
 
 void
 instruction::inc_handler(ExecutionContext& context) {
-    uint16_t& pc = context.registry[+registers::def::pc];
-    uint8_t reg = context.bytecode[++pc];
+    uint16_t& pc = context.reg(registers::def::pc);
+    auto reg = static_cast<registers::def>(context.bytecode[++pc]);
 
-    if (reg == +registers::def::sp) {
+    if (reg == registers::def::sp) {
         uint8_t offset = context.bytecode[++pc];
         offset *= 2;
-        offset = static_cast<uint8_t>(offset + context.registry[+registers::def::fp] + 2);
+        offset = static_cast<uint8_t>(offset + context.reg(registers::def::fp) + 2);
         uint16_t offset16 = static_cast<uint16_t>(offset);
         int16_t value = stack_read_at_offset(context.bytecode, offset16);
         value++;
         write_int16(context.bytecode, offset16, value);
     }
     else {
-        context.registry[reg]++;
+        context.reg(reg)++;
     }
 }
 void
 instruction::dec_handler(ExecutionContext& context) {
-    uint16_t& pc = context.registry[+registers::def::pc];
-    uint8_t reg = context.bytecode[++pc];
+    uint16_t& pc = context.reg(registers::def::pc);
+    auto reg = static_cast<registers::def>(context.bytecode[++pc]);
 
-    if (reg == +registers::def::sp) {
+    if (reg == registers::def::sp) {
         uint8_t offset = context.bytecode[++pc];
         offset *= 2;
-        offset = static_cast<uint8_t>(offset + context.registry[+registers::def::fp] + 2);
+        offset = static_cast<uint8_t>(offset + context.reg(registers::def::fp) + 2);
         uint16_t offset16 = static_cast<uint16_t>(offset);
         int16_t value = stack_read_at_offset(context.bytecode, offset16);
         value--;
         write_int16(context.bytecode, offset16, value);
     }
     else {
-        context.registry[reg]--;
+        context.reg(reg)--;
     }
 }
 
@@ -230,9 +231,9 @@ instruction::dec_handler(ExecutionContext& context) {
 // They can only jump backwards, which is all a loop needs.
 static void
 jump_back_if(ExecutionContext& context, bool (*taken)(int16_t)) {
-    uint16_t& pc = context.registry[+registers::def::pc];
+    uint16_t& pc = context.reg(registers::def::pc);
     int16_t distance = instruction::read_word(context.bytecode, ++pc);
-    if (taken(i16(context.registry[+registers::def::imm]))) {
+    if (taken(i16(context.reg(registers::def::imm)))) {
         pc -= distance;
     }
 }
@@ -259,13 +260,25 @@ instruction::jump_lt_handler(ExecutionContext& context) {
 
 void
 instruction::jump_handler(ExecutionContext& context) {
-    uint16_t& pc = context.registry[+registers::def::pc];
+    uint16_t& pc = context.reg(registers::def::pc);
     uint16_t address = static_cast<uint16_t>(read_word(context.bytecode, ++pc));
 
     // The address counts from the start of the program, which is loaded at bp.
     // The execute loop increments pc after every handler, so land one byte
     // before the target.
-    pc = static_cast<uint16_t>(context.registry[+registers::def::bp] + address - 1);
+    pc = static_cast<uint16_t>(context.reg(registers::def::bp) + address - 1);
+}
+
+void
+instruction::call_handler(ExecutionContext& context) {
+    uint16_t& pc = context.reg(registers::def::pc);
+    uint16_t& fp = context.reg(registers::def::fp);
+    uint16_t& sp = context.reg(registers::def::sp);
+    uint16_t address = read_word(context.bytecode, ++pc);
+    push_helper(context, pc);
+    push_helper(context, fp);
+    fp = sp;
+    pc = static_cast<uint16_t>(context.reg(registers::def::bp) + address - 1);
 }
 
 void
