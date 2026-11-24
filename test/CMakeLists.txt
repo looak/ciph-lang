@@ -40,6 +40,16 @@ ciph_add_test(vm_tests
     ciph::vm
 )
 
+# Whole programs: source text compiled and then run in the VM.
+ciph_add_test(program_tests
+  SOURCES
+    programs/tests_programs.cpp
+  DEPENDS
+    ciph::compiler
+    ciph::vm
+    fmt::fmt
+)
+
 if(TARGET ciph::platform)
   # Small program the process tests start as a child. Kept in the build tree
   # next to the tests; its path is handed to them as a compile definition.

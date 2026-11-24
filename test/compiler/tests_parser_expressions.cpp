@@ -37,6 +37,18 @@ shapeOf(const ASTBaseNode* node) {
 			}
 			return fmt::format("({} {} {})", shapeOf(binary->readLeft()), op, shapeOf(binary->readRight()));
 		}
+		case ASTNodeType::COMPARISON_EXPRESSION: {
+			auto comparison = static_cast<const ASTComparisonExpressionNode*>(node);
+			const char* op = "?";
+			switch (comparison->readOperator()) {
+				case OperatorType::EQUAL: op = "=="; break;
+				case OperatorType::NOT_EQUAL: op = "!="; break;
+				case OperatorType::LESS_THAN: op = "<"; break;
+				case OperatorType::GREATER_THAN: op = ">"; break;
+				default: break;
+			}
+			return fmt::format("({} {} {})", shapeOf(comparison->readLeft()), op, shapeOf(comparison->readRight()));
+		}
 		default:
 			return "<other>";
 	}
@@ -272,4 +284,93 @@ TEST(ParserExpressionTest, LetThenReturn_ChainsInParentheses) {
 	EXPECT_EQ(shapeOf(let->readExpression()), "(((1 + 2) + 3) * 2)");
 	auto ret = static_cast<const ASTReturnNode*>(program->readStatements()[1]);
 	EXPECT_EQ(shapeOf(ret->readExpression()), "(((x - 1) - 1) / 2)");
+}
+
+// ---- Comparisons inside parentheses ----
+//
+// Parentheses hold any expression, a comparison included. A parenthesised
+// comparison is then an ordinary operand: it can sit on either side of
+// another operator.
+
+TEST(ParserExpressionTest, Parentheses_HoldAComparison) {
+	EXPECT_EQ(returnedShapeOf("return (1 < 2);"), "(1 < 2)");
+	EXPECT_EQ(returnedShapeOf("return (a == b);"), "(a == b)");
+}
+
+TEST(ParserExpressionTest, Parentheses_NestedAroundAComparison) {
+	EXPECT_EQ(returnedShapeOf("return ((1 != 2));"), "(1 != 2)");
+}
+
+TEST(ParserExpressionTest, Parentheses_ComparisonWithChainsOnBothSides) {
+	EXPECT_EQ(returnedShapeOf("return (1 + 2 + 3 > 2 * 3);"), "(((1 + 2) + 3) > (2 * 3))");
+}
+
+TEST(ParserExpressionTest, Parentheses_TwoComparisonsCompared) {
+	// Not a chain: each side is one parenthesised operand.
+	EXPECT_EQ(returnedShapeOf("return (1 < 2) == (3 < 4);"), "((1 < 2) == (3 < 4))");
+}
+
+TEST(ParserExpressionTest, Parentheses_ComparisonAsAnArithmeticOperand) {
+	EXPECT_EQ(returnedShapeOf("return (1 < 2) + 1;"), "((1 < 2) + 1)");
+	EXPECT_EQ(returnedShapeOf("return 2 * (a > b);"), "(2 * (a > b))");
+}
+
+TEST(ParserExpressionTest, Parentheses_ComparisonInLetAndWhile) {
+	EXPECT_TRUE(Parser("let x = (1 < 2); return x;").parse().has_value());
+	EXPECT_TRUE(Parser("let i = 0; while ((i < 5)) { i++; } return i;").parse().has_value());
+}
+
+TEST(ParserExpressionTest, Parentheses_ChainedComparisonInsideIsStillAnError) {
+	auto result = Parser("return (1 < 2 < 3);").parse();
+
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error().code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON);
+}
+
+TEST(ParserExpressionTest, Parentheses_UnclosedAroundAComparison) {
+	auto result = Parser("return (1 < 2;").parse();
+
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error().code, ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH);
+}
+
+// ---- Unary minus ----
+//
+// `-x` negates x. It binds tighter than `*` and `/`, and it can repeat.
+//
+// These tests only check what parses. How the tree stores a negation is not
+// decided, so the values it produces are checked by running whole programs,
+// in test/programs/tests_programs.cpp.
+
+TEST(ParserExpressionTest, UnaryMinus_Parses) {
+	EXPECT_TRUE(Parser("return -5;").parse().has_value());
+	EXPECT_TRUE(Parser("let x = 5; return -x;").parse().has_value());
+	EXPECT_TRUE(Parser("return -(2 + 3);").parse().has_value());
+}
+
+TEST(ParserExpressionTest, UnaryMinus_AfterABinaryOperator) {
+	EXPECT_TRUE(Parser("return 3 - -2;").parse().has_value());
+	EXPECT_TRUE(Parser("return 3 * -2;").parse().has_value());
+	EXPECT_TRUE(Parser("return 1 < -2;").parse().has_value());
+}
+
+TEST(ParserExpressionTest, UnaryMinus_Repeats) {
+	// With a space: `--` without one is the decrement operator.
+	EXPECT_TRUE(Parser("return - -4;").parse().has_value());
+	EXPECT_TRUE(Parser("return -(-4);").parse().has_value());
+}
+
+TEST(ParserExpressionTest, UnaryMinus_NeedsAnOperand) {
+	auto result = Parser("return -;").parse();
+
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
+}
+
+TEST(ParserExpressionTest, UnaryMinus_AloneIsNotAStatement) {
+	// A negation does nothing on its own, like any other bare expression.
+	auto result = Parser("let x = 1; -x;").parse();
+
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error().code, ErrorCode::SYNTAX_ERROR_UNUSED_EXPRESSION);
 }
