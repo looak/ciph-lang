@@ -43,7 +43,7 @@ number         = digit { digit } ;
 - A `while` body runs before its condition is first checked.
 - A chain of `+ -` or of `* /` groups from the left: `10 - 4 - 3` is
   `(10 - 4) - 3`. `*` and `/` bind tighter than `+` and `-`.
-- A comparison does not chain: `a == b == c` is an error.
+- A comparison does not chain: `a == b == c` is reported as `e0xe061`.
 - An expression can stand alone as a statement only when it does something: a
   call, or `++` / `--`. Anything else, such as `1 + 2;` or `x == y;`, is
   reported as `e0xe060`, because its result is not used.

@@ -5,7 +5,7 @@
 
 #include <ciph/compiler/ast.hpp>
 #include <ciph/compiler/compile_unit.hpp>
-#include <ciph/compiler/error_defines.hpp>
+#include <ciph/compiler/diagnostics.hpp>
 
 using namespace ciph;
 

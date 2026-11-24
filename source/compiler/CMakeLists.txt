@@ -2,7 +2,7 @@ ciph_add_library(compiler
   SOURCES
     src/code_generator.cpp
     src/compile_unit.cpp
-    src/lexar.cpp
+    src/lexer.cpp
     src/parser.cpp
     src/semantic_analyzer.cpp
   HEADERS
@@ -10,10 +10,9 @@ ciph_add_library(compiler
     include/ciph/compiler/bit_field.hpp
     include/ciph/compiler/code_generator.hpp
     include/ciph/compiler/compile_unit.hpp
-    include/ciph/compiler/error_defines.hpp
-    include/ciph/compiler/error_reporter.hpp
-    include/ciph/compiler/lexar.hpp
-    include/ciph/compiler/lexar_defines.hpp
+    include/ciph/compiler/diagnostics.hpp
+    include/ciph/compiler/lexer.hpp
+    include/ciph/compiler/lexer_defines.hpp
     include/ciph/compiler/parser.hpp
     include/ciph/compiler/semantic_analyzer.hpp
   DEPENDS

@@ -15,7 +15,6 @@
 
 #include <ciph/compiler/code_generator.hpp>
 #include <ciph/shared/disassembler.hpp>
-//#include <ciph/compiler/error_reporter.hpp>
 #include <ciph/compiler/parser.hpp>
 #include <ciph/vm/processing_unit.hpp>
 #include <ciph/shared/shared_defines.hpp>

@@ -5,7 +5,7 @@
 
 #include <ciph/compiler/ast.hpp>
 #include <ciph/compiler/code_generator.hpp>
-#include <ciph/compiler/lexar_defines.hpp>
+#include <ciph/compiler/lexer_defines.hpp>
 #include <ciph/compiler/parser.hpp>
 
 using namespace ciph;

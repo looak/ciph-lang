@@ -2,7 +2,7 @@
 
 #include <fmt/core.h>
 
-#include <ciph/compiler/error_defines.hpp>
+#include <ciph/compiler/diagnostics.hpp>
 
 using namespace ciph;
 

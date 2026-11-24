@@ -4,8 +4,8 @@
 #include <string_view>
 #include <expected>
 
-#include <ciph/compiler/error_defines.hpp>
-#include <ciph/compiler/lexar.hpp>
+#include <ciph/compiler/diagnostics.hpp>
+#include <ciph/compiler/lexer.hpp>
 
 namespace ciph {
 
@@ -29,7 +29,7 @@ public:
 
     // The tokens the program was parsed from. An AST node's SourceRange holds
     // indices into this list.
-    const std::vector<Token>& readTokens() const { return m_lexar.readTokens(); }
+    const std::vector<Token>& readTokens() const { return m_lexer.readTokens(); }
 
 private:
     // The range from token `first` to the token most recently popped.
@@ -47,7 +47,7 @@ private:
     // Defined in parser.cpp: every instantiation is made there.
     template <ParseExpect (Parser::*Next)(), OperatorType... Ops>
     ParseExpect parseBinaryLevel();
-    ParseExpect parseAddativeExpression();
+    ParseExpect parseAdditiveExpression();
     ParseExpect parseMultiplicativeExpression();
     ParseExpect parseIdentifier();
     ParseExpect parsePrimaryExpression();
@@ -63,7 +63,7 @@ private:
     // this assumption that I can reuse scope for while & function bodies might be flawed later...
     ParseExpect parseScopeNode(ASTScopeNode* scopeNode);
 
-    Lexar m_lexar;
+    Lexer m_lexer;
 };
 
 } // namespace ciph

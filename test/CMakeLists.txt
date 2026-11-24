@@ -21,8 +21,8 @@ ciph_add_test(compiler_tests
     compiler/tests_bit_field.cpp
     compiler/tests_code_generator.cpp
     compiler/tests_compile_unit.cpp
-    compiler/tests_error_defines.cpp
-    compiler/tests_lexar.cpp
+    compiler/tests_diagnostics.cpp
+    compiler/tests_lexer.cpp
     compiler/tests_parser.cpp
     compiler/tests_parser_expressions.cpp
     compiler/tests_semantic_analyzer.cpp

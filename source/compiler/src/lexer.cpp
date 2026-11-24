@@ -1,6 +1,6 @@
-#include <ciph/compiler/lexar.hpp>
+#include <ciph/compiler/lexer.hpp>
 #include <ciph/shared/shared_defines.hpp>
-#include <ciph/compiler/lexar_defines.hpp>
+#include <ciph/compiler/lexer_defines.hpp>
 
 using namespace ciph;
 
@@ -38,7 +38,7 @@ Token::readIndex() const {
     return m_index;
 }
 
-Lexar::Lexar(std::string_view input)
+Lexer::Lexer(std::string_view input)
     : m_input(input)
     , m_position(0)
     , m_tokens()
@@ -47,7 +47,7 @@ Lexar::Lexar(std::string_view input)
 }
 
 void
-Lexar::push(std::variant<std::string_view, OperatorType> value, TokenType type, Position& position, uint32_t length) {
+Lexer::push(std::variant<std::string_view, OperatorType> value, TokenType type, Position& position, uint32_t length) {
     if (std::holds_alternative<std::string_view>(value)) {
         m_tokens.emplace_back(std::get<std::string_view>(value), type, position, length, m_index);
     }
@@ -60,7 +60,7 @@ Lexar::push(std::variant<std::string_view, OperatorType> value, TokenType type, 
 }
 
 void
-Lexar::skipWhiteSpaces(Position& cursorPos) {
+Lexer::skipWhiteSpaces(Position& cursorPos) {
     bool done = false;
     do {
         // m_input is a string_view: unlike std::string, it has no '\0' at
@@ -101,9 +101,9 @@ Lexar::skipWhiteSpaces(Position& cursorPos) {
 }
 
 std::pair<bool, ErrorCode>
-Lexar::lex() {
+Lexer::lex() {
     if (m_performedAnalysis)
-        return {false, ErrorCode::LEXAR_PERFORMED_ANALYSIS};
+        return {false, ErrorCode::LEXER_PERFORMED_ANALYSIS};
     Position cursorPosition = {1, 1};
 
     while (m_position < m_input.size()) {
@@ -219,7 +219,7 @@ Lexar::lex() {
         }
 
         // if we reach this without hitting a continue, we have an unknown character
-        return {false, ErrorCode::LEXAR_UNKNOWN_CHARACTER};
+        return {false, ErrorCode::LEXER_UNKNOWN_CHARACTER};
     }
 
     // reset position, we'll reuse this variable when we pop & peek the tokens in our vector.
@@ -230,7 +230,7 @@ Lexar::lex() {
 }
 
 std::pair<bool, Token>
-Lexar::popOperator(OperatorType op) {
+Lexer::popOperator(OperatorType op) {
     Token token = pop();
     if (token.readType() != TokenType::OPERATOR)
         return {false, token};
@@ -241,7 +241,7 @@ Lexar::popOperator(OperatorType op) {
 }
 
 std::pair<bool, Token>
-Lexar::popExpect(TokenType type) {
+Lexer::popExpect(TokenType type) {
     Token token = pop();
     if (token.readType() != type)
         return {false, token};
@@ -250,13 +250,13 @@ Lexar::popExpect(TokenType type) {
 }
 
 Token
-Lexar::peek(uint16_t offset) const {
+Lexer::peek(uint16_t offset) const {
     uint16_t peekPos = u16(m_position + offset);
     return m_tokens[peekPos];
 }
 
 Token
-Lexar::pop() {
+Lexer::pop() {
     Token token = m_tokens[m_position++];
     return token;
 }
@@ -265,14 +265,14 @@ Lexar::pop() {
 // end. m_position still advances, because those loops step back one character
 // after reading past the end of a number or name.
 char
-Lexar::popNextChar() {
+Lexer::popNextChar() {
     const char c = m_position < m_input.size() ? m_input[m_position] : '\0';
     ++m_position;
     return c;
 }
 
 char
-Lexar::peekNextChar() {
+Lexer::peekNextChar() {
     if (m_position >= m_input.size())
         return '\0';
 
@@ -280,7 +280,7 @@ Lexar::peekNextChar() {
 }
 
 bool
-Lexar::isOperator(char cursor) {
+Lexer::isOperator(char cursor) {
     if (cursor == '\0')
         return false;
 
@@ -292,7 +292,7 @@ Lexar::isOperator(char cursor) {
 }
 
 bool
-Lexar::identifyOperator(char cursor, Position& cursorPos) {
+Lexer::identifyOperator(char cursor, Position& cursorPos) {
     for (auto& op : s_operators) {
         if (op.first == cursor) {
             char peek = peekNextChar();

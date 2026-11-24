@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <ciph/compiler/ast.hpp>
-#include <ciph/compiler/error_defines.hpp>
+#include <ciph/compiler/diagnostics.hpp>
 #include <ciph/compiler/parser.hpp>
 #include <ciph/compiler/semantic_analyzer.hpp>
 

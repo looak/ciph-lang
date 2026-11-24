@@ -21,12 +21,12 @@ fail(ErrorCode code, Position position, std::string message) {
 } // namespace
 
 Parser::Parser(std::string_view input)
-    : m_lexar(input) {
+    : m_lexer(input) {
 }
 
 ParseExpect
 Parser::parse() {
-    auto [success, error_code] = m_lexar.lex();
+    auto [success, error_code] = m_lexer.lex();
     if (success == false) {
         return fail(error_code, {}, "Error while lexing input");
     }
@@ -36,9 +36,9 @@ Parser::parse() {
 
 ParseExpect
 Parser::parseProgram() {
-    const uint32_t first = m_lexar.nextIndex(); // first token of this construct
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     ASTProgramNode* program = new ASTProgramNode(SourceRange{first, first});
-    auto token = m_lexar.peek();
+    auto token = m_lexer.peek();
 
     while (token.readType() != TokenType::END_OF_FILE) {
         auto statement = parseStatement();
@@ -47,20 +47,20 @@ Parser::parseProgram() {
         }
 
         program->addStatement(*statement);
-        token = m_lexar.peek();
+        token = m_lexer.peek();
     }
 
     // Everything up to, but not including, the end-of-file token. An empty
     // program keeps the one-token range it was created with.
-    if (m_lexar.nextIndex() > first) {
-        program->closeSourceRange(m_lexar.nextIndex() - 1);
+    if (m_lexer.nextIndex() > first) {
+        program->closeSourceRange(m_lexer.nextIndex() - 1);
     }
     return program;
 }
 
 SourceRange
 Parser::rangeFrom(uint32_t first) const {
-    return SourceRange{first, m_lexar.nextIndex() - 1};
+    return SourceRange{first, m_lexer.nextIndex() - 1};
 }
 
 ParseExpect
@@ -72,7 +72,7 @@ Parser::parseStatement() {
         return [this, what](ASTBaseNode* statement) { return expectSemicolon(statement, what); };
     };
 
-    auto token = m_lexar.peek();
+    auto token = m_lexer.peek();
     switch (token.readType()) {
         case TokenType::RETURN:
             return parseReturnStatement().and_then(semicolonAfter("return statement"));
@@ -92,7 +92,7 @@ Parser::parseStatement() {
 
 ParseExpect
 Parser::parseExpressionStatement() {
-    const Token token = m_lexar.peek();
+    const Token token = m_lexer.peek();
     auto expression = parseComparisonExpression();
     if (!expression) {
         return expression;
@@ -110,14 +110,14 @@ Parser::parseExpressionStatement() {
 
 ParseExpect
 Parser::expectSemicolon(ASTBaseNode* statement, const char* what) {
-    const uint32_t next = m_lexar.nextIndex();
-    auto [success, token] = m_lexar.popExpect(TokenType::SEMICOLON);
+    const uint32_t next = m_lexer.nextIndex();
+    auto [success, token] = m_lexer.popExpect(TokenType::SEMICOLON);
     if (success == false) {
         // Point just past the statement's last token, where the ';' belongs.
         // The token found instead is often on the next line.
         Position position = token.readPosition();
         if (next > 0) {
-            const Token& last = m_lexar.readTokens()[next - 1];
+            const Token& last = m_lexer.readTokens()[next - 1];
             position = last.readPosition();
             position.column += last.readLength();
         }
@@ -129,7 +129,7 @@ Parser::expectSemicolon(ASTBaseNode* statement, const char* what) {
 
 ParseExpect
 Parser::parseWhileCondition() {
-    auto [success, expected_token] = m_lexar.popExpect(TokenType::OPEN_PAREN);
+    auto [success, expected_token] = m_lexer.popExpect(TokenType::OPEN_PAREN);
     if (success == false) {
         return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, expected_token.readPosition(), "Expecting a open parenthesis after while keyword which contains a expression");
     }
@@ -143,7 +143,7 @@ Parser::parseWhileCondition() {
         return std::unexpected(error);
     }
 
-    auto [success2, expected_token2] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
+    auto [success2, expected_token2] = m_lexer.popExpect(TokenType::CLOSE_PAREN);
     if (success2 == false) {
         return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, expected_token2.readPosition(), "Expecting a close parenthesis after while keyword which contains a expression");
     }
@@ -153,12 +153,12 @@ Parser::parseWhileCondition() {
 
 ParseExpect
 Parser::parseScopeNode(ASTScopeNode* scopeNode) {
-    auto [success, expected_token] = m_lexar.popExpect(TokenType::OPEN_BRACE);
+    auto [success, expected_token] = m_lexer.popExpect(TokenType::OPEN_BRACE);
     if (success == false) {
         return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, expected_token.readPosition(), "Expecting a open brace after keyword which contains a expression");
     }
 
-    Token token = m_lexar.peek();
+    Token token = m_lexer.peek();
     while (token.readType() != TokenType::CLOSE_BRACE) {
         auto statement = parseStatement();
         if (!statement) {
@@ -167,25 +167,25 @@ Parser::parseScopeNode(ASTScopeNode* scopeNode) {
 
         scopeNode->addStatement(*statement);
 
-        token = m_lexar.peek();
+        token = m_lexer.peek();
         if (token.readType() == TokenType::END_OF_FILE) {
-            return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, m_lexar.peek().readPosition(), "Expecting a close brace before end of file.");
+            return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, m_lexer.peek().readPosition(), "Expecting a close brace before end of file.");
         }
     }
 
-    auto [success1, expected_token1] = m_lexar.popExpect(TokenType::CLOSE_BRACE);
+    auto [success1, expected_token1] = m_lexer.popExpect(TokenType::CLOSE_BRACE);
     if (success1 == false) {
         return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, expected_token1.readPosition(), "Expecting a close brace after open brance which contains statements");
     }
 
-    scopeNode->closeSourceRange(m_lexar.nextIndex() - 1); // the closing brace
+    scopeNode->closeSourceRange(m_lexer.nextIndex() - 1); // the closing brace
     return scopeNode;
 }
 
 ParseExpect
 Parser::parseWhileStatement() {
-    const uint32_t first = m_lexar.nextIndex(); // first token of this construct
-    m_lexar.pop();
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
+    m_lexer.pop();
 
     auto condition = parseWhileCondition();
     if (!condition) {
@@ -205,9 +205,9 @@ Parser::parseWhileStatement() {
 
 ParseExpect
 Parser::parseReturnStatement() {
-    const uint32_t first = m_lexar.nextIndex(); // first token of this construct
-    m_lexar.pop();
-    auto token = m_lexar.peek();
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
+    m_lexer.pop();
+    auto token = m_lexer.peek();
     ASTExpressionNode* expression = nullptr;
     if (token.readType() == TokenType::SEMICOLON) {
         // `return;` returns 0 as default
@@ -227,23 +227,35 @@ Parser::parseReturnStatement() {
 
 ParseExpect
 Parser::parseComparisonExpression() {
-    const uint32_t first = m_lexar.nextIndex(); // first token of this construct
-    auto left_result = parseAddativeExpression();
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
+    auto left_result = parseAdditiveExpression();
     if (!left_result) {
         return left_result;
     }
     auto left = static_cast<ASTExpressionNode*>(*left_result);
 
-    auto op = m_lexar.peek();
-    if (op.readOperatorValue() == OperatorType::EQUAL || op.readOperatorValue() == OperatorType::NOT_EQUAL ||
-        op.readOperatorValue() == OperatorType::LESS_THAN || op.readOperatorValue() == OperatorType::GREATER_THAN) {
-        m_lexar.pop();
+    auto isComparison = [](const Token& token) {
+        return token.readOperatorValue() == OperatorType::EQUAL || token.readOperatorValue() == OperatorType::NOT_EQUAL ||
+               token.readOperatorValue() == OperatorType::LESS_THAN || token.readOperatorValue() == OperatorType::GREATER_THAN;
+    };
 
-        auto right_result = parseAddativeExpression();
+    auto op = m_lexer.peek();
+    if (isComparison(op)) {
+        m_lexer.pop();
+
+        auto right_result = parseAdditiveExpression();
         if (!right_result) {
             return right_result;
         }
         auto right = static_cast<ASTExpressionNode*>(*right_result);
+
+        // A comparison takes one operator. A second one is reported here, at
+        // that operator, rather than as a missing ';' by the caller.
+        auto second = m_lexer.peek();
+        if (isComparison(second)) {
+            return fail(ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON, second.readPosition(),
+                        "Comparisons cannot be chained, as in 'a == b == c'. Compare two values at a time");
+        }
 
         return new ASTComparisonExpressionNode(rangeFrom(first), left, right, op.readOperatorValue());
     }
@@ -257,16 +269,16 @@ Parser::parseComparisonExpression() {
 template <ParseExpect (Parser::*Next)(), OperatorType... Ops>
 ParseExpect
 Parser::parseBinaryLevel() {
-    const uint32_t first = m_lexar.nextIndex(); // first token of this construct
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     auto left_result = (this->*Next)();
     if (!left_result) {
         return left_result;
     }
     auto left = static_cast<ASTExpressionNode*>(*left_result);
 
-    auto op = m_lexar.peek();
+    auto op = m_lexer.peek();
     while (((op.readOperatorValue() == Ops) || ...)) {
-        m_lexar.pop();
+        m_lexer.pop();
 
         auto right_result = (this->*Next)();
         if (!right_result) {
@@ -275,14 +287,14 @@ Parser::parseBinaryLevel() {
         auto right = static_cast<ASTExpressionNode*>(*right_result);
 
         left = new ASTBinaryExpressionNode(rangeFrom(first), left, right, op.readOperatorValue());
-        op = m_lexar.peek();
+        op = m_lexer.peek();
     }
 
     return left;
 }
 
 ParseExpect
-Parser::parseAddativeExpression() {
+Parser::parseAdditiveExpression() {
     return parseBinaryLevel<&Parser::parseMultiplicativeExpression, OperatorType::ADDITION, OperatorType::SUBTRACTION>();
 }
 
@@ -293,12 +305,12 @@ Parser::parseMultiplicativeExpression() {
 
 ParseExpect
 Parser::parsePrimaryExpression() {
-    const uint32_t first = m_lexar.nextIndex(); // first token of this construct
-    Token token = m_lexar.peek();
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
+    Token token = m_lexer.peek();
 
     switch (token.readType()) {
         case TokenType::NUMBER: {
-            m_lexar.pop();
+            m_lexer.pop();
             // Reads the digits straight from the source text. A literal too
             // large for an int leaves the value at 0.
             const std::string_view digits = token.readStringValue();
@@ -309,14 +321,14 @@ Parser::parsePrimaryExpression() {
         case TokenType::IDENTIFIER:
             return parseIdentifier();
         case TokenType::OPEN_PAREN: {
-            m_lexar.pop();
+            m_lexer.pop();
 
-            auto expression = parseAddativeExpression();
+            auto expression = parseAdditiveExpression();
             if (!expression) {
                 return expression;
             }
 
-            auto [success, expected_token] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
+            auto [success, expected_token] = m_lexer.popExpect(TokenType::CLOSE_PAREN);
             if (success == false) {
                 return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, expected_token.readPosition(), "Missmatch between open and close parenthesis in expression.");
             }
@@ -341,16 +353,16 @@ Parser::parsePrimaryExpression() {
 
 ParseExpect
 Parser::parseLetStatement() {
-    const uint32_t first = m_lexar.nextIndex(); // first token of this construct
-    m_lexar.pop();
-    auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
+    m_lexer.pop();
+    auto [success, token] = m_lexer.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
         return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, token.readPosition(), "Expected identifier after let keyword");
     }
 
     auto name = token.readStringValue();
 
-    auto [op_success, op_token] = m_lexar.popOperator(OperatorType::ASSIGNMENT);
+    auto [op_success, op_token] = m_lexer.popOperator(OperatorType::ASSIGNMENT);
     if (op_success == false) {
         return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR, op_token.readPosition(), fmt::format("Expected assignment operator after identifier {} in let statement", name));
     }
@@ -367,30 +379,30 @@ Parser::parseLetStatement() {
 
 ParseExpect
 Parser::parseIdentifier() {
-    const uint32_t first = m_lexar.nextIndex(); // first token of this construct
-    auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
+    auto [success, token] = m_lexer.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
         return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, token.readPosition(), "Expected identifier in expression");
     }
 
     std::string_view name = token.readStringValue();
-    token = m_lexar.peek();
+    token = m_lexer.peek();
 
     if (token.readType() == TokenType::OPEN_PAREN) {
-        m_lexar.pop(); // pop open paren
+        m_lexer.pop(); // pop open paren
         // handle arguments later
-        auto [close_success, result] = m_lexar.popExpect(TokenType::CLOSE_PAREN);
+        auto [close_success, result] = m_lexer.popExpect(TokenType::CLOSE_PAREN);
         if (close_success == false) {
             return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, result.readPosition(), "Expected closing parenthesis for function call");
         }
         return new ASTCallNode(rangeFrom(first), name);
     }
     else if (token.readOperatorValue() == OperatorType::INCREMENT) {
-        m_lexar.pop();
+        m_lexer.pop();
         return new ASTIdentifierNode(rangeFrom(first), name, IncDec::PostIncrement);
     }
     else if (token.readOperatorValue() == OperatorType::DECREMENT) {
-        m_lexar.pop();
+        m_lexer.pop();
         return new ASTIdentifierNode(rangeFrom(first), name, IncDec::PostDecrement);
     }
 
@@ -399,9 +411,9 @@ Parser::parseIdentifier() {
 
 ParseExpect
 Parser::parseFunctionStatement() {
-    const uint32_t first = m_lexar.nextIndex(); // first token of this construct
-    m_lexar.pop();
-    auto [success, token] = m_lexar.popExpect(TokenType::IDENTIFIER);
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
+    m_lexer.pop();
+    auto [success, token] = m_lexer.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
         return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, token.readPosition(), "Expected function identifier after fn keyword");
     }
@@ -410,9 +422,9 @@ Parser::parseFunctionStatement() {
     range.focus = token.readIndex(); // the name, not the `fn` keyword
     auto functionNode = new ASTFunctionNode(range, name);
 
-    m_lexar.popExpect(TokenType::OPEN_PAREN);
+    m_lexer.popExpect(TokenType::OPEN_PAREN);
     // handle parameters later
-    m_lexar.popExpect(TokenType::CLOSE_PAREN);
+    m_lexer.popExpect(TokenType::CLOSE_PAREN);
 
     auto body = parseScopeNode(functionNode);
     if (!body) {

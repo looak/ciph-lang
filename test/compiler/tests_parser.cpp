@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 #include <ciph/compiler/ast.hpp>
-#include <ciph/compiler/error_defines.hpp>
+#include <ciph/compiler/diagnostics.hpp>
 #include <ciph/compiler/parser.hpp>
 
 using namespace ciph;
@@ -168,21 +168,63 @@ TEST(ParserTest, EqualsOperator) {
 	EXPECT_EQ(compare_expression->readOperator(), OperatorType::EQUAL);
 }
 
-// DISABLED: placeholder. Chained comparisons such as `x == x == x` should be
-// rejected with an error, but the parser does not do that yet and this test
-// has no real assertion. Re-enable once the error exists.
-TEST(ParserTest, DISABLED_EqualsOperator_NotLegal) {
-	// setup
-	std::string code("return x == x == x;");
-	Parser parser(code);
+// A comparison takes one operator: `a == b == c` is a syntax error, reported
+// as SYNTAX_ERROR_CHAINED_COMPARISON at the second operator.
 
-	// do - we know the node type returned is a program
-	// auto parser_result = parser.parse();
-	// auto program_node = parser_result.value();
-	// ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
+namespace {
 
-	// validate
-	EXPECT_TRUE(false) << "This test should fail and produce a error message";
+void
+expectChainedComparison(const char* code) {
+	auto parser_result = Parser(code).parse();
+	ASSERT_FALSE(parser_result.has_value()) << "Parsed without error: " << code;
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON) << code;
+}
+
+} // namespace
+
+TEST(ParserTest, EqualsOperator_NotLegal) {
+	expectChainedComparison("return x == x == x;");
+}
+
+TEST(ParserTest, ChainedComparison_MixedOperators) {
+	expectChainedComparison("return a < b == c;");
+	expectChainedComparison("return a != b > c;");
+}
+
+TEST(ParserTest, ChainedComparison_InLet) {
+	expectChainedComparison("let x = 1 == 1 == 1;");
+}
+
+TEST(ParserTest, ChainedComparison_InWhileConditionIsTheNestedError) {
+	// A while condition wraps whatever went wrong inside it, so the chained
+	// comparison is the nested error.
+	auto parser_result = Parser("let i = 0; while (i < 5 < 6) { i++; } return i;").parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
+	ASSERT_EQ(parser_result.error().nestedError.size(), 1u);
+	EXPECT_EQ(parser_result.error().nestedError[0].code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON);
+}
+
+TEST(ParserTest, ChainedComparison_PointsAtTheSecondOperator) {
+	// The second `==` starts at line 1 column 15.
+	auto parser_result = Parser("return a == b == c;").parse();
+
+	ASSERT_FALSE(parser_result.has_value());
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON);
+	EXPECT_EQ(parser_result.error().position.line, 1u);
+	EXPECT_EQ(parser_result.error().position.column, 15u);
+}
+
+TEST(ParserTest, SingleComparison_WithArithmeticChainsOnBothSides) {
+	auto parser_result = Parser("return 1 + 2 + 3 == 2 * 3 * 1;").parse();
+
+	ASSERT_TRUE(parser_result.has_value());
+	auto program = static_cast<const ASTProgramNode*>(*parser_result);
+	ASSERT_EQ(program->readStatements().size(), 1);
+	auto expression = static_cast<const ASTReturnNode*>(program->readStatements()[0])->readExpression();
+	ASSERT_EQ(expression->readType(), ASTNodeType::COMPARISON_EXPRESSION);
+	EXPECT_EQ(static_cast<const ASTComparisonExpressionNode*>(expression)->readOperator(), OperatorType::EQUAL);
 }
 
 TEST(ParserTest, WhileStatement_Legal) {

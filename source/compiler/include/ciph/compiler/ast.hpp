@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <ciph/compiler/bit_field.hpp>
-#include <ciph/compiler/lexar_defines.hpp>
+#include <ciph/compiler/lexer_defines.hpp>
 
 namespace ciph {
 
@@ -40,7 +40,7 @@ enum class ASTNodeType
 };
 
 // The tokens an AST node was built from: indices into the lexer's token list
-// (Lexar::readTokens()), both ends inclusive. A token knows its line, column
+// (Lexer::readTokens()), both ends inclusive. A token knows its line, column
 // and length, so a range leads back to the exact source text.
 //
 // A node that was not built from source text, such as one a test creates by

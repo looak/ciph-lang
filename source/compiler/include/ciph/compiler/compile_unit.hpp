@@ -6,8 +6,8 @@
 #include <string_view>
 #include <vector>
 
-#include <ciph/compiler/error_defines.hpp>
-#include <ciph/compiler/lexar.hpp>
+#include <ciph/compiler/diagnostics.hpp>
+#include <ciph/compiler/lexer.hpp>
 
 namespace ciph {
 

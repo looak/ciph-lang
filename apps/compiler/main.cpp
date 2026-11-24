@@ -29,8 +29,8 @@
 #include <fmt/ostream.h>
 
 #include <ciph/compiler/compile_unit.hpp>
-#include <ciph/compiler/error_defines.hpp>
-#include <ciph/compiler/lexar_defines.hpp>
+#include <ciph/compiler/diagnostics.hpp>
+#include <ciph/compiler/lexer_defines.hpp>
 #include <ciph/shared/disassembler.hpp>
 
 using namespace ciph;

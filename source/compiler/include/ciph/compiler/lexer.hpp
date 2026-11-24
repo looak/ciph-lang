@@ -7,8 +7,8 @@
 #include <variant>
 #include <vector>
 
-#include <ciph/compiler/error_defines.hpp>
-#include <ciph/compiler/lexar_defines.hpp>
+#include <ciph/compiler/diagnostics.hpp>
+#include <ciph/compiler/lexer_defines.hpp>
 
 namespace ciph {
 
@@ -43,18 +43,18 @@ private:
 // something, such as a std::string, is added.
 static_assert(std::is_trivially_copyable_v<Token>);
 
-class Lexar {
+class Lexer {
 public:
-    explicit Lexar(std::string_view input);
-    ~Lexar() = default;
+    explicit Lexer(std::string_view input);
+    ~Lexer() = default;
 
     /**
     * @brief Performs the lexical analysis on the input string.
     *
     * This function processes the input string and converts it into a stream of tokens. It checks the input for
-    * lexical errors and returns a `LexarResult` indicating the success or failure of the lexical analysis.
-    * If the analysis is successful, the first element of the `LexarResult` is true and the second element is
-    * an error code indicating no error. If the analysis fails, the first element of the `LexarResult` is false
+    * lexical errors and returns a `LexerResult` indicating the success or failure of the lexical analysis.
+    * If the analysis is successful, the first element of the `LexerResult` is true and the second element is
+    * an error code indicating no error. If the analysis fails, the first element of the `LexerResult` is false
     * and the second element is an error code indicating the type of error that occurred.
     *
     * @return A pair where the first element is a boolean indicating whether the analysis failed or not, if not the

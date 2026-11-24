@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
-#include <ciph/compiler/lexar.hpp>
+#include <ciph/compiler/lexer.hpp>
 
 using namespace ciph;
 
-TEST(LexarTest, PrimitiveTokens) {
+TEST(LexerTest, PrimitiveTokens) {
     // setup
-    Lexar lx("12345");
+    Lexer lx("12345");
     lx.lex();
 
     // do
@@ -25,7 +25,7 @@ isOperator(const Token& token, OperatorType type) {
 bool
 OperatorTester(std::string input, OperatorType type) {
     // setup
-    Lexar lx(input);
+    Lexer lx(input);
     lx.lex();
 
     // do
@@ -35,7 +35,7 @@ OperatorTester(std::string input, OperatorType type) {
     return isOperator(token, type);
 }
 
-TEST(LexarTest, IdentifyOperators) {
+TEST(LexerTest, IdentifyOperators) {
     std::vector<std::pair<std::string, OperatorType>> operatorsToTest = {
         {"=", OperatorType::ASSIGNMENT},
         {"==", OperatorType::EQUAL},
@@ -80,9 +80,9 @@ TEST(LexarTest, IdentifyOperators) {
     }
 }
 
-TEST(LexarTest, SimpleAddExpression) {
+TEST(LexerTest, SimpleAddExpression) {
     // setup
-    Lexar lx("1 +2");
+    Lexer lx("1 +2");
     lx.lex();
 
 
@@ -101,8 +101,8 @@ TEST(LexarTest, SimpleAddExpression) {
     EXPECT_EQ(token3.readType(), TokenType::NUMBER);
 }
 
-TEST(LexarTest, SimpleAssignmentExpression) {
-    Lexar lx("myVar = 10 + 5 - (3 * 2)");
+TEST(LexerTest, SimpleAssignmentExpression) {
+    Lexer lx("myVar = 10 + 5 - (3 * 2)");
     lx.lex();
 
     std::vector<Token> tokens;
@@ -137,7 +137,7 @@ TEST(LexarTest, SimpleAssignmentExpression) {
     EXPECT_EQ(tokens[11].readType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexarTest, KeywordsIdentification) {
+TEST(LexerTest, KeywordsIdentification) {
     std::vector<std::pair<std::string, TokenType>> keywordsToTest = {
         {"let", TokenType::LET},
         {"return", TokenType::RETURN},
@@ -154,23 +154,23 @@ TEST(LexarTest, KeywordsIdentification) {
     };
 
     for (auto& kw : keywordsToTest) {
-        Lexar lx(kw.first);
+        Lexer lx(kw.first);
         lx.lex();
         auto token = lx.pop();
         EXPECT_EQ(token.readType(), kw.second) << "Failed for keyword: " << kw.first;
     }
 }
 
-TEST(LexarTest, IdentifierLiteral) {
-    Lexar lx("myVar");
+TEST(LexerTest, IdentifierLiteral) {
+    Lexer lx("myVar");
     lx.lex();
     auto token = lx.pop();
     EXPECT_EQ(token.readStringValue(), "myVar");
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
 }
 
-TEST(LexarTest, LetExpression) {
-    Lexar lx("let x = 5");
+TEST(LexerTest, LetExpression) {
+    Lexer lx("let x = 5");
     lx.lex();
     auto token = lx.pop();
     EXPECT_EQ(token.readStringValue(), "let");
@@ -185,34 +185,34 @@ TEST(LexarTest, LetExpression) {
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
 }
 
-TEST(LexarTest, BraceTokens) {
-    Lexar lx("{");
+TEST(LexerTest, BraceTokens) {
+    Lexer lx("{");
     lx.lex();
     auto token = lx.pop();
     EXPECT_EQ(token.readStringValue(), "{");
     EXPECT_EQ(token.readType(), TokenType::OPEN_BRACE);
 
-    lx = Lexar("}");
+    lx = Lexer("}");
     lx.lex();
     token = lx.pop();
     EXPECT_EQ(token.readStringValue(), "}");
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
 
-    lx = Lexar("[");
+    lx = Lexer("[");
     lx.lex();
     token = lx.pop();
     EXPECT_EQ(token.readStringValue(), "[");
     EXPECT_EQ(token.readType(), TokenType::OPEN_BRACKET);
 
-    lx = Lexar("]");
+    lx = Lexer("]");
     lx.lex();
     token = lx.pop();
     EXPECT_EQ(token.readStringValue(), "]");
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACKET);
 }
 
-TEST(LexarTest, FunctionAndScope) {
-    Lexar lx("fn myFunction() { return 0 }");
+TEST(LexerTest, FunctionAndScope) {
+    Lexer lx("fn myFunction() { return 0 }");
     lx.lex();
 
     auto token = lx.pop();
@@ -237,8 +237,8 @@ TEST(LexarTest, FunctionAndScope) {
     EXPECT_EQ(token.readType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexarTest, FunctionAndScopeAndCall) {
-    Lexar lx("fn myFunction() { return 0 } return myFunction()");
+TEST(LexerTest, FunctionAndScopeAndCall) {
+    Lexer lx("fn myFunction() { return 0 } return myFunction()");
     lx.lex();
 
     auto token = lx.pop();
@@ -271,9 +271,9 @@ TEST(LexarTest, FunctionAndScopeAndCall) {
     token = lx.pop();
     EXPECT_EQ(token.readType(), TokenType::END_OF_FILE);
 }
-TEST(LexarTest, WindowsLineEndings_AreWhitespace) {
+TEST(LexerTest, WindowsLineEndings_AreWhitespace) {
     // setup
-    Lexar lx("let x\r\nreturn");
+    Lexer lx("let x\r\nreturn");
 
     // do
     auto [success, error] = lx.lex();
@@ -288,9 +288,9 @@ TEST(LexarTest, WindowsLineEndings_AreWhitespace) {
     EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexarTest, Tokens_KnowTheirColumnAndLength) {
+TEST(LexerTest, Tokens_KnowTheirColumnAndLength) {
     // setup:    123456789012345678
-    Lexar lx("let count = 123 <= x;");
+    Lexer lx("let count = 123 <= x;");
 
     // do
     auto [success, error] = lx.lex();
@@ -318,9 +318,9 @@ TEST(LexarTest, Tokens_KnowTheirColumnAndLength) {
     }
 }
 
-TEST(LexarTest, LineComments_AreSkipped) {
+TEST(LexerTest, LineComments_AreSkipped) {
     // setup
-    Lexar lx("let // the rest of this line is ignored: return 5 / 2\nx // comment at end of input");
+    Lexer lx("let // the rest of this line is ignored: return 5 / 2\nx // comment at end of input");
 
     // do
     auto [success, error] = lx.lex();
@@ -335,9 +335,9 @@ TEST(LexarTest, LineComments_AreSkipped) {
     EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexarTest, Division_IsNotAComment) {
+TEST(LexerTest, Division_IsNotAComment) {
     // setup
-    Lexar lx("6 / 2");
+    Lexer lx("6 / 2");
 
     // do
     auto [success, error] = lx.lex();
@@ -349,9 +349,9 @@ TEST(LexarTest, Division_IsNotAComment) {
     EXPECT_EQ(lx.pop().readType(), TokenType::NUMBER);
 }
 
-TEST(LexarTest, FunctionSignatureTokens) {
+TEST(LexerTest, FunctionSignatureTokens) {
     // setup
-    Lexar lx("fn gcd_loop(mut a: i16, b: i16) -> i16");
+    Lexer lx("fn gcd_loop(mut a: i16, b: i16) -> i16");
 
     // do
     auto [success, error] = lx.lex();
@@ -395,9 +395,9 @@ TEST(LexarTest, FunctionSignatureTokens) {
     EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
 }
 
-TEST(LexarTest, MinusAndDecrement_AreNotArrows) {
+TEST(LexerTest, MinusAndDecrement_AreNotArrows) {
     // setup
-    Lexar lx("a - b a--");
+    Lexer lx("a - b a--");
 
     // do
     auto [success, error] = lx.lex();
@@ -411,9 +411,9 @@ TEST(LexarTest, MinusAndDecrement_AreNotArrows) {
     EXPECT_TRUE(isOperator(lx.pop(), OperatorType::DECREMENT));
 }
 
-TEST(LexarTest, Identifier_MayContainDigitsAndUnderscores) {
+TEST(LexerTest, Identifier_MayContainDigitsAndUnderscores) {
     // setup
-    Lexar lx("_tmp x1 9lives");
+    Lexer lx("_tmp x1 9lives");
 
     // do
     auto [success, error] = lx.lex();
