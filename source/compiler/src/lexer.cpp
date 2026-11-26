@@ -33,6 +33,13 @@ Token::readLength() const {
     return m_length;
 }
 
+Location
+Token::readLocation() const {
+    Position end = m_position;
+    end.column += m_length;
+    return Location{.span = {.start = m_position, .end = end}};
+}
+
 uint32_t
 Token::readIndex() const {
     return m_index;

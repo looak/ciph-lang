@@ -14,10 +14,8 @@ namespace {
 // The error result every parse function returns on failure. The message is
 // added to the error code's default text.
 std::unexpected<Diagnostic>
-fail(ErrorCode code, Position position, std::string message) {
-    return std::unexpected(Diagnostic{.code = code,
-                                      .location = {.span = {.start = position, .end = position}},
-                                      .message = std::move(message)});
+fail(ErrorCode code, Location location, std::string message) {
+    return std::unexpected(Diagnostic{.code = code, .location = location, .message = std::move(message)});
 }
 
 } // namespace
@@ -80,7 +78,7 @@ Parser::parseStatement() {
         case TokenType::FUNCTION:
             return parseFunctionStatement();
         case TokenType::SEMICOLON:
-            return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, token.readPosition(),
+            return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, token.readLocation(),
                         "Found ';' with no statement before it");
         default:
             return expectSemicolon(parseExpressionStatement(), "expression");
@@ -101,7 +99,7 @@ Parser::parseExpressionStatement() {
         return expression;
     }
 
-    return fail(ErrorCode::SYNTAX_ERROR_UNUSED_EXPRESSION, token.readPosition(),
+    return fail(ErrorCode::SYNTAX_ERROR_UNUSED_EXPRESSION, token.readLocation(),
                 "The result of this expression is not used. Only a call, '++' or '--' can stand alone as a statement");
 }
 
@@ -115,15 +113,15 @@ Parser::expectSemicolon(Expect<ASTBaseNode*> statement, const char* what) {
     auto [success, token] = m_lexer.popExpect(TokenType::SEMICOLON);
     if (success == false) {
         // Point just past the statement's last token, where the ';' belongs.
-        // The token found instead is often on the next line.
+        // The token found instead is often on the next line. A point, not a
+        // character, so the span is empty.
         Position position = token.readPosition();
         if (next > 0) {
-            const Token& last = m_lexer.readTokens()[next - 1];
-            position = last.readPosition();
-            position.column += last.readLength();
+            position = m_lexer.readTokens()[next - 1].readLocation().span.end;
         }
 
-        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON, position, fmt::format("Expected ';' after {}", what));
+        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_SEMICOLON, Location{.span = {.start = position, .end = position}},
+                    fmt::format("Expected ';' after {}", what));
     }
     return statement;
 }
@@ -132,7 +130,7 @@ Expect<ASTBaseNode*>
 Parser::parseWhileCondition() {
     auto [success, expected_token] = m_lexer.popExpect(TokenType::OPEN_PAREN);
     if (success == false) {
-        return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, expected_token.readPosition(), "Expecting a open parenthesis after while keyword which contains a expression");
+        return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, expected_token.readLocation(), "Expecting a open parenthesis after while keyword which contains a expression");
     }
 
     auto condition = parseComparisonExpression();
@@ -142,7 +140,7 @@ Parser::parseWhileCondition() {
 
     auto [success2, expected_token2] = m_lexer.popExpect(TokenType::CLOSE_PAREN);
     if (success2 == false) {
-        return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, expected_token2.readPosition(), "Expecting a close parenthesis after while keyword which contains a expression");
+        return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, expected_token2.readLocation(), "Expecting a close parenthesis after while keyword which contains a expression");
     }
 
     return condition;
@@ -152,7 +150,7 @@ Expect<ASTBaseNode*>
 Parser::parseScopeNode(ASTScopeNode* scopeNode) {
     auto [success, expected_token] = m_lexer.popExpect(TokenType::OPEN_BRACE);
     if (success == false) {
-        return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, expected_token.readPosition(), "Expecting a open brace after keyword which contains a expression");
+        return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, expected_token.readLocation(), "Expecting a open brace after keyword which contains a expression");
     }
 
     Token token = m_lexer.peek();
@@ -166,13 +164,13 @@ Parser::parseScopeNode(ASTScopeNode* scopeNode) {
 
         token = m_lexer.peek();
         if (token.readType() == TokenType::END_OF_FILE) {
-            return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, m_lexer.peek().readPosition(), "Expecting a close brace before end of file.");
+            return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, m_lexer.peek().readLocation(), "Expecting a close brace before end of file.");
         }
     }
 
     auto [success1, expected_token1] = m_lexer.popExpect(TokenType::CLOSE_BRACE);
     if (success1 == false) {
-        return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, expected_token1.readPosition(), "Expecting a close brace after open brance which contains statements");
+        return fail(ErrorCode::SYNTAX_ERROR_BRACE_MISSMATCH, expected_token1.readLocation(), "Expecting a close brace after open brance which contains statements");
     }
 
     scopeNode->closeSourceRange(m_lexer.nextIndex() - 1); // the closing brace
@@ -250,7 +248,7 @@ Parser::parseComparisonExpression() {
         // that operator, rather than as a missing ';' by the caller.
         auto second = m_lexer.peek();
         if (isComparison(second)) {
-            return fail(ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON, second.readPosition(),
+            return fail(ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON, second.readLocation(),
                         "Comparisons cannot be chained, as in 'a == b == c'. Compare two values at a time");
         }
 
@@ -347,7 +345,7 @@ Parser::parsePrimaryExpression() {
 
             auto [success, expected_token] = m_lexer.popExpect(TokenType::CLOSE_PAREN);
             if (success == false) {
-                return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, expected_token.readPosition(), "Missmatch between open and close parenthesis in expression.");
+                return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, expected_token.readLocation(), "Missmatch between open and close parenthesis in expression.");
             }
 
             return expression;
@@ -363,7 +361,7 @@ Parser::parsePrimaryExpression() {
             else if (!token.readStringValue().empty()) {
                 message += fmt::format(", found '{}'", token.readStringValue());
             }
-            return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, token.readPosition(), std::move(message));
+            return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, token.readLocation(), std::move(message));
         }
     }
 }
@@ -374,14 +372,14 @@ Parser::parseLetStatement() {
     m_lexer.pop();
     auto [success, token] = m_lexer.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
-        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, token.readPosition(), "Expected identifier after let keyword");
+        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, token.readLocation(), "Expected identifier after let keyword");
     }
 
     auto name = token.readStringValue();
 
     auto [op_success, op_token] = m_lexer.popOperator(OperatorType::ASSIGNMENT);
     if (op_success == false) {
-        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR, op_token.readPosition(), fmt::format("Expected assignment operator after identifier {} in let statement", name));
+        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_OPERATOR, op_token.readLocation(), fmt::format("Expected assignment operator after identifier {} in let statement", name));
     }
 
     auto expression = parseComparisonExpression();
@@ -399,7 +397,7 @@ Parser::parseIdentifier() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     auto [success, token] = m_lexer.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
-        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, token.readPosition(), "Expected identifier in expression");
+        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, token.readLocation(), "Expected identifier in expression");
     }
 
     std::string_view name = token.readStringValue();
@@ -410,7 +408,7 @@ Parser::parseIdentifier() {
         // handle arguments later
         auto [close_success, result] = m_lexer.popExpect(TokenType::CLOSE_PAREN);
         if (close_success == false) {
-            return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, result.readPosition(), "Expected closing parenthesis for function call");
+            return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, result.readLocation(), "Expected closing parenthesis for function call");
         }
         return new ASTCallNode(rangeFrom(first), name);
     }
@@ -432,7 +430,7 @@ Parser::parseFunctionStatement() {
     m_lexer.pop();
     auto [success, token] = m_lexer.popExpect(TokenType::IDENTIFIER);
     if (success == false) {
-        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, token.readPosition(), "Expected function identifier after fn keyword");
+        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_IDENTIFIER, token.readLocation(), "Expected function identifier after fn keyword");
     }
     auto name = token.readStringValue();
     SourceRange range{first, first};
@@ -451,7 +449,7 @@ Parser::parseFunctionStatement() {
     const auto& statements = functionNode->readStatements();
     bool hasReturn = !statements.empty() && statements.back()->readType() == ASTNodeType::RETURN;
     if (hasReturn == false) {
-        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_RETURN_STATEMENT, token.readPosition(), "Expected function to have a return statement");
+        return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_RETURN_STATEMENT, token.readLocation(), "Expected function to have a return statement");
     }
 
     return functionNode;

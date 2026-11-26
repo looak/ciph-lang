@@ -4,17 +4,6 @@
 
 using namespace ciph;
 
-namespace {
-
-Position
-endOf(const Token& token) {
-    Position end = token.readPosition();
-    end.column += token.readLength();
-    return end;
-}
-
-} // namespace
-
 Location
 ciph::locationOf(const ASTBaseNode& node, std::span<const Token> tokens) {
     const SourceRange range = node.readSourceRange();
@@ -32,5 +21,6 @@ ciph::locationOf(const ASTBaseNode& node, std::span<const Token> tokens) {
         return Location{};
     }
 
-    return Location{.span = {.start = tokens[first].readPosition(), .end = endOf(tokens[last])}};
+    return Location{.span = {.start = tokens[first].readLocation().span.start,
+                             .end = tokens[last].readLocation().span.end}};
 }

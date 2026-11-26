@@ -24,7 +24,10 @@ public:
     std::string_view readStringValue() const;
     OperatorType readOperatorValue() const;
     Position readPosition() const;
-    uint32_t readLength() const;    
+    uint32_t readLength() const;
+    // The characters the token covers, for a diagnostic. Tokens never span
+    // lines, so the end is on the same line.
+    Location readLocation() const;
     uint32_t readIndex() const;
 
 private:
