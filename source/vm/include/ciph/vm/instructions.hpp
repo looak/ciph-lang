@@ -1,7 +1,9 @@
 #pragma once
 
+#include <array>
+
+#include <ciph/shared/instruction_set.hpp>
 #include <ciph/shared/shared_defines.hpp>
-#include <unordered_map>
 #include <ciph/vm/execution_context.hpp>
 
 namespace ciph {
@@ -17,57 +19,40 @@ void push_helper_reg(ExecutionContext& context, registers::def reg);
 
 void jmp_helper(ExecutionContext& context, int16_t address);
 
-typedef void (*handler)(ExecutionContext& context);
+using Handler = void (*)(ExecutionContext& context);
 
-void push_handler(ExecutionContext& context);
-void push_literal_handler(ExecutionContext& context);
-void push_reg_handler(ExecutionContext& context);
+// One handler per opcode. Each is an ordinary function in instructions.cpp.
+// Every instruction in CIPH_INSTRUCTIONS gets a declaration here and needs a
+// definition there, or linking fails.
+template <def Op>
+void exec(ExecutionContext& context);
 
-void add_handler(ExecutionContext& context);
-void sub_handler(ExecutionContext& context);
-void mul_handler(ExecutionContext& context);
-void div_handler(ExecutionContext& context);
-void return_handler(ExecutionContext& context);
-void peek_handler(ExecutionContext& context);
-void peek_offset_handler(ExecutionContext& context);
-void pop_reg_handler(ExecutionContext& context);
-void inc_handler(ExecutionContext& context);
-void dec_handler(ExecutionContext& context);
-void cmp_handler(ExecutionContext& context);
-void mov_handler(ExecutionContext& context);
-void jump_eq_handler(ExecutionContext& context);
-void jump_nz_handler(ExecutionContext& context);
-void jump_gt_handler(ExecutionContext& context);
-void jump_lt_handler(ExecutionContext& context);
-void jump_handler(ExecutionContext& context);
-void call_handler(ExecutionContext& context);
-void halt_handler(ExecutionContext& context);
+// Declares exec<def::NAME> for every implemented instruction. Only the
+// declarations come from the macro; the definitions are written out in full.
+#define CIPH_DECLARE_EXEC(NAME, OP, MNEMONIC) template <> void exec<def::NAME>(ExecutionContext& context);
+CIPH_INSTRUCTIONS(CIPH_DECLARE_EXEC, CIPH_DECLARE_EXEC)
+#undef CIPH_DECLARE_EXEC
 
-static std::unordered_map<def, handler> handlers = {
-	{def::PSH, push_handler},
-	{def::PSH_REG, push_reg_handler},
-	{def::PSH_LIT, push_literal_handler},
-	{def::ADD, add_handler},
-	{def::SUB, sub_handler},
-	{def::MUL, mul_handler},
-	{def::DIV, div_handler},
-	{def::POP_REG, pop_reg_handler},
-	{def::PEK_REG, peek_handler},
-	{def::PEK_OFF, peek_offset_handler},
-	{def::RET, return_handler},
-	{def::INC, inc_handler},
-	{def::DEC, dec_handler},
-	{def::CMP, cmp_handler},
-	{def::MOV, mov_handler},
-	{def::JEQ, jump_eq_handler},
-	{def::JNZ, jump_nz_handler},
-	{def::JGT, jump_gt_handler},
-	{def::JLT, jump_lt_handler},
-	{def::JMP, jump_handler},
-	{def::CALL, call_handler},
-	{def::HALT, halt_handler}
+// Runs for any opcode that isn't in AllInstructions: stops the VM.
+inline void invalid_handler(ExecutionContext& context) {
+	context.faulted = true;
+}
 
-}; // handlers
+template <typename Set>
+struct Dispatch;
+
+template <typename... Instrs>
+struct Dispatch<InstructionSet<Instrs...>> {
+	static constexpr std::array<Handler, 256> table = [] {
+		std::array<Handler, 256> t{};
+		t.fill(&invalid_handler);
+		((t[Instrs::value] = &exec<Instrs::opcode>), ...);
+		return t;
+	}();
+};
+
+// Indexed by opcode byte: handlers[+def::ADD](context).
+inline constexpr const std::array<Handler, 256>& handlers = Dispatch<AllInstructions>::table;
 
 } // namespace instruction
 } // namespace ciph

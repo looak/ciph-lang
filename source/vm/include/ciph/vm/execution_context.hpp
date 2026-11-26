@@ -26,6 +26,7 @@ public:
 	uint16_t* registry;
 	uint8_t* bytecode = nullptr;
 	int16_t return_value = 0;
+	bool faulted = false;
 };
 
 } // namespace ciph

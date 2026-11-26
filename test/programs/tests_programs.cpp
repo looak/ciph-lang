@@ -53,6 +53,32 @@ TEST(ProgramTest, WhileLoopCountsToFive) {
     EXPECT_EQ(run("let i = 0; while (i < 5) { i++; } return i;"), 5);
 }
 
+// ---- Variable slots ----
+//
+// Every `let` gets its own slot on the stack. Reading a variable while
+// working out a value must not throw off which slot the next `let` gets.
+
+TEST(ProgramTest, VariableSlots_LiteralsOnly) {
+    EXPECT_EQ(run("let x = 1; let y = 2; let z = 5; return z;"), 5);
+}
+
+TEST(ProgramTest, VariableSlots_AfterALetThatCopiesAVariable) {
+    EXPECT_EQ(run("let x = 1; let y = x; let z = 5; return z;"), 5);
+    EXPECT_EQ(run("let x = 1; let y = x; let z = 5; return y + z;"), 6);
+}
+
+TEST(ProgramTest, VariableSlots_AfterALetThatComputesWithAVariable) {
+    EXPECT_EQ(run("let x = 1; let y = x + 1; let z = 5; return z;"), 5);
+}
+
+TEST(ProgramTest, VariableSlots_AfterAWhileConditionThatReadsAVariable) {
+    EXPECT_EQ(run("let i = 0; while (i < 3) { i++; } let z = 7; return z;"), 7);
+}
+
+TEST(ProgramTest, VariableSlots_AfterALetThatNegatesAVariable) {
+    EXPECT_EQ(run("let x = 1; let y = -x; let z = 5; return z;"), 5);
+}
+
 // ---- Unary minus ----
 
 TEST(ProgramTest, UnaryMinus_OnALiteral) {

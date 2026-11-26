@@ -300,7 +300,27 @@ Parser::parseAdditiveExpression() {
 
 ParseExpect
 Parser::parseMultiplicativeExpression() {
-    return parseBinaryLevel<&Parser::parsePrimaryExpression, OperatorType::MULTIPLICATION, OperatorType::DIVISION>();
+    return parseBinaryLevel<&Parser::parseUnaryExpression, OperatorType::MULTIPLICATION, OperatorType::DIVISION>();
+}
+
+// `-x`. The operand is itself a unary expression, so a minus can repeat:
+// `- -x` is `-(-x)`. Sitting below the multiplicative level makes it bind
+// tighter than `*` and `/`: `-2 * 3` is `(-2) * 3`.
+ParseExpect
+Parser::parseUnaryExpression() {
+    const uint32_t first = m_lexer.nextIndex(); // first token of this construct
+    const Token op = m_lexer.peek();
+    if (op.readOperatorValue() != OperatorType::SUBTRACTION) {
+        return parsePrimaryExpression();
+    }
+    m_lexer.pop();
+
+    auto operand = parseUnaryExpression();
+    if (!operand) {
+        return operand;
+    }
+
+    return new ASTUnaryExpressionNode(rangeFrom(first), *operand, op.readOperatorValue());
 }
 
 ParseExpect
@@ -323,7 +343,7 @@ Parser::parsePrimaryExpression() {
         case TokenType::OPEN_PAREN: {
             m_lexer.pop();
 
-            auto expression = parseAdditiveExpression();
+            auto expression = parseComparisonExpression();            
             if (!expression) {
                 return expression;
             }

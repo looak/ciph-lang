@@ -4,6 +4,7 @@ ciph_add_library(shared
     src/shared_lib.cpp
   HEADERS
     include/ciph/shared/disassembler.hpp
+    include/ciph/shared/instruction_set.hpp
     include/ciph/shared/shared_defines.hpp
   PRIVATE_DEPENDS
     fmt::fmt

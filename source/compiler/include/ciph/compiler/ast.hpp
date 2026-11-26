@@ -32,6 +32,7 @@ enum class ASTNodeType
 	// scope and operators
 	BINARY_EXPRESSION,
 	COMPARISON_EXPRESSION,
+	UNARY_EXPRESSION,
 
 	CALL_EXPRESSION,
 
@@ -195,6 +196,26 @@ public:
 private:
 	ASTBaseNode* m_left;
 	ASTBaseNode* m_right;
+	OperatorType m_operator;
+};
+
+// An operator written before its one operand: `-x`. The operator is the
+// node's first token, so errors point at it without a focus being set.
+class ASTUnaryExpressionNode : public ASTExpressionNode
+{
+public:
+	ASTUnaryExpressionNode(SourceRange range, ASTBaseNode* operand, OperatorType op) :
+		ASTExpressionNode(ASTNodeType::UNARY_EXPRESSION, range),
+		m_operand(operand),
+		m_operator(op)
+	{}
+	~ASTUnaryExpressionNode() override = default;
+
+	[[nodiscard]] const ASTBaseNode* readOperand() const { return m_operand; }
+	[[nodiscard]] OperatorType readOperator() const { return m_operator; }
+
+private:
+	ASTBaseNode* m_operand;
 	OperatorType m_operator;
 };
 

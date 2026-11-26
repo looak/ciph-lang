@@ -132,6 +132,9 @@ SemanticAnalyzer::analyzeExpression(const ASTBaseNode* expression) {
             analyzeExpression(comparison->readRight());
             break;
         }
+        case ASTNodeType::UNARY_EXPRESSION:
+            analyzeExpression(static_cast<const ASTUnaryExpressionNode*>(expression)->readOperand());
+            break;
         default:
             // Literals and a bare ++/-- use no names.
             break;

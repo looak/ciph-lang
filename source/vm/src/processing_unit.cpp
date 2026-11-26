@@ -32,11 +32,11 @@ int16_t ProcessingUnit::execute()
     uint16_t& pc = m_reg_memory[+registers::def::pc];
     do {
         instr = static_cast<instruction::def>(m_context.bytecode[pc]);
-        instruction::handlers[instr](m_context);
+        instruction::handlers[+instr](m_context);
         pc++;
 
     }
-    while (instr != instruction::def::HALT);
+    while (instr != instruction::def::HALT && !m_context.faulted);
 
     return m_context.return_value;
 }
@@ -46,8 +46,8 @@ bool ProcessingUnit::step()
     instruction::def instr = instruction::def::RET;    
     uint16_t& pc = m_reg_memory[+registers::def::pc];
     instr = static_cast<instruction::def>(m_context.bytecode[pc]);
-    instruction::handlers[instr](m_context);
+    instruction::handlers[+instr](m_context);
     pc++;
 
-    return instr != instruction::def::HALT;
+    return instr != instruction::def::HALT && !m_context.faulted;
 }

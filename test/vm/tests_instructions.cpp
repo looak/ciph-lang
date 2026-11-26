@@ -76,7 +76,7 @@ TEST_F(InstructionsTest, PushHandler)
 
     EXPECT_EQ(instruction, instruction::def::PSH_LIT);
 
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
     int16_t value = peek_word(context.bytecode, registries[+registers::def::sp]);
 	EXPECT_EQ(static_cast<uint16_t>(value), 0xf00d);
 }
@@ -96,11 +96,11 @@ TEST_F(InstructionsTest, PeekHandler_Reg)
     uint16_t& pc = registries[+registers::def::pc];
     auto instruction = static_cast<instruction::def>(context.bytecode[pc]);    
 
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
     pc++;
     instruction = static_cast<instruction::def>(context.bytecode[pc]);
     EXPECT_EQ(instruction, instruction::def::PEK_REG);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
 
     int16_t value = context.reg(registers::def::r0);
     EXPECT_EQ(value, 42);
@@ -128,13 +128,13 @@ TEST_F(InstructionsTest, PeekHandler_Offset)
     for (int i = 0; i < 4; i++)
     {
         auto instruction = static_cast<instruction::def>(context.bytecode[pc]);
-        instruction::handlers[instruction](context);
+        instruction::handlers[+instruction](context);
         pc++;
     }
 
     auto instruction = static_cast<instruction::def>(context.bytecode[pc]);
     EXPECT_EQ(instruction, instruction::def::PEK_OFF);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
 
     int16_t value = context.reg(registers::def::r0);
     EXPECT_EQ(value, 17);
@@ -159,7 +159,7 @@ int16_t BinaryExpressionHandlerTest(int16_t a, int16_t b, instruction::def _inst
     {
         uint16_t& pc = context.reg(registers::def::pc);
         auto instr = static_cast<instruction::def>(context.bytecode[pc]);
-		instruction::handlers[instr](context);
+		instruction::handlers[+instr](context);
         pc++;
 	}
 	
@@ -192,6 +192,80 @@ TEST_F(InstructionsTest, BinaryExpressionHandlersTests)
     }
 }
 
+// Pushes `value`, runs NEG and returns what is then on top of the stack.
+// NEG takes no operand bytes: it replaces the top of the stack with its
+// negation, so the stack is as deep afterwards as before.
+int16_t NegHandlerTest(int16_t value, InstructionsTest* fixture)
+{
+    ExecutionContext context(fixture->registries, fixture->mem.getMemory());
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, static_cast<uint8_t>((value >> 8) & 0xFF), static_cast<uint8_t>(value & 0xFF),
+        +instruction::def::NEG
+    };
+
+    fixture->mem.load(program, sizeof(program));
+
+    uint16_t& pc = context.reg(registers::def::pc);
+    instruction::handlers[+instruction::def::PSH_LIT](context);
+    pc++;
+    const uint16_t depthBefore = context.reg(registers::def::sp);
+
+    // Checked against invalid_handler: a missing handler should fail the test
+    // with a clear message, not just set the fault flag.
+    auto handler = instruction::handlers[context.bytecode[pc]];
+    if (handler == &instruction::invalid_handler)
+    {
+        ADD_FAILURE() << "NEG has no handler";
+        return 0;
+    }
+    handler(context);
+    pc++;
+    
+    EXPECT_EQ(context.reg(registers::def::sp), depthBefore) << "NEG changed the depth of the stack";
+    return pop_helper(context);
+}
+
+TEST_F(InstructionsTest, NegHandler_NegatesTopOfStack)
+{
+    std::vector<std::pair<int16_t, int16_t>> tests = {
+        {5, -5},
+        {-5, 5},
+        {0, 0},
+        {1, -1},
+        {32767, -32767},
+        {-32767, 32767},
+    };
+
+    for (auto [value, expected] : tests)
+    {
+        EXPECT_EQ(NegHandlerTest(value, this), expected) << "negating " << value;
+    }
+}
+
+TEST_F(InstructionsTest, NegHandler_LeavesTheValueBelowAlone)
+{
+    uint8_t program[] = {
+        +instruction::def::PSH_LIT, 0, 42,
+        +instruction::def::PSH_LIT, 0, 7,
+        +instruction::def::NEG
+    };
+
+    mem.load(program, sizeof(program));
+    ExecutionContext context(registries, mem.getMemory());
+
+    uint16_t& pc = registries[+registers::def::pc];
+    for (int i = 0; i < 3; i++)
+    {
+        auto handler = instruction::handlers[context.bytecode[pc]];
+        ASSERT_NE(handler, &instruction::invalid_handler) << "no handler for instruction " << i;
+        handler(context);
+        pc++;
+    }
+
+    EXPECT_EQ(pop_helper(context), -7);
+    EXPECT_EQ(pop_helper(context), 42);
+}
+
 TEST_F(InstructionsTest, PopReg_ExpectValueInReturnRegister)
 {
     uint8_t program[] = {
@@ -206,11 +280,11 @@ TEST_F(InstructionsTest, PopReg_ExpectValueInReturnRegister)
     // tick program
     uint16_t& pc = registries[+registers::def::pc];
     auto instruction = static_cast<instruction::def>(context.bytecode[pc]);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
 
     instruction = static_cast<instruction::def>(context.bytecode[++pc]);
     EXPECT_EQ(instruction, instruction::def::POP_REG);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
 
     int16_t value = context.reg(registers::def::ret);
     EXPECT_EQ(value, 19);
@@ -233,19 +307,19 @@ TEST_F(InstructionsTest, IncHandler_RegAndStack)
     uint16_t& pc = registries[+registers::def::pc];
     auto instruction = static_cast<instruction::def>(context.bytecode[pc]);    
 
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
     pc++;
     instruction = static_cast<instruction::def>(context.bytecode[pc]);
     EXPECT_EQ(instruction, instruction::def::INC);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
 
     pc++;
     instruction = static_cast<instruction::def>(context.bytecode[pc]);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
 
     pc++;
     instruction = static_cast<instruction::def>(context.bytecode[pc]);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
     EXPECT_EQ(instruction, instruction::def::INC);
 
     int16_t value = context.reg(registers::def::r0);
@@ -272,19 +346,19 @@ TEST_F(InstructionsTest, DecHandler_RegAndStack)
     uint16_t& pc = registries[+registers::def::pc];
     auto instruction = static_cast<instruction::def>(context.bytecode[pc]);    
 
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
     pc++;
     instruction = static_cast<instruction::def>(context.bytecode[pc]);
     EXPECT_EQ(instruction, instruction::def::DEC);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
 
     pc++;
     instruction = static_cast<instruction::def>(context.bytecode[pc]);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
 
     pc++;
     instruction = static_cast<instruction::def>(context.bytecode[pc]);
-    instruction::handlers[instruction](context);
+    instruction::handlers[+instruction](context);
     EXPECT_EQ(instruction, instruction::def::DEC);
 
     int16_t value = context.reg(registers::def::r0);
@@ -312,7 +386,7 @@ TEST_F(InstructionsTest, MoveHandler_RegToReg)
     for (int i = 0; i < 3; i++)
     {
         instruction = static_cast<instruction::def>(context.bytecode[pc]);
-        instruction::handlers[instruction](context);
+        instruction::handlers[+instruction](context);
         pc++;
     }
 
@@ -338,7 +412,7 @@ TEST_F(InstructionsTest, CompareHandler_Stack_ResultInImm)
     for (int i = 0; i < 3; i++)
     {
         instruction = static_cast<instruction::def>(context.bytecode[pc]);
-        instruction::handlers[instruction](context);
+        instruction::handlers[+instruction](context);
         pc++;
     }
 

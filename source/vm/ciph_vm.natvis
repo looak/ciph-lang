@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debugger views for the ciph VM (MSVC debugger: cppvsdbg in VS Code, or
+  Visual Studio). Linked into every executable that uses ciph::vm, see
+  source/vm/CMakeLists.txt.
+
+  Hand-written for now: this file knows the instruction encoding on its own,
+  so when CIPH_INSTRUCTIONS in shared_defines.hpp changes, update the table
+  below and the matching group in the disassembly loop.
+
+  Register indices (registers::def): imm 0, r0-r6 1-7, ret 8, sp 10, fp 11,
+  bp 14, pc 15.
+
+  Instruction encoding. The opcode is one byte; operands follow it.
+    reg  = 1 byte, a registers::def
+    off  = 1 byte, signed slot offset from fp
+    word = 2 bytes, big-endian (high byte first)
+
+    name     opcode  params  bytes  operands
+    ADD      0x06    0       1
+    SUB      0x08    0       1
+    MUL      0x0A    0       1
+    DIV      0x0C    0       1
+    PSH      0x10    0       1
+    RET      0xCF    0       1
+    HALT     0xFE    0       1
+    NEG      0xF0    0       1      (still in CIPH_RESERVED_INSTRUCTIONS)
+    PSH_REG  0x20    1       2      reg
+    POP_REG  0x40    1       2      reg
+    PEK_REG  0x50    1       2      reg
+    MOV      0x02    2       3      reg, reg
+    PEK_OFF  0x51    2       3      reg, off
+    PSH_LIT  0x11    1       3      word  (literal)
+    JMP      0xC0    1       3      word  (address from bp)
+    CALL     0xCA    1       3      word  (address from bp)
+    JNZ      0xC1    1       3      word  (distance back)
+    JEQ      0xC2    1       3      word  (distance back)
+    JGT      0xC3    1       3      word  (distance back)
+    JLT      0xC4    1       3      word  (distance back)
+    INC      0x0E    1-2     2-3    reg [, off when reg is sp]
+    DEC      0x0F    1-2     2-3    reg [, off when reg is sp]
+    CMP      0xCC    1-2     2-3    reg [, reg when reg is not sp]
+-->
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="ciph::ExecutionContext">
+    <DisplayString Condition="registry == nullptr">(no registers)</DisplayString>
+    <DisplayString>{(ciph::instruction::def)bytecode[registry[15]],en} at {registry[15] - registry[14]}  sp={registry[10]} fp={registry[11]} ret={(short)registry[8]}</DisplayString>
+    <Expand>
+      <Synthetic Name="registers" Condition="registry != nullptr">
+        <DisplayString>pc={registry[15]} sp={registry[10]} fp={registry[11]} bp={registry[14]} ret={(short)registry[8]} imm={(short)registry[0]}</DisplayString>
+        <Expand>
+          <Item Name="pc">registry[15]</Item>
+          <Item Name="sp">registry[10]</Item>
+          <Item Name="fp">registry[11]</Item>
+          <Item Name="bp">registry[14]</Item>
+          <Item Name="ret">(short)registry[8]</Item>
+          <Item Name="imm">(short)registry[0]</Item>
+          <Item Name="r0">(short)registry[1]</Item>
+          <Item Name="r1">(short)registry[2]</Item>
+          <Item Name="r2">(short)registry[3]</Item>
+          <Item Name="r3">(short)registry[4]</Item>
+          <Item Name="r4">(short)registry[5]</Item>
+          <Item Name="r5">(short)registry[6]</Item>
+          <Item Name="r6">(short)registry[7]</Item>
+        </Expand>
+      </Synthetic>
+
+      <!--
+        The current frame: one 16-bit slot per value, from fp up to sp.
+        Slots are little-endian (low byte first), the way push_helper writes
+        them. Slot n is what PEK_OFF reads with offset n.
+        Below fp, CALL saved the caller's fp and the return pc. At the top
+        level there is no caller, so those two hold whatever is in memory.
+      -->
+      <Synthetic Name="frame" Condition="registry != nullptr">
+        <DisplayString>{(registry[10] - registry[11]) / 2} slots</DisplayString>
+        <Expand>
+          <Item Name="saved fp [fp-2]">(unsigned short)(bytecode[registry[11] - 2] | (bytecode[registry[11] - 1] &lt;&lt; 8))</Item>
+          <Item Name="return pc [fp-4]">(unsigned short)(bytecode[registry[11] - 4] | (bytecode[registry[11] - 3] &lt;&lt; 8))</Item>
+          <CustomListItems MaxItemsPerView="128">
+            <Variable Name="a" InitialValue="registry[11]" />
+            <Variable Name="slot" InitialValue="0" />
+            <Loop>
+              <Break Condition="a + 1 &gt;= registry[10]" />
+              <Item Name="slot {slot}">(short)(bytecode[a] | (bytecode[a + 1] &lt;&lt; 8))</Item>
+              <Exec>a = a + 2</Exec>
+              <Exec>slot = slot + 1</Exec>
+            </Loop>
+          </CustomListItems>
+        </Expand>
+      </Synthetic>
+
+      <!--
+        Disassembly from bp. ExecutionContext does not know where the program
+        ends, so this stops at sp or at the first byte that is not an
+        instruction it knows. Each line is named "<address from bp>  <text>";
+        its value is the instruction's raw bytes.
+      -->
+      <Synthetic Name="disassembly" Condition="registry != nullptr">
+        <DisplayString>from bp={registry[14]}, pc at {registry[15] - registry[14]}</DisplayString>
+        <Expand>
+          <CustomListItems MaxItemsPerView="512">
+            <Variable Name="bp" InitialValue="registry[14]" />
+            <Variable Name="p" InitialValue="registry[14]" />
+            <Variable Name="op" InitialValue="0" />
+            <Variable Name="word" InitialValue="(short)0" />
+            <Loop>
+              <Break Condition="p &gt;= registry[10]" />
+              <Exec>op = bytecode[p]</Exec>
+
+              <!-- 0 params, 1 byte -->
+              <If Condition="op == 0x06 || op == 0x08 || op == 0x0A || op == 0x0C || op == 0x10 || op == 0xCF || op == 0xFE || op == 0xF0">
+                <Item Name="{p - bp}  {(ciph::instruction::def)op,en}">bytecode + p,[1]x</Item>
+                <Exec>p = p + 1</Exec>
+              </If>
+
+              <!-- 1 param: reg. 2 bytes -->
+              <Elseif Condition="op == 0x20 || op == 0x40 || op == 0x50">
+                <Item Name="{p - bp}  {(ciph::instruction::def)op,en} {(ciph::registers::def)bytecode[p + 1],en}">bytecode + p,[2]x</Item>
+                <Exec>p = p + 2</Exec>
+              </Elseif>
+
+              <!-- 2 params: reg, reg. 3 bytes -->
+              <Elseif Condition="op == 0x02">
+                <Item Name="{p - bp}  MOV {(ciph::registers::def)bytecode[p + 1],en}, {(ciph::registers::def)bytecode[p + 2],en}">bytecode + p,[3]x</Item>
+                <Exec>p = p + 3</Exec>
+              </Elseif>
+
+              <!-- 2 params: reg, off. 3 bytes -->
+              <Elseif Condition="op == 0x51">
+                <Item Name="{p - bp}  PEK_OFF {(ciph::registers::def)bytecode[p + 1],en}, slot {(int)(signed char)bytecode[p + 2]}">bytecode + p,[3]x</Item>
+                <Exec>p = p + 3</Exec>
+              </Elseif>
+
+              <!-- 1 param: word literal. 3 bytes -->
+              <Elseif Condition="op == 0x11">
+                <Exec>word = (short)((bytecode[p + 1] &lt;&lt; 8) | bytecode[p + 2])</Exec>
+                <Item Name="{p - bp}  PSH_LIT {word}">bytecode + p,[3]x</Item>
+                <Exec>p = p + 3</Exec>
+              </Elseif>
+
+              <!-- 1 param: word address from bp. 3 bytes -->
+              <Elseif Condition="op == 0xC0 || op == 0xCA">
+                <Exec>word = (short)((bytecode[p + 1] &lt;&lt; 8) | bytecode[p + 2])</Exec>
+                <Item Name="{p - bp}  {(ciph::instruction::def)op,en} {(unsigned short)word}">bytecode + p,[3]x</Item>
+                <Exec>p = p + 3</Exec>
+              </Elseif>
+
+              <!--
+                1 param: word distance back. 3 bytes. The target is counted
+                from the end of the instruction (see jump_back_if).
+              -->
+              <Elseif Condition="op == 0xC1 || op == 0xC2 || op == 0xC3 || op == 0xC4">
+                <Exec>word = (short)((bytecode[p + 1] &lt;&lt; 8) | bytecode[p + 2])</Exec>
+                <Item Name="{p - bp}  {(ciph::instruction::def)op,en} back {word} (to {p + 3 - word - bp})">bytecode + p,[3]x</Item>
+                <Exec>p = p + 3</Exec>
+              </Elseif>
+
+              <!-- INC / DEC: reg, plus an offset byte when reg is sp. 2 or 3 bytes -->
+              <Elseif Condition="(op == 0x0E || op == 0x0F) &amp;&amp; bytecode[p + 1] == 0x0A">
+                <Item Name="{p - bp}  {(ciph::instruction::def)op,en} slot {(int)(signed char)bytecode[p + 2]}">bytecode + p,[3]x</Item>
+                <Exec>p = p + 3</Exec>
+              </Elseif>
+              <Elseif Condition="op == 0x0E || op == 0x0F">
+                <Item Name="{p - bp}  {(ciph::instruction::def)op,en} {(ciph::registers::def)bytecode[p + 1],en}">bytecode + p,[2]x</Item>
+                <Exec>p = p + 2</Exec>
+              </Elseif>
+
+              <!-- CMP: reg, plus a second reg when the first is not sp. 2 or 3 bytes -->
+              <Elseif Condition="op == 0xCC &amp;&amp; bytecode[p + 1] == 0x0A">
+                <Item Name="{p - bp}  CMP sp">bytecode + p,[2]x</Item>
+                <Exec>p = p + 2</Exec>
+              </Elseif>
+              <Elseif Condition="op == 0xCC">
+                <Item Name="{p - bp}  CMP {(ciph::registers::def)bytecode[p + 1],en}, {(ciph::registers::def)bytecode[p + 2],en}">bytecode + p,[3]x</Item>
+                <Exec>p = p + 3</Exec>
+              </Elseif>
+
+              <Else>
+                <Item Name="{p - bp}  ?? not an instruction, stopping">bytecode + p,[1]x</Item>
+                <Break />
+              </Else>
+            </Loop>
+          </CustomListItems>
+        </Expand>
+      </Synthetic>
+
+      <Item Name="return_value">return_value</Item>
+      <Item Name="faulted">faulted</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ciph::ProcessingUnit">
+    <DisplayString>{m_context}</DisplayString>
+    <Expand>
+      <ExpandedItem>m_context</ExpandedItem>
+      <Item Name="memory">m_memory</Item>
+    </Expand>
+  </Type>
+
+  <!-- Only the part in use: registers, then the loaded program(s). -->
+  <Type Name="ciph::Memory&lt;*&gt;">
+    <DisplayString>{m_allocPointer} of {m_size} bytes used</DisplayString>
+    <Expand>
+      <Item Name="used">m_memory,[m_allocPointer]x</Item>
+      <Item Name="all">m_memory,[m_size]x</Item>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>

@@ -1,5 +1,6 @@
 #include <ciph/shared/disassembler.hpp>
 #include <ciph/shared/shared_defines.hpp>
+#include <ciph/shared/instruction_set.hpp>
 #include <fmt/core.h>
 
 using namespace ciph;
@@ -7,7 +8,7 @@ using namespace ciph;
 std::string Disassembler::disassembleInstruction(size_t& program_count) const
 {
     auto instr = static_cast<instruction::def>(m_program[program_count]);
-    std::string result = fmt::format("{} ", instruction::mnemonics.at(instr));
+    std::string result = fmt::format("{} ", instruction::AllInstructions::mnemonics[+instr]);
     switch (instr)
     {
         case instruction::def::JMP:
@@ -37,7 +38,7 @@ std::string Disassembler::disassembleInstruction(size_t& program_count) const
             result += ", " + dissassembleReg(program_count);
             break;
         case instruction::def::CMP:
-            disassembleInstructionWithOptionalReg(program_count);
+            result += disassembleInstructionWithOptionalReg(program_count);
             break;
 
     }

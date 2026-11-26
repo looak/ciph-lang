@@ -49,6 +49,7 @@ private:
     ParseExpect parseBinaryLevel();
     ParseExpect parseAdditiveExpression();
     ParseExpect parseMultiplicativeExpression();
+    ParseExpect parseUnaryExpression();
     ParseExpect parseIdentifier();
     ParseExpect parsePrimaryExpression();
     ParseExpect parseComparisonExpression();

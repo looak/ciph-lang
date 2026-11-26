@@ -49,6 +49,11 @@ shapeOf(const ASTBaseNode* node) {
 			}
 			return fmt::format("({} {} {})", shapeOf(comparison->readLeft()), op, shapeOf(comparison->readRight()));
 		}
+		case ASTNodeType::UNARY_EXPRESSION: {
+			auto unary = static_cast<const ASTUnaryExpressionNode*>(node);
+			const char* op = unary->readOperator() == OperatorType::SUBTRACTION ? "-" : "?";
+			return fmt::format("({}{})", op, shapeOf(unary->readOperand()));
+		}
 		default:
 			return "<other>";
 	}
@@ -338,9 +343,36 @@ TEST(ParserExpressionTest, Parentheses_UnclosedAroundAComparison) {
 //
 // `-x` negates x. It binds tighter than `*` and `/`, and it can repeat.
 //
-// These tests only check what parses. How the tree stores a negation is not
-// decided, so the values it produces are checked by running whole programs,
-// in test/programs/tests_programs.cpp.
+// The tree stores a negation as a unary node holding its operand, written
+// here as "(-x)". The values it produces are checked by running whole
+// programs, in test/programs/tests_programs.cpp.
+
+TEST(ParserExpressionTest, UnaryMinus_Shape) {
+	EXPECT_EQ(parsedShapeOf("-5"), "(-5)");
+	EXPECT_EQ(parsedShapeOf("-(2 + 3)"), "(-(2 + 3))");
+	EXPECT_EQ(parsedShapeOf("- -4"), "(-(-4))");
+}
+
+TEST(ParserExpressionTest, UnaryMinus_BindsTighterThanBinaryOperators) {
+	EXPECT_EQ(parsedShapeOf("-2 * 3"), "((-2) * 3)");
+	EXPECT_EQ(parsedShapeOf("-2 - 3"), "((-2) - 3)");
+	EXPECT_EQ(parsedShapeOf("3 - -2"), "(3 - (-2))");
+	EXPECT_EQ(parsedShapeOf("2 * -a"), "(2 * (-a))");
+}
+
+TEST(ParserExpressionTest, UnaryMinus_SourceRangeStartsAtTheOperator) {
+	// tokens: return(0) -(1) ((2) 2(3) +(4) 3(5) )(6) ;(7)
+	Parser parser("return -(2 + 3);");
+
+	auto parser_result = parser.parse();
+	ASSERT_TRUE(parser_result.has_value());
+	auto expression = returnedExpression(static_cast<const ASTProgramNode*>(*parser_result));
+	ASSERT_NE(expression, nullptr);
+	ASSERT_EQ(expression->readType(), ASTNodeType::UNARY_EXPRESSION);
+
+	EXPECT_EQ(expression->readSourceRange().first, 1u);
+	EXPECT_EQ(expression->readSourceRange().last, 6u);
+}
 
 TEST(ParserExpressionTest, UnaryMinus_Parses) {
 	EXPECT_TRUE(Parser("return -5;").parse().has_value());

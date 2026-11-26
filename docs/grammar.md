@@ -19,7 +19,8 @@ block          = "{" { statement } "}" ;
 
 comparison     = additive [ ( "==" | "!=" | "<" | ">" ) additive ] ;
 additive       = multiplicative { ( "+" | "-" ) multiplicative } ;
-multiplicative = primary { ( "*" | "/" ) primary } ;
+multiplicative = unary { ( "*" | "/" ) unary } ;
+unary          = "-" unary | primary ;
 
 primary        = number
                | identifier
@@ -43,6 +44,9 @@ number         = digit { digit } ;
 - A `while` body runs before its condition is first checked.
 - A chain of `+ -` or of `* /` groups from the left: `10 - 4 - 3` is
   `(10 - 4) - 3`. `*` and `/` bind tighter than `+` and `-`.
+- A unary `-` binds tighter than `*` and `/`: `-2 * 3` is `(-2) * 3`. It can
+  repeat, but needs a space: `- -4` is 4, while `--` is the decrement
+  operator.
 - A comparison does not chain: `a == b == c` is reported as `e0xe061`.
 - An expression can stand alone as a statement only when it does something: a
   call, or `++` / `--`. Anything else, such as `1 + 2;` or `x == y;`, is

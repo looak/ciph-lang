@@ -1,7 +1,5 @@
 #include <ciph/vm/instructions.hpp>
-
 #include <functional>
-
 #include <ciph/vm/processing_unit.hpp>
 
 using namespace ciph;
@@ -84,28 +82,28 @@ binary_stack_expression(ExecutionContext& context, std::function<int16_t(int16_t
     instruction::push_helper(context, op(a, b));
 }
 
-void
-instruction::add_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::ADD>(ExecutionContext& context) {
     binary_stack_expression(context, [](int16_t a, int16_t b) { return a + b; });
 }
 
-void
-instruction::sub_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::SUB>(ExecutionContext& context) {
     binary_stack_expression(context, [](int16_t a, int16_t b) { return a - b; });
 }
 
-void
-instruction::mul_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::MUL>(ExecutionContext& context) {
     binary_stack_expression(context, [](int16_t a, int16_t b) { return a * b; });
 }
 
-void
-instruction::div_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::DIV>(ExecutionContext& context) {
     binary_stack_expression(context, [](int16_t a, int16_t b) { return a / b; });
 }
 
-void
-instruction::peek_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::PEK_REG>(ExecutionContext& context) {
     uint16_t& pc = context.reg(registers::def::pc);
     auto reg = static_cast<registers::def>(context.bytecode[++pc]);
     uint16_t sp = context.reg(registers::def::sp);
@@ -113,27 +111,28 @@ instruction::peek_handler(ExecutionContext& context) {
     context.reg(reg) = static_cast<uint16_t>(value);
 }
 
-void
-instruction::push_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::PSH>(ExecutionContext& context) {
     push_helper_reg(context, registers::def::imm);
 }
 
-void
-instruction::push_reg_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::PSH_REG>(ExecutionContext& context) {
     uint16_t& pc = context.reg(registers::def::pc);
     auto reg = static_cast<registers::def>(context.bytecode[++pc]);
-    instruction::push_helper(context, i16(context.reg(reg)));
+    int16_t value = read_word(context.bytecode, ++pc);
+    context.reg(reg) = value;
 }
 
-void
-instruction::push_literal_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::PSH_LIT>(ExecutionContext& context) {
     uint16_t& programCnt = context.reg(registers::def::pc);
     int16_t value = read_word(context.bytecode, ++programCnt);
     instruction::push_helper(context, value);
 }
 
-void
-instruction::cmp_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::CMP>(ExecutionContext& context) {
     uint16_t& programCnt = context.reg(registers::def::pc);
     auto reg = static_cast<registers::def>(context.bytecode[++programCnt]);
     if (reg == registers::def::sp) {
@@ -143,16 +142,16 @@ instruction::cmp_handler(ExecutionContext& context) {
     }
 }
 
-void
-instruction::mov_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::MOV>(ExecutionContext& context) {
     uint16_t& programCnt = context.reg(registers::def::pc);
     auto regX = static_cast<registers::def>(context.bytecode[++programCnt]);
     auto regY = static_cast<registers::def>(context.bytecode[++programCnt]);
     context.reg(regX) = context.reg(regY);
 }
 
-void
-instruction::return_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::RET>(ExecutionContext& context) {
     context.return_value = context.reg(registers::def::ret);
 
     uint16_t& pc = context.reg(registers::def::pc);
@@ -168,8 +167,8 @@ struct peek_offset_instrction {
     int8_t offset;
 };
 
-void
-instruction::peek_offset_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::PEK_OFF>(ExecutionContext& context) {
     auto peek = read<peek_offset_instrction>(context.bytecode, context.reg(registers::def::pc));
     uint16_t sp = context.reg(registers::def::fp) + (peek.offset * 2) + 2;
     int16_t value = instruction::stack_read_at_offset(context.bytecode, sp);
@@ -181,15 +180,15 @@ instruction::peek_offset_handler(ExecutionContext& context) {
         context.reg(peek.reg) = value;
 }
 
-void
-instruction::pop_reg_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::POP_REG>(ExecutionContext& context) {
     uint16_t& pc = context.reg(registers::def::pc);
     auto reg = static_cast<registers::def>(context.bytecode[++pc]);
     context.reg(reg) = pop_helper(context);
 }
 
-void
-instruction::inc_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::INC>(ExecutionContext& context) {
     uint16_t& pc = context.reg(registers::def::pc);
     auto reg = static_cast<registers::def>(context.bytecode[++pc]);
 
@@ -206,8 +205,8 @@ instruction::inc_handler(ExecutionContext& context) {
         context.reg(reg)++;
     }
 }
-void
-instruction::dec_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::DEC>(ExecutionContext& context) {
     uint16_t& pc = context.reg(registers::def::pc);
     auto reg = static_cast<registers::def>(context.bytecode[++pc]);
 
@@ -238,28 +237,28 @@ jump_back_if(ExecutionContext& context, bool (*taken)(int16_t)) {
     }
 }
 
-void
-instruction::jump_eq_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::JEQ>(ExecutionContext& context) {
     jump_back_if(context, [](int16_t difference) { return difference == 0; });
 }
 
-void
-instruction::jump_nz_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::JNZ>(ExecutionContext& context) {
     jump_back_if(context, [](int16_t difference) { return difference != 0; });
 }
 
-void
-instruction::jump_gt_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::JGT>(ExecutionContext& context) {
     jump_back_if(context, [](int16_t difference) { return difference > 0; });
 }
 
-void
-instruction::jump_lt_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::JLT>(ExecutionContext& context) {
     jump_back_if(context, [](int16_t difference) { return difference < 0; });
 }
 
-void
-instruction::jump_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::JMP>(ExecutionContext& context) {
     uint16_t& pc = context.reg(registers::def::pc);
     uint16_t address = static_cast<uint16_t>(read_word(context.bytecode, ++pc));
 
@@ -269,8 +268,8 @@ instruction::jump_handler(ExecutionContext& context) {
     pc = static_cast<uint16_t>(context.reg(registers::def::bp) + address - 1);
 }
 
-void
-instruction::call_handler(ExecutionContext& context) {
+template <>
+void instruction::exec<instruction::def::CALL>(ExecutionContext& context) {
     uint16_t& pc = context.reg(registers::def::pc);
     uint16_t& fp = context.reg(registers::def::fp);
     uint16_t& sp = context.reg(registers::def::sp);
@@ -281,8 +280,14 @@ instruction::call_handler(ExecutionContext& context) {
     pc = static_cast<uint16_t>(context.reg(registers::def::bp) + address - 1);
 }
 
-void
-instruction::halt_handler(ExecutionContext&) {
+template <>
+void instruction::exec<instruction::def::HALT>(ExecutionContext&) {
     // Nothing to do: the execute loop stops when it sees HALT. Unlike RET it
     // leaves the return value and the stack untouched.
+}
+
+template <>
+void instruction::exec<instruction::def::NEG>(ExecutionContext& context) {    
+    int16_t value = pop_helper(context);
+    push_helper(context, -value);
 }

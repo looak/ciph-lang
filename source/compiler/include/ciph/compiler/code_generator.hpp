@@ -97,7 +97,7 @@ private:
                                         std::optional<registers::def> regB = std::nullopt);
     void generateBinaryExpression(  const ASTBinaryExpressionNode* node,
                                     std::optional<registers::def> reg = std::nullopt);
-    void generateNumericLiteral(const ASTNumericLiteralNode* node);
+    void generateNumericLiteral(const ASTNumericLiteralNode* node, registers::def reg);
     void generateCall(const ASTCallNode* callNode);
     void generateOperator(  const ASTBinaryExpressionNode* node, std::optional<registers::def> regA = std::nullopt,
                             std::optional<registers::def> regB = std::nullopt);
