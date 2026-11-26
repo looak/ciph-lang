@@ -13,8 +13,6 @@ class ASTBaseNode;
 class ASTScopeNode;
 struct SourceRange;
 
-using ParseExpect = std::expected<ASTBaseNode*, Diagnostic>;
-
 class Parser {
 public:
     // The parser and its lexer keep string_views into `input` (tokens point
@@ -24,8 +22,8 @@ public:
     explicit Parser(std::string_view input);
     ~Parser() = default;
 
-    ParseExpect parse();
-    ParseExpect parseProgram();
+    Expect<ASTBaseNode*> parse();
+    Expect<ASTBaseNode*> parseProgram();
 
     // The tokens the program was parsed from. An AST node's SourceRange holds
     // indices into this list.
@@ -35,34 +33,35 @@ private:
     // The range from token `first` to the token most recently popped.
     SourceRange rangeFrom(uint32_t first) const;
 
-    ParseExpect parseStatement();
+    Expect<ASTBaseNode*> parseStatement();
     // Pops the ';' that ends a simple statement and passes the statement on;
-    // `what` names the statement in the error message.
-    ParseExpect expectSemicolon(ASTBaseNode* statement, const char* what);
+    // `what` names the statement in the error message. A statement that
+    // failed to parse is passed on as it is, without looking for the ';'.
+    Expect<ASTBaseNode*> expectSemicolon(Expect<ASTBaseNode*> statement, const char* what);
     // A call, `x++` or `x--` used as a statement. Any other expression is an
     // error, since its value would go unused.
-    ParseExpect parseExpressionStatement();
-    ParseExpect parseLetStatement();
-    ParseExpect parseReturnStatement();
+    Expect<ASTBaseNode*> parseExpressionStatement();
+    Expect<ASTBaseNode*> parseLetStatement();
+    Expect<ASTBaseNode*> parseReturnStatement();
     // Defined in parser.cpp: every instantiation is made there.
-    template <ParseExpect (Parser::*Next)(), OperatorType... Ops>
-    ParseExpect parseBinaryLevel();
-    ParseExpect parseAdditiveExpression();
-    ParseExpect parseMultiplicativeExpression();
-    ParseExpect parseUnaryExpression();
-    ParseExpect parseIdentifier();
-    ParseExpect parsePrimaryExpression();
-    ParseExpect parseComparisonExpression();
+    template <Expect<ASTBaseNode*> (Parser::*Next)(), OperatorType... Ops>
+    Expect<ASTBaseNode*> parseBinaryLevel();
+    Expect<ASTBaseNode*> parseAdditiveExpression();
+    Expect<ASTBaseNode*> parseMultiplicativeExpression();
+    Expect<ASTBaseNode*> parseUnaryExpression();
+    Expect<ASTBaseNode*> parseIdentifier();
+    Expect<ASTBaseNode*> parsePrimaryExpression();
+    Expect<ASTBaseNode*> parseComparisonExpression();
 
-    ParseExpect parseWhileStatement();
-    ParseExpect parseWhileCondition();
+    Expect<ASTBaseNode*> parseWhileStatement();
+    Expect<ASTBaseNode*> parseWhileCondition();
 
-    ParseExpect parseFunctionStatement();
-    ParseExpect parseFunctionParameters();
-    ParseExpect parseFunctionBody();
+    Expect<ASTBaseNode*> parseFunctionStatement();
+    Expect<ASTBaseNode*> parseFunctionParameters();
+    Expect<ASTBaseNode*> parseFunctionBody();
 
     // this assumption that I can reuse scope for while & function bodies might be flawed later...
-    ParseExpect parseScopeNode(ASTScopeNode* scopeNode);
+    Expect<ASTBaseNode*> parseScopeNode(ASTScopeNode* scopeNode);
 
     Lexer m_lexer;
 };

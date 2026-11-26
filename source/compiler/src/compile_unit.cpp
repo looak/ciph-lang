@@ -23,7 +23,7 @@ CompileUnit& CompileUnit::operator=(CompileUnit&&) noexcept = default;
 bool
 CompileUnit::parse() {
     Parser parser(*m_source);
-    ParseExpect result = parser.parse();
+    Expect<ASTBaseNode*> result = parser.parse();
     m_tokens = parser.readTokens();
 
     if (!result) {

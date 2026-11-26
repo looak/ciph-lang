@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <expected>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -93,6 +94,17 @@ struct Diagnostic {
     // The errors that led to this one, such as the bad expression inside a
     // while condition.
     std::vector<Diagnostic> nestedError = {};
+};
+
+// The result of anything that can fail with a diagnostic. [[nodiscard]] on the
+// type, so every function returning it is nodiscard without saying so.
+//
+// and_then, transform and or_else return a plain std::expected, which is not
+// nodiscard and does not convert back to an Expect.
+template <class T>
+class [[nodiscard]] Expect : public std::expected<T, Diagnostic> {
+public:
+    using std::expected<T, Diagnostic>::expected;
 };
 
 // A diagnostic as plain text, for a console or a log:

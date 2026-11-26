@@ -26,7 +26,7 @@ Parser::Parser(std::string_view input)
     : m_lexer(input) {
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parse() {
     auto [success, error_code] = m_lexer.lex();
     if (success == false) {
@@ -36,7 +36,7 @@ Parser::parse() {
     return parseProgram();
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseProgram() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     ASTProgramNode* program = new ASTProgramNode(SourceRange{first, first});
@@ -65,21 +65,16 @@ Parser::rangeFrom(uint32_t first) const {
     return SourceRange{first, m_lexer.nextIndex() - 1};
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseStatement() {
     // Simple statements end with a semicolon; block statements (while, fn) do
-    // not. and_then only runs the semicolon check when the statement itself
-    // parsed, otherwise the statement's own error is passed through.
-    auto semicolonAfter = [this](const char* what) {
-        return [this, what](ASTBaseNode* statement) { return expectSemicolon(statement, what); };
-    };
-
+    // not.
     auto token = m_lexer.peek();
     switch (token.readType()) {
         case TokenType::RETURN:
-            return parseReturnStatement().and_then(semicolonAfter("return statement"));
+            return expectSemicolon(parseReturnStatement(), "return statement");
         case TokenType::LET:
-            return parseLetStatement().and_then(semicolonAfter("let statement"));
+            return expectSemicolon(parseLetStatement(), "let statement");
         case TokenType::WHILE:
             return parseWhileStatement();
         case TokenType::FUNCTION:
@@ -88,11 +83,11 @@ Parser::parseStatement() {
             return fail(ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION, token.readPosition(),
                         "Found ';' with no statement before it");
         default:
-            return parseExpressionStatement().and_then(semicolonAfter("expression"));
+            return expectSemicolon(parseExpressionStatement(), "expression");
     }
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseExpressionStatement() {
     const Token token = m_lexer.peek();
     auto expression = parseComparisonExpression();
@@ -110,8 +105,12 @@ Parser::parseExpressionStatement() {
                 "The result of this expression is not used. Only a call, '++' or '--' can stand alone as a statement");
 }
 
-ParseExpect
-Parser::expectSemicolon(ASTBaseNode* statement, const char* what) {
+Expect<ASTBaseNode*>
+Parser::expectSemicolon(Expect<ASTBaseNode*> statement, const char* what) {
+    if (!statement) {
+        return statement;
+    }
+
     const uint32_t next = m_lexer.nextIndex();
     auto [success, token] = m_lexer.popExpect(TokenType::SEMICOLON);
     if (success == false) {
@@ -129,7 +128,7 @@ Parser::expectSemicolon(ASTBaseNode* statement, const char* what) {
     return statement;
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseWhileCondition() {
     auto [success, expected_token] = m_lexer.popExpect(TokenType::OPEN_PAREN);
     if (success == false) {
@@ -154,7 +153,7 @@ Parser::parseWhileCondition() {
     return condition;
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseScopeNode(ASTScopeNode* scopeNode) {
     auto [success, expected_token] = m_lexer.popExpect(TokenType::OPEN_BRACE);
     if (success == false) {
@@ -185,7 +184,7 @@ Parser::parseScopeNode(ASTScopeNode* scopeNode) {
     return scopeNode;
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseWhileStatement() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     m_lexer.pop();
@@ -206,7 +205,7 @@ Parser::parseWhileStatement() {
     return whileNode;
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseReturnStatement() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     m_lexer.pop();
@@ -228,7 +227,7 @@ Parser::parseReturnStatement() {
     return new ASTReturnNode(rangeFrom(first), expression);
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseComparisonExpression() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     auto left_result = parseAdditiveExpression();
@@ -269,8 +268,8 @@ Parser::parseComparisonExpression() {
 // One precedence level of left-associative binary operators: parses `Next`,
 // then folds `op Next` into the left side for as long as the next token is
 // one of `Ops`. So `a - b - c` becomes `(a - b) - c`.
-template <ParseExpect (Parser::*Next)(), OperatorType... Ops>
-ParseExpect
+template <Expect<ASTBaseNode*> (Parser::*Next)(), OperatorType... Ops>
+Expect<ASTBaseNode*>
 Parser::parseBinaryLevel() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     auto left_result = (this->*Next)();
@@ -296,12 +295,12 @@ Parser::parseBinaryLevel() {
     return left;
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseAdditiveExpression() {
     return parseBinaryLevel<&Parser::parseMultiplicativeExpression, OperatorType::ADDITION, OperatorType::SUBTRACTION>();
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseMultiplicativeExpression() {
     return parseBinaryLevel<&Parser::parseUnaryExpression, OperatorType::MULTIPLICATION, OperatorType::DIVISION>();
 }
@@ -309,7 +308,7 @@ Parser::parseMultiplicativeExpression() {
 // `-x`. The operand is itself a unary expression, so a minus can repeat:
 // `- -x` is `-(-x)`. Sitting below the multiplicative level makes it bind
 // tighter than `*` and `/`: `-2 * 3` is `(-2) * 3`.
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseUnaryExpression() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     const Token op = m_lexer.peek();
@@ -326,7 +325,7 @@ Parser::parseUnaryExpression() {
     return new ASTUnaryExpressionNode(rangeFrom(first), *operand, op.readOperatorValue());
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parsePrimaryExpression() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     Token token = m_lexer.peek();
@@ -374,7 +373,7 @@ Parser::parsePrimaryExpression() {
     }
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseLetStatement() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     m_lexer.pop();
@@ -400,7 +399,7 @@ Parser::parseLetStatement() {
     return new ASTLetNode(range, name, static_cast<ASTExpressionNode*>(*expression));
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseIdentifier() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     auto [success, token] = m_lexer.popExpect(TokenType::IDENTIFIER);
@@ -432,7 +431,7 @@ Parser::parseIdentifier() {
     return new ASTIdentifierNode(rangeFrom(first), name);
 }
 
-ParseExpect
+Expect<ASTBaseNode*>
 Parser::parseFunctionStatement() {
     const uint32_t first = m_lexer.nextIndex(); // first token of this construct
     m_lexer.pop();
