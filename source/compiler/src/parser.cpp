@@ -321,12 +321,16 @@ Parser::parsePrimaryExpression() {
     switch (token.readType()) {
         case TokenType::NUMBER: {
             m_cursor.pop();
-            // Reads the digits straight from the source text. A literal too
-            // large for an int leaves the value at 0.
+            // Reads the digits straight from the source text. Every value is a
+            // signed 16-bit number for now, so a literal above 32767 is an error.
             const std::string_view digits = token.readStringValue();
-            int numericValue = 0;
-            std::from_chars(digits.data(), digits.data() + digits.size(), numericValue);
-            return new ASTNumericLiteralNode(rangeFrom(first), static_cast<int16_t>(numericValue));
+            int16_t numericValue = 0;
+            auto [end, error] = std::from_chars(digits.data(), digits.data() + digits.size(), numericValue);
+            if (error == std::errc::result_out_of_range) {
+                return fail(ErrorCode::SYNTAX_ERROR_NUMBER_OUT_OF_RANGE, token.readLocation(),
+                            fmt::format("{} does not fit in 16 bits (largest is 32767)", digits));
+            }
+            return new ASTNumericLiteralNode(rangeFrom(first), numericValue);
         }
         case TokenType::IDENTIFIER:
             return parseIdentifier();
