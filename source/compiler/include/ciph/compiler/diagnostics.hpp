@@ -120,11 +120,29 @@ public:
 // never opened, so it can be a file path or any other label.
 [[nodiscard]] std::string formatDiagnostic(std::string_view sourceName, const Diagnostic& diagnostic);
 
+class Token;
+
 // One function per error, each making its diagnostic from what went wrong.
+// Messages start in lower case, have no full stop, and quote code: 'x', '('.
 namespace diag {
 
-[[nodiscard]] Diagnostic undeclaredIdentifier(Location location, std::string_view name);
+// Lexer
 [[nodiscard]] Diagnostic unknownCharacter(Location location, char character);
+
+// Parser. `where` finishes the sentence, such as "after 'while'".
+[[nodiscard]] Diagnostic expectedExpression(Location location, const Token& found);
+[[nodiscard]] Diagnostic unusedExpression(Location location);
+[[nodiscard]] Diagnostic expectedSemicolon(Location location, std::string_view after);
+[[nodiscard]] Diagnostic expectedParenthesis(Location location, char parenthesis, std::string_view where);
+[[nodiscard]] Diagnostic expectedBrace(Location location, char brace, std::string_view where);
+[[nodiscard]] Diagnostic chainedComparison(Location location);
+[[nodiscard]] Diagnostic numberOutOfRange(Location location, std::string_view digits);
+[[nodiscard]] Diagnostic expectedIdentifier(Location location, std::string_view where);
+[[nodiscard]] Diagnostic expectedAssignment(Location location, std::string_view name);
+[[nodiscard]] Diagnostic missingReturn(Location location, std::string_view function);
+
+// Semantic analyzer
+[[nodiscard]] Diagnostic undeclaredIdentifier(Location location, std::string_view name);
 
 } // namespace diag
 
