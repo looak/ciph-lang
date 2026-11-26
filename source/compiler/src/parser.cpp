@@ -432,9 +432,17 @@ Parser::parseFunctionStatement() {
     range.focus = token.readIndex(); // the name, not the `fn` keyword
     auto functionNode = new ASTFunctionNode(range, name);
 
-    m_cursor.popExpect(TokenType::OPEN_PAREN);
+    auto [open, openToken] = m_cursor.popExpect(TokenType::OPEN_PAREN);
+    if (open == false) {
+        return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, openToken.readLocation(),
+                    "Expected '(' after the function name");
+    }
     // handle parameters later
-    m_cursor.popExpect(TokenType::CLOSE_PAREN);
+    auto [close, closeToken] = m_cursor.popExpect(TokenType::CLOSE_PAREN);
+    if (close == false) {
+        return fail(ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH, closeToken.readLocation(),
+                    "Expected ')': functions take no parameters yet");
+    }
 
     auto body = parseScopeNode(functionNode);
     if (!body) {

@@ -1,11 +1,15 @@
 #include <ciph/compiler/token_cursor.hpp>
-#include <ciph/shared/shared_defines.hpp>
+
+#include <cstddef>
 
 using namespace ciph;
 
 Token
 TokenCursor::pop() {
-    Token token = m_tokens[m_position++];
+    Token token = peek();
+    if (m_position < m_tokens.size()) {
+        ++m_position;
+    }
     return token;
 }
 
@@ -32,6 +36,12 @@ TokenCursor::popOperator(OperatorType op) {
 
 Token
 TokenCursor::peek(uint16_t offset) const {
-    uint16_t peekPos = u16(m_position + offset);
-    return m_tokens[peekPos];
+    const std::size_t index = std::size_t{m_position} + offset;
+    if (index < m_tokens.size()) {
+        return m_tokens[index];
+    }
+
+    // Outside the list: an empty token where the program ends.
+    const Position end = m_tokens.empty() ? Position{} : m_tokens.back().readLocation().span.end;
+    return Token("", TokenType::BEYOND_PROGRAM, end, 0, static_cast<uint32_t>(m_tokens.size()));
 }

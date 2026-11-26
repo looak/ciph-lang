@@ -40,7 +40,10 @@ BOOLEAN,*/
     ARROW, // "->", before a function's return type
 
     END_OF_FILE,
-    UNKNOWN
+    UNKNOWN,
+    // Not made by the lexer: what a TokenCursor returns when asked for a
+    // token outside the list, so a parser bug reads this instead of crashing.
+    BEYOND_PROGRAM
 };
 
 enum class OperatorType : uint8_t

@@ -16,7 +16,8 @@ class TokenCursor {
 public:
     explicit TokenCursor(std::span<const Token> tokens) : m_tokens(tokens) {}
 
-    // The next token, moving past it. Reading past END_OF_FILE is undefined.
+    // The next token, moving past it. Past END_OF_FILE this returns a
+    // BEYOND_PROGRAM token and stays where it is.
     Token pop();
 
     // Pops the next token. The bool says whether it has the expected type;
@@ -28,6 +29,7 @@ public:
     std::pair<bool, Token> popOperator(OperatorType op);
 
     // The token `offset` places ahead, without moving. 0 is the next token.
+    // Beyond the list this is a BEYOND_PROGRAM token.
     Token peek(uint16_t offset = 0) const;
 
     // Index, into readTokens(), of the token the next pop() returns. The
