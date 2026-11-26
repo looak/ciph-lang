@@ -3,14 +3,14 @@
 
 #include <ciph/compiler/ast.hpp>
 #include <ciph/compiler/diagnostics.hpp>
-#include <ciph/compiler/parser.hpp>
+#include "text_parser.hpp"
 
 using namespace ciph;
 
 TEST(ParserTest, ReturnStatement_DefaultNumericNode_ValueZero) {
 	// setup
 	std::string code("return;");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -32,7 +32,7 @@ TEST(ParserTest, ReturnStatement_DefaultNumericNode_ValueZero) {
 TEST(ParserTest, ReturnStatement_NumericNodeGivenValue) {
 	// setup
 	std::string code("return 5;");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -54,7 +54,7 @@ TEST(ParserTest, ReturnStatement_NumericNodeGivenValue) {
 TEST(ParserTest, ReturnStatement_NumericNodeExpression) {
 	// setup
 	std::string code("return 5 + 2;");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -74,7 +74,7 @@ TEST(ParserTest, ReturnStatement_NumericNodeExpression) {
 TEST(ParserTest, LetStatement) {
 	// setup
 	std::string code("let x = 5;");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -94,7 +94,7 @@ TEST(ParserTest, LetStatement) {
 TEST(ParserTest, LetStatement_ErrorInExpression) {
 	// setup
 	std::string code("let x 42;"); // should produce an error
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -106,7 +106,7 @@ TEST(ParserTest, LetStatement_ErrorInExpression) {
 TEST(ParserTest, LetStatement_Expression) {
 	// setup
 	std::string code("let x = 5 + 5;");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -130,7 +130,7 @@ TEST(ParserTest, IncStatement) {
 	// setup
 	std::string code(R"(let x = 5;
 						x++;)");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -150,7 +150,7 @@ TEST(ParserTest, IncStatement) {
 TEST(ParserTest, EqualsOperator) {
 	// setup
 	std::string code("return x == x;");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -175,7 +175,7 @@ namespace {
 
 void
 expectChainedComparison(const char* code) {
-	auto parser_result = Parser(code).parse();
+	auto parser_result = TextParser(code).parse();
 	ASSERT_FALSE(parser_result.has_value()) << "Parsed without error: " << code;
 	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON) << code;
 }
@@ -197,7 +197,7 @@ TEST(ParserTest, ChainedComparison_InLet) {
 
 TEST(ParserTest, ChainedComparison_InWhileConditionIsPassedUpUnchanged) {
 	// A while condition passes up whatever went wrong inside it as it is.
-	auto parser_result = Parser("let i = 0; while (i < 5 < 6) { i++; } return i;").parse();
+	auto parser_result = TextParser("let i = 0; while (i < 5 < 6) { i++; } return i;").parse();
 
 	ASSERT_FALSE(parser_result.has_value());
 	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON);
@@ -205,7 +205,7 @@ TEST(ParserTest, ChainedComparison_InWhileConditionIsPassedUpUnchanged) {
 
 TEST(ParserTest, ChainedComparison_PointsAtTheSecondOperator) {
 	// The second `==` starts at line 1 column 15.
-	auto parser_result = Parser("return a == b == c;").parse();
+	auto parser_result = TextParser("return a == b == c;").parse();
 
 	ASSERT_FALSE(parser_result.has_value());
 	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON);
@@ -214,7 +214,7 @@ TEST(ParserTest, ChainedComparison_PointsAtTheSecondOperator) {
 }
 
 TEST(ParserTest, SingleComparison_WithArithmeticChainsOnBothSides) {
-	auto parser_result = Parser("return 1 + 2 + 3 == 2 * 3 * 1;").parse();
+	auto parser_result = TextParser("return 1 + 2 + 3 == 2 * 3 * 1;").parse();
 
 	ASSERT_TRUE(parser_result.has_value());
 	auto program = static_cast<const ASTProgramNode*>(*parser_result);
@@ -233,7 +233,7 @@ TEST(ParserTest, WhileStatement_Legal) {
 				i++;
 			}
 			return i;)");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -255,7 +255,7 @@ TEST(ParserTest, SimpleFunction_ReturnsConstant) {
 				return 42;
 			}
 			return number();)");
-	Parser parser(code);
+	TextParser parser(code);
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value()) << "Parser produced an error: " << parser_result.error().message;
@@ -276,7 +276,7 @@ TEST(ParserTest, SimpleFunction_ReturnsConstant) {
 // Block statements (while, fn) take none; the tests above cover that.
 
 TEST(ParserTest, MissingSemicolon_AfterLet) {
-	Parser parser("let x = 5");
+	TextParser parser("let x = 5");
 
 	auto parser_result = parser.parse();
 
@@ -285,7 +285,7 @@ TEST(ParserTest, MissingSemicolon_AfterLet) {
 }
 
 TEST(ParserTest, MissingSemicolon_AfterReturn) {
-	Parser parser("return 5");
+	TextParser parser("return 5");
 
 	auto parser_result = parser.parse();
 
@@ -294,7 +294,7 @@ TEST(ParserTest, MissingSemicolon_AfterReturn) {
 }
 
 TEST(ParserTest, MissingSemicolon_AfterExpression) {
-	Parser parser("number()");
+	TextParser parser("number()");
 
 	auto parser_result = parser.parse();
 
@@ -312,7 +312,7 @@ namespace {
 
 void
 expectUnusedExpression(const char* code) {
-	auto parser_result = Parser(code).parse();
+	auto parser_result = TextParser(code).parse();
 	ASSERT_FALSE(parser_result.has_value()) << "Parsed without error: " << code;
 	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_UNUSED_EXPRESSION) << code;
 }
@@ -320,7 +320,7 @@ expectUnusedExpression(const char* code) {
 } // namespace
 
 TEST(ParserTest, ExpressionStatement_CallIsAllowed) {
-	Parser parser("fn number() { return 42; } number(); return 0;");
+	TextParser parser("fn number() { return 42; } number(); return 0;");
 
 	auto parser_result = parser.parse();
 
@@ -331,7 +331,7 @@ TEST(ParserTest, ExpressionStatement_CallIsAllowed) {
 }
 
 TEST(ParserTest, ExpressionStatement_IncrementAndDecrementAreAllowed) {
-	Parser parser("let i = 0; i++; i--; return i;");
+	TextParser parser("let i = 0; i++; i--; return i;");
 
 	auto parser_result = parser.parse();
 
@@ -367,7 +367,7 @@ TEST(ParserTest, ExpressionStatement_RejectedInsideABlock) {
 }
 
 TEST(ParserTest, IncDec_PostDecrementIsRecorded) {
-	auto parser_result = Parser("let i = 0; i--; return i;").parse();
+	auto parser_result = TextParser("let i = 0; i--; return i;").parse();
 
 	ASSERT_TRUE(parser_result.has_value());
 	auto program = static_cast<const ASTProgramNode*>(*parser_result);
@@ -377,7 +377,7 @@ TEST(ParserTest, IncDec_PostDecrementIsRecorded) {
 }
 
 TEST(ParserTest, IncDec_PlainIdentifierHasNone) {
-	auto parser_result = Parser("let i = 0; return i;").parse();
+	auto parser_result = TextParser("let i = 0; return i;").parse();
 
 	ASSERT_TRUE(parser_result.has_value());
 	auto program = static_cast<const ASTProgramNode*>(*parser_result);
@@ -390,14 +390,14 @@ TEST(ParserTest, IncDec_PlainIdentifierHasNone) {
 TEST(ParserTest, IncDec_PrefixFormIsNotSupported) {
 	// Only `x++` / `x--` exist; `++` cannot start an expression.
 	for (const char* code : {"let i = 0; ++i; return i;", "let i = 0; return --i;"}) {
-		auto parser_result = Parser(code).parse();
+		auto parser_result = TextParser(code).parse();
 		ASSERT_FALSE(parser_result.has_value()) << code;
 		EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION) << code;
 	}
 }
 
 TEST(ParserTest, Origin_ReturnWithoutValueIsSynthesized) {
-	auto parser_result = Parser("return;").parse();
+	auto parser_result = TextParser("return;").parse();
 
 	ASSERT_TRUE(parser_result.has_value());
 	auto program = static_cast<const ASTProgramNode*>(*parser_result);
@@ -407,7 +407,7 @@ TEST(ParserTest, Origin_ReturnWithoutValueIsSynthesized) {
 }
 
 TEST(ParserTest, Origin_ParsedValueIsText) {
-	auto parser_result = Parser("return 5;").parse();
+	auto parser_result = TextParser("return 5;").parse();
 
 	ASSERT_TRUE(parser_result.has_value());
 	auto program = static_cast<const ASTProgramNode*>(*parser_result);
@@ -416,7 +416,7 @@ TEST(ParserTest, Origin_ParsedValueIsText) {
 }
 
 TEST(ParserTest, MissingSemicolon_BetweenStatements) {
-	Parser parser("let x = 5 return x;");
+	TextParser parser("let x = 5 return x;");
 
 	auto parser_result = parser.parse();
 
@@ -425,7 +425,7 @@ TEST(ParserTest, MissingSemicolon_BetweenStatements) {
 }
 
 TEST(ParserTest, MissingSemicolon_LastStatementInBlock) {
-	Parser parser("let i = 0; while (i < 5) { i++ } return i;");
+	TextParser parser("let i = 0; while (i < 5) { i++ } return i;");
 
 	auto parser_result = parser.parse();
 
@@ -434,7 +434,7 @@ TEST(ParserTest, MissingSemicolon_LastStatementInBlock) {
 }
 
 TEST(ParserTest, MissingSemicolon_InsideFunctionBody) {
-	Parser parser("fn number() { return 42 } return number();");
+	TextParser parser("fn number() { return 42 } return number();");
 
 	auto parser_result = parser.parse();
 
@@ -443,7 +443,7 @@ TEST(ParserTest, MissingSemicolon_InsideFunctionBody) {
 }
 
 TEST(ParserTest, LoneSemicolon_IsAnError) {
-	Parser parser("let x = 5;;");
+	TextParser parser("let x = 5;;");
 
 	auto parser_result = parser.parse();
 
@@ -454,7 +454,7 @@ TEST(ParserTest, LoneSemicolon_IsAnError) {
 TEST(ParserTest, MissingSemicolon_PointsJustPastTheStatement) {
 	// The ';' belongs after the 5, at line 1 column 10, not at `return` on
 	// the next line where the parser noticed it was missing.
-	Parser parser("let x = 5\nreturn x;");
+	TextParser parser("let x = 5\nreturn x;");
 
 	auto parser_result = parser.parse();
 
@@ -472,7 +472,7 @@ namespace {
 
 void
 expectMissingExpression(const char* code) {
-	auto parser_result = Parser(code).parse();
+	auto parser_result = TextParser(code).parse();
 	ASSERT_FALSE(parser_result.has_value()) << "Parsed without error: " << code;
 	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION) << code;
 }
@@ -523,7 +523,7 @@ TEST(ParserTest, MissingOperand_StatementThatCannotStartAnExpression) {
 
 TEST(ParserTest, MissingOperand_PointsAtTheTokenFoundInstead) {
 	// The ';' at column 12 is where the right-hand side should have started.
-	auto parser_result = Parser("return 1 + ;").parse();
+	auto parser_result = TextParser("return 1 + ;").parse();
 
 	ASSERT_FALSE(parser_result.has_value());
 	EXPECT_EQ(parser_result.error().location.span.start.line, 1u);
@@ -532,7 +532,7 @@ TEST(ParserTest, MissingOperand_PointsAtTheTokenFoundInstead) {
 
 TEST(ParserTest, MissingOperand_EmptyWhileConditionPointsAtTheCloseParen) {
 	// The ')' at column 19 is where the condition should have started.
-	auto parser_result = Parser("let i = 0; while () { i++; } return i;").parse();
+	auto parser_result = TextParser("let i = 0; while () { i++; } return i;").parse();
 
 	ASSERT_FALSE(parser_result.has_value());
 	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
@@ -555,7 +555,7 @@ expectRange(const ASTBaseNode* node, uint32_t first, uint32_t last) {
 
 TEST(ParserTest, SourceRange_CoversTheNodesTokens) {
 	// token:       0   1 2 3 4 5 6 7      8 9
-	Parser parser("let x = 1 + 2 ; return x ;");
+	TextParser parser("let x = 1 + 2 ; return x ;");
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value());
@@ -580,7 +580,7 @@ TEST(ParserTest, SourceRange_CoversTheNodesTokens) {
 
 TEST(ParserTest, SourceRange_BlockRunsToItsClosingBrace) {
 	// token:       0   1 2 3 4 5     6 7 8 9 10 11 12 13 14 15 16     17 18
-	Parser parser("let i = 0 ; while ( i < 5 )  {  i  ++ ;  }  return i  ;");
+	TextParser parser("let i = 0 ; while ( i < 5 )  {  i  ++ ;  }  return i  ;");
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value());
@@ -597,7 +597,7 @@ TEST(ParserTest, SourceRange_BlockRunsToItsClosingBrace) {
 }
 
 TEST(ParserTest, SourceRange_LeadsBackToLineAndColumn) {
-	Parser parser("let x = 5;\n  return x;");
+	TextParser parser("let x = 5;\n  return x;");
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value());
@@ -612,7 +612,7 @@ TEST(ParserTest, SourceRange_LeadsBackToLineAndColumn) {
 
 TEST(ParserTest, SourceRange_NodeWithoutSourceHasNoTokens) {
 	// `return;` supplies a literal 0 that appears nowhere in the source
-	Parser parser("return;");
+	TextParser parser("return;");
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value());

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <ciph/compiler/lexer.hpp>
+#include <ciph/compiler/token_cursor.hpp>
 
 using namespace ciph;
 
@@ -8,9 +9,10 @@ TEST(LexerTest, PrimitiveTokens) {
     // setup
     Lexer lx("12345");
     lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     // do
-    auto token = lx.pop();
+    auto token = cursor.pop();
 
     // validate
     EXPECT_EQ(token.readStringValue(), "12345");
@@ -27,9 +29,10 @@ OperatorTester(std::string input, OperatorType type) {
     // setup
     Lexer lx(input);
     lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     // do
-    auto token = lx.pop();
+    auto token = cursor.pop();
 
     // validate
     return isOperator(token, type);
@@ -84,12 +87,13 @@ TEST(LexerTest, SimpleAddExpression) {
     // setup
     Lexer lx("1 +2");
     lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
 
     // do
-    auto token1 = lx.pop();
-    auto token2 = lx.pop();
-    auto token3 = lx.pop();
+    auto token1 = cursor.pop();
+    auto token2 = cursor.pop();
+    auto token3 = cursor.pop();
 
     // validate
     EXPECT_EQ(token1.readStringValue(), "1");
@@ -104,11 +108,12 @@ TEST(LexerTest, SimpleAddExpression) {
 TEST(LexerTest, SimpleAssignmentExpression) {
     Lexer lx("myVar = 10 + 5 - (3 * 2)");
     lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     std::vector<Token> tokens;
     bool eofOrError = false;
     do {
-        auto token = lx.pop();
+        auto token = cursor.pop();
         tokens.push_back(token);
         if (token.readType() == TokenType::END_OF_FILE)
             eofOrError = true;
@@ -156,7 +161,8 @@ TEST(LexerTest, KeywordsIdentification) {
     for (auto& kw : keywordsToTest) {
         Lexer lx(kw.first);
         lx.lex();
-        auto token = lx.pop();
+        TokenCursor cursor(lx.readTokens());
+        auto token = cursor.pop();
         EXPECT_EQ(token.readType(), kw.second) << "Failed for keyword: " << kw.first;
     }
 }
@@ -164,7 +170,8 @@ TEST(LexerTest, KeywordsIdentification) {
 TEST(LexerTest, IdentifierLiteral) {
     Lexer lx("myVar");
     lx.lex();
-    auto token = lx.pop();
+    TokenCursor cursor(lx.readTokens());
+    auto token = cursor.pop();
     EXPECT_EQ(token.readStringValue(), "myVar");
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
 }
@@ -172,15 +179,16 @@ TEST(LexerTest, IdentifierLiteral) {
 TEST(LexerTest, LetExpression) {
     Lexer lx("let x = 5");
     lx.lex();
-    auto token = lx.pop();
+    TokenCursor cursor(lx.readTokens());
+    auto token = cursor.pop();
     EXPECT_EQ(token.readStringValue(), "let");
     EXPECT_EQ(token.readType(), TokenType::LET);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readStringValue(), "x");
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
-    EXPECT_TRUE(isOperator(lx.pop(), OperatorType::ASSIGNMENT));
+    EXPECT_TRUE(isOperator(cursor.pop(), OperatorType::ASSIGNMENT));
 
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readStringValue(), "5");
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
 }
@@ -188,25 +196,29 @@ TEST(LexerTest, LetExpression) {
 TEST(LexerTest, BraceTokens) {
     Lexer lx("{");
     lx.lex();
-    auto token = lx.pop();
+    TokenCursor cursor(lx.readTokens());
+    auto token = cursor.pop();
     EXPECT_EQ(token.readStringValue(), "{");
     EXPECT_EQ(token.readType(), TokenType::OPEN_BRACE);
 
     lx = Lexer("}");
     lx.lex();
-    token = lx.pop();
+    cursor = TokenCursor(lx.readTokens());
+    token = cursor.pop();
     EXPECT_EQ(token.readStringValue(), "}");
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
 
     lx = Lexer("[");
     lx.lex();
-    token = lx.pop();
+    cursor = TokenCursor(lx.readTokens());
+    token = cursor.pop();
     EXPECT_EQ(token.readStringValue(), "[");
     EXPECT_EQ(token.readType(), TokenType::OPEN_BRACKET);
 
     lx = Lexer("]");
     lx.lex();
-    token = lx.pop();
+    cursor = TokenCursor(lx.readTokens());
+    token = cursor.pop();
     EXPECT_EQ(token.readStringValue(), "]");
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACKET);
 }
@@ -214,61 +226,63 @@ TEST(LexerTest, BraceTokens) {
 TEST(LexerTest, FunctionAndScope) {
     Lexer lx("fn myFunction() { return 0 }");
     lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
-    auto token = lx.pop();
+    auto token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::FUNCTION);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "myFunction");
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::CLOSE_PAREN);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::OPEN_BRACE);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::RETURN);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
     EXPECT_EQ(token.readStringValue(), "0");
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::END_OF_FILE);
 }
 
 TEST(LexerTest, FunctionAndScopeAndCall) {
     Lexer lx("fn myFunction() { return 0 } return myFunction()");
     lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
-    auto token = lx.pop();
+    auto token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::FUNCTION);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "myFunction");
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::CLOSE_PAREN);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::OPEN_BRACE);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::RETURN);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
     EXPECT_EQ(token.readStringValue(), "0");
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::CLOSE_BRACE);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::RETURN);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "myFunction");
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::OPEN_PAREN);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::CLOSE_PAREN);
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::END_OF_FILE);
 }
 TEST(LexerTest, WindowsLineEndings_AreWhitespace) {
@@ -277,15 +291,16 @@ TEST(LexerTest, WindowsLineEndings_AreWhitespace) {
 
     // do
     auto [success, error] = lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     // validate
     ASSERT_TRUE(success);
-    EXPECT_EQ(lx.pop().readType(), TokenType::LET);
-    EXPECT_EQ(lx.pop().readType(), TokenType::IDENTIFIER);
-    auto token = lx.pop();
+    EXPECT_EQ(cursor.pop().readType(), TokenType::LET);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::IDENTIFIER);
+    auto token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::RETURN);
     EXPECT_EQ(token.readPosition().line, 2u);
-    EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::END_OF_FILE);
 }
 
 TEST(LexerTest, Tokens_KnowTheirColumnAndLength) {
@@ -294,6 +309,7 @@ TEST(LexerTest, Tokens_KnowTheirColumnAndLength) {
 
     // do
     auto [success, error] = lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     // validate
     ASSERT_TRUE(success);
@@ -312,7 +328,7 @@ TEST(LexerTest, Tokens_KnowTheirColumnAndLength) {
         {22, 0}, // end of file
     };
     for (const Expected& e : expected) {
-        auto token = lx.pop();
+        auto token = cursor.pop();
         EXPECT_EQ(token.readPosition().column, e.column);
         EXPECT_EQ(token.readLength(), e.length);
     }
@@ -324,15 +340,16 @@ TEST(LexerTest, LineComments_AreSkipped) {
 
     // do
     auto [success, error] = lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     // validate
     ASSERT_TRUE(success);
-    EXPECT_EQ(lx.pop().readType(), TokenType::LET);
-    auto token = lx.pop();
+    EXPECT_EQ(cursor.pop().readType(), TokenType::LET);
+    auto token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "x");
     EXPECT_EQ(token.readPosition().line, 2u);
-    EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::END_OF_FILE);
 }
 
 TEST(LexerTest, Division_IsNotAComment) {
@@ -341,12 +358,13 @@ TEST(LexerTest, Division_IsNotAComment) {
 
     // do
     auto [success, error] = lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     // validate
     ASSERT_TRUE(success);
-    lx.pop(); // 6
-    EXPECT_TRUE(isOperator(lx.pop(), OperatorType::DIVISION));
-    EXPECT_EQ(lx.pop().readType(), TokenType::NUMBER);
+    cursor.pop(); // 6
+    EXPECT_TRUE(isOperator(cursor.pop(), OperatorType::DIVISION));
+    EXPECT_EQ(cursor.pop().readType(), TokenType::NUMBER);
 }
 
 TEST(LexerTest, FunctionSignatureTokens) {
@@ -355,44 +373,45 @@ TEST(LexerTest, FunctionSignatureTokens) {
 
     // do
     auto [success, error] = lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     // validate
     ASSERT_TRUE(success);
-    EXPECT_EQ(lx.pop().readType(), TokenType::FUNCTION);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::FUNCTION);
 
-    auto token = lx.pop();
+    auto token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "gcd_loop");
 
-    EXPECT_EQ(lx.pop().readType(), TokenType::OPEN_PAREN);
-    EXPECT_EQ(lx.pop().readType(), TokenType::MUT);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::OPEN_PAREN);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::MUT);
 
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "a");
 
-    EXPECT_EQ(lx.pop().readType(), TokenType::COLON);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::COLON);
 
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "i16");
 
-    EXPECT_EQ(lx.pop().readType(), TokenType::COMMA);
-    EXPECT_EQ(lx.pop().readType(), TokenType::IDENTIFIER); // b
-    EXPECT_EQ(lx.pop().readType(), TokenType::COLON);
-    EXPECT_EQ(lx.pop().readType(), TokenType::IDENTIFIER); // i16
-    EXPECT_EQ(lx.pop().readType(), TokenType::CLOSE_PAREN);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::COMMA);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::IDENTIFIER); // b
+    EXPECT_EQ(cursor.pop().readType(), TokenType::COLON);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::IDENTIFIER); // i16
+    EXPECT_EQ(cursor.pop().readType(), TokenType::CLOSE_PAREN);
 
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::ARROW);
     EXPECT_EQ(token.readPosition().column, 33u);
 
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "i16");
     EXPECT_EQ(token.readPosition().column, 36u);
 
-    EXPECT_EQ(lx.pop().readType(), TokenType::END_OF_FILE);
+    EXPECT_EQ(cursor.pop().readType(), TokenType::END_OF_FILE);
 }
 
 TEST(LexerTest, MinusAndDecrement_AreNotArrows) {
@@ -401,14 +420,15 @@ TEST(LexerTest, MinusAndDecrement_AreNotArrows) {
 
     // do
     auto [success, error] = lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     // validate
     ASSERT_TRUE(success);
-    lx.pop(); // a
-    EXPECT_TRUE(isOperator(lx.pop(), OperatorType::SUBTRACTION));
-    lx.pop(); // b
-    lx.pop(); // a
-    EXPECT_TRUE(isOperator(lx.pop(), OperatorType::DECREMENT));
+    cursor.pop(); // a
+    EXPECT_TRUE(isOperator(cursor.pop(), OperatorType::SUBTRACTION));
+    cursor.pop(); // b
+    cursor.pop(); // a
+    EXPECT_TRUE(isOperator(cursor.pop(), OperatorType::DECREMENT));
 }
 
 TEST(LexerTest, Identifier_MayContainDigitsAndUnderscores) {
@@ -417,19 +437,20 @@ TEST(LexerTest, Identifier_MayContainDigitsAndUnderscores) {
 
     // do
     auto [success, error] = lx.lex();
+    TokenCursor cursor(lx.readTokens());
 
     // validate
     ASSERT_TRUE(success);
-    auto token = lx.pop();
+    auto token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "_tmp");
 
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "x1");
 
     // A leading digit still starts a number.
-    token = lx.pop();
+    token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::NUMBER);
     EXPECT_EQ(token.readStringValue(), "9");
 }

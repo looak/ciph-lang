@@ -6,6 +6,7 @@
 
 #include <ciph/compiler/diagnostics.hpp>
 #include <ciph/compiler/lexer.hpp>
+#include <ciph/compiler/token_cursor.hpp>
 
 namespace ciph {
 
@@ -15,19 +16,13 @@ struct SourceRange;
 
 class Parser {
 public:
-    // The parser and its lexer keep string_views into `input` (tokens point
-    // at their text), so the characters must outlive the Parser. A string
-    // literal or a CompileUnit's source is fine; a temporary std::string
-    // is not.
-    explicit Parser(std::string_view input);
+    // Builds the AST from already lexed tokens. The tokens, and the source
+    // text they point into, must outlive the Parser and the AST it builds.
+    explicit Parser(TokenCursor cursor);
     ~Parser() = default;
 
     Expect<ASTBaseNode*> parse();
     Expect<ASTBaseNode*> parseProgram();
-
-    // The tokens the program was parsed from. An AST node's SourceRange holds
-    // indices into this list.
-    const std::vector<Token>& readTokens() const { return m_lexer.readTokens(); }
 
 private:
     // The range from token `first` to the token most recently popped.
@@ -63,7 +58,7 @@ private:
     // this assumption that I can reuse scope for while & function bodies might be flawed later...
     Expect<ASTBaseNode*> parseScopeNode(ASTScopeNode* scopeNode);
 
-    Lexer m_lexer;
+    TokenCursor m_cursor;
 };
 
 } // namespace ciph

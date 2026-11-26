@@ -7,6 +7,7 @@ ciph_add_library(compiler
     src/lexer.cpp
     src/parser.cpp
     src/semantic_analyzer.cpp
+    src/token_cursor.cpp
   HEADERS
     include/ciph/compiler/ast.hpp
     include/ciph/compiler/bit_field.hpp
@@ -17,6 +18,7 @@ ciph_add_library(compiler
     include/ciph/compiler/lexer_defines.hpp
     include/ciph/compiler/parser.hpp
     include/ciph/compiler/semantic_analyzer.hpp
+    include/ciph/compiler/token_cursor.hpp
   DEPENDS
     ciph::shared
   PRIVATE_DEPENDS

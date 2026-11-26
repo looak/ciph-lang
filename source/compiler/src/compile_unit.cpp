@@ -22,10 +22,16 @@ CompileUnit& CompileUnit::operator=(CompileUnit&&) noexcept = default;
 
 bool
 CompileUnit::parse() {
-    Parser parser(*m_source);
-    Expect<ASTBaseNode*> result = parser.parse();
-    m_tokens = parser.readTokens();
+    Lexer lexer(*m_source);
+    auto [lexed, lexError] = lexer.lex();
+    if (!lexed) {
+        m_diagnostics.push_back(Diagnostic{.code = lexError, .location = {}, .message = "Error while lexing input"});
+        return false;
+    }
+    m_tokens = lexer.readTokens();
 
+    Parser parser{TokenCursor{m_tokens}};
+    Expect<ASTBaseNode*> result = parser.parse();
     if (!result) {
         m_diagnostics.push_back(std::move(result.error()));
         return false;

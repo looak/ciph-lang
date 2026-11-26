@@ -229,43 +229,9 @@ Lexer::lex() {
         return {false, ErrorCode::LEXER_UNKNOWN_CHARACTER};
     }
 
-    // reset position, we'll reuse this variable when we pop & peek the tokens in our vector.
-    m_position = 0;
     m_performedAnalysis = true;
     push("eof", TokenType::END_OF_FILE, cursorPosition, 0);
     return {true, ErrorCode::NO_ERR};
-}
-
-std::pair<bool, Token>
-Lexer::popOperator(OperatorType op) {
-    Token token = pop();
-    if (token.readType() != TokenType::OPERATOR)
-        return {false, token};
-    if (token.readOperatorValue() != op)
-        return {false, token};
-
-    return {true, token};
-}
-
-std::pair<bool, Token>
-Lexer::popExpect(TokenType type) {
-    Token token = pop();
-    if (token.readType() != type)
-        return {false, token};
-
-    return {true, token};
-}
-
-Token
-Lexer::peek(uint16_t offset) const {
-    uint16_t peekPos = u16(m_position + offset);
-    return m_tokens[peekPos];
-}
-
-Token
-Lexer::pop() {
-    Token token = m_tokens[m_position++];
-    return token;
 }
 
 // Returns '\0' once the input is used up, which the lexing loops treat as the

@@ -2,7 +2,7 @@
 
 #include <ciph/compiler/ast.hpp>
 #include <ciph/compiler/diagnostics.hpp>
-#include <ciph/compiler/parser.hpp>
+#include "text_parser.hpp"
 #include <ciph/compiler/semantic_analyzer.hpp>
 
 using namespace ciph;
@@ -13,7 +13,7 @@ namespace {
 // analyzer reports for it.
 std::vector<Diagnostic>
 analyze(const std::string& code) {
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     EXPECT_TRUE(parser_result.has_value()) << "test source did not parse";
     if (!parser_result) {

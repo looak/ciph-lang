@@ -6,7 +6,7 @@
 #include <ciph/compiler/ast.hpp>
 #include <ciph/compiler/code_generator.hpp>
 #include <ciph/compiler/lexer_defines.hpp>
-#include <ciph/compiler/parser.hpp>
+#include "text_parser.hpp"
 
 using namespace ciph;
 
@@ -96,7 +96,7 @@ TEST_F(CodeGeneratorTestFixture, GeneratingOrderOfOperation_MulBeforeAdd)
     // setup    
     std::string code("return 2 * 2 + 3;");
     //std::string code("(1 + 2 * 3 + 2) / 3");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
@@ -128,7 +128,7 @@ TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression)
 {
     // setup    
     std::string code("return 2 * (2 + 3);");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
@@ -159,7 +159,7 @@ TEST_F(CodeGeneratorTestFixture, ReturnStatment_Expression_Simple)
 {
     // setup    
     std::string code("return 2 + 3;");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
@@ -189,7 +189,7 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_Expression)
     // setup    
     std::string code(R"(let x = 2 * (2 + 3);
                         return x;)");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
@@ -226,7 +226,7 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_MultipleVariables)
                         let y = 3;
                         let z = x + y;
                         return z + y;)");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
@@ -266,7 +266,7 @@ TEST_F(CodeGeneratorTestFixture, LetStatement_DivisionExpression)
     std::string code(R"(let x = 10 + 20;
                         let y = 3;
                         return x / y;)");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
@@ -303,7 +303,7 @@ TEST_F(CodeGeneratorTestFixture, Return_Equals)
 {
     // setup    
     std::string code("return 5 == 2;");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
@@ -337,7 +337,7 @@ TEST_F(CodeGeneratorTestFixture, Return_EqualsIdentifer)
     std::string code(R"(let x = 10;
                         return x == 10;)");
     
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
@@ -372,7 +372,7 @@ TEST_F(CodeGeneratorTestFixture, IncIdentifierExpression)
     std::string code(R"(let x = 10;
                         x++;
                         return x;)");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode);
@@ -408,7 +408,7 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement) {
 				i++;
 			}
 			return i;)");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
 
@@ -454,7 +454,7 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement_JumpMatchesTheComparison) {
 
     for (const Case& c : cases) {
         std::string code = fmt::format("let i = 0; while (i {} 5) {{ i++; }} return i;", c.comparison);
-        Parser parser(code);
+        TextParser parser(code);
         auto parser_result = parser.parse();
         auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
         CodeGenerator generator(programNode, parser.readTokens());
@@ -481,7 +481,7 @@ TEST_F(CodeGeneratorTestFixture, WhileStatement_JumpMatchesTheComparison) {
 
 TEST_F(CodeGeneratorTestFixture, ValidProgram_ReportsNoErrors) {
     std::string code("let x = 2; return x + 3;");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode, parser.readTokens());
@@ -494,7 +494,7 @@ TEST_F(CodeGeneratorTestFixture, Function_ReportedAsUnsupportedAtItsName) {
                      "    return 5;\n"
                      "}\n"
                      "return number();");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode, parser.readTokens());
@@ -514,7 +514,7 @@ TEST_F(CodeGeneratorTestFixture, NameReusedInSiblingBlocks_ReportedAsUnsupported
                      "while (i < 1) { let a = 1; i++; }\n"
                      "while (i < 2) { let a = 2; i++; }\n"
                      "return i;");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
     CodeGenerator generator(programNode, parser.readTokens());
@@ -551,7 +551,7 @@ TEST_F(CodeGeneratorTestFixture, DISABLED_SimpleFunctionReturn) {
                 return 5+5;
             }
             return number();)");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());
 
@@ -584,7 +584,7 @@ TEST_F(CodeGeneratorTestFixture, DISABLED_SimpleFunctionReturn) {
 TEST_F(CodeGeneratorTestFixture, ChainedSubtraction_SubtractsLeftToRight)
 {
     std::string code("return 10 - 4 - 3;");
-    Parser parser(code);
+    TextParser parser(code);
     auto parser_result = parser.parse();
     ASSERT_TRUE(parser_result.has_value());
     auto programNode = static_cast<ASTProgramNode*>(parser_result.value());

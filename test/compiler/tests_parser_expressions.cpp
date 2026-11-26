@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <ciph/compiler/ast.hpp>
-#include <ciph/compiler/parser.hpp>
+#include "text_parser.hpp"
 
 using namespace ciph;
 
@@ -75,7 +75,7 @@ returnedExpression(const ASTProgramNode* program) {
 // "<parse error>" so the test fails on the comparison instead of crashing.
 std::string
 returnedShapeOf(const std::string& code) {
-	Parser parser(code);
+	TextParser parser(code);
 	auto parser_result = parser.parse();
 	if (!parser_result.has_value()) {
 		return "<parse error>";
@@ -97,7 +97,7 @@ parsedShapeOf(const std::string& expression) {
 TEST(ParserExpressionTest, SimpleAdd) {
 	// setup
 	std::string code("return 1 + 2;");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -117,7 +117,7 @@ TEST(ParserExpressionTest, SimpleAdd) {
 TEST(ParserExpressionTest, OrderOfOperations_MulBeforeAdd) {
 	// setup
 	std::string code("return 2 * 2 + 3;");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -142,7 +142,7 @@ TEST(ParserExpressionTest, OrderOfOperations_MulBeforeAdd) {
 TEST(ParserExpressionTest, OrderOfOperations_ParenthaseseBeforeMul) {
 	// setup
 	std::string code("return 2 * (2 + 3);");
-	Parser parser(code);
+	TextParser parser(code);
 
 	// do - we know the node type returned is a program
 	auto parser_result = parser.parse();
@@ -205,7 +205,7 @@ TEST(ParserExpressionTest, Chained_Variables) {
 }
 
 TEST(ParserExpressionTest, Chained_InLetAndReturn) {
-	Parser parser("let x = 1 + 2 + 3; return x - 1 - 1;");
+	TextParser parser("let x = 1 + 2 + 3; return x - 1 - 1;");
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value());
@@ -219,7 +219,7 @@ TEST(ParserExpressionTest, Chained_InLetAndReturn) {
 }
 
 TEST(ParserExpressionTest, Chained_OnEitherSideOfAComparison) {
-	Parser parser("return 1 + 2 + 3 == 2 * 3 * 1;");
+	TextParser parser("return 1 + 2 + 3 == 2 * 3 * 1;");
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value());
@@ -234,7 +234,7 @@ TEST(ParserExpressionTest, Chained_OnEitherSideOfAComparison) {
 
 TEST(ParserExpressionTest, Chained_SourceRangeCoversTheWholeChain) {
 	// tokens: return(0) 1(1) +(2) 2(3) +(4) 3(5) ;(6)
-	Parser parser("return 1 + 2 + 3;");
+	TextParser parser("return 1 + 2 + 3;");
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value());
@@ -278,7 +278,7 @@ TEST(ParserExpressionTest, Return_ChainsInsideAndOutsideParentheses) {
 }
 
 TEST(ParserExpressionTest, LetThenReturn_ChainsInParentheses) {
-	Parser parser("let x = (1 + 2 + 3) * 2; return (x - 1 - 1) / 2;");
+	TextParser parser("let x = (1 + 2 + 3) * 2; return (x - 1 - 1) / 2;");
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value());
@@ -321,19 +321,19 @@ TEST(ParserExpressionTest, Parentheses_ComparisonAsAnArithmeticOperand) {
 }
 
 TEST(ParserExpressionTest, Parentheses_ComparisonInLetAndWhile) {
-	EXPECT_TRUE(Parser("let x = (1 < 2); return x;").parse().has_value());
-	EXPECT_TRUE(Parser("let i = 0; while ((i < 5)) { i++; } return i;").parse().has_value());
+	EXPECT_TRUE(TextParser("let x = (1 < 2); return x;").parse().has_value());
+	EXPECT_TRUE(TextParser("let i = 0; while ((i < 5)) { i++; } return i;").parse().has_value());
 }
 
 TEST(ParserExpressionTest, Parentheses_ChainedComparisonInsideIsStillAnError) {
-	auto result = Parser("return (1 < 2 < 3);").parse();
+	auto result = TextParser("return (1 < 2 < 3);").parse();
 
 	ASSERT_FALSE(result.has_value());
 	EXPECT_EQ(result.error().code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON);
 }
 
 TEST(ParserExpressionTest, Parentheses_UnclosedAroundAComparison) {
-	auto result = Parser("return (1 < 2;").parse();
+	auto result = TextParser("return (1 < 2;").parse();
 
 	ASSERT_FALSE(result.has_value());
 	EXPECT_EQ(result.error().code, ErrorCode::SYNTAX_ERROR_PARENTHESIS_MISSMATCH);
@@ -362,7 +362,7 @@ TEST(ParserExpressionTest, UnaryMinus_BindsTighterThanBinaryOperators) {
 
 TEST(ParserExpressionTest, UnaryMinus_SourceRangeStartsAtTheOperator) {
 	// tokens: return(0) -(1) ((2) 2(3) +(4) 3(5) )(6) ;(7)
-	Parser parser("return -(2 + 3);");
+	TextParser parser("return -(2 + 3);");
 
 	auto parser_result = parser.parse();
 	ASSERT_TRUE(parser_result.has_value());
@@ -375,25 +375,25 @@ TEST(ParserExpressionTest, UnaryMinus_SourceRangeStartsAtTheOperator) {
 }
 
 TEST(ParserExpressionTest, UnaryMinus_Parses) {
-	EXPECT_TRUE(Parser("return -5;").parse().has_value());
-	EXPECT_TRUE(Parser("let x = 5; return -x;").parse().has_value());
-	EXPECT_TRUE(Parser("return -(2 + 3);").parse().has_value());
+	EXPECT_TRUE(TextParser("return -5;").parse().has_value());
+	EXPECT_TRUE(TextParser("let x = 5; return -x;").parse().has_value());
+	EXPECT_TRUE(TextParser("return -(2 + 3);").parse().has_value());
 }
 
 TEST(ParserExpressionTest, UnaryMinus_AfterABinaryOperator) {
-	EXPECT_TRUE(Parser("return 3 - -2;").parse().has_value());
-	EXPECT_TRUE(Parser("return 3 * -2;").parse().has_value());
-	EXPECT_TRUE(Parser("return 1 < -2;").parse().has_value());
+	EXPECT_TRUE(TextParser("return 3 - -2;").parse().has_value());
+	EXPECT_TRUE(TextParser("return 3 * -2;").parse().has_value());
+	EXPECT_TRUE(TextParser("return 1 < -2;").parse().has_value());
 }
 
 TEST(ParserExpressionTest, UnaryMinus_Repeats) {
 	// With a space: `--` without one is the decrement operator.
-	EXPECT_TRUE(Parser("return - -4;").parse().has_value());
-	EXPECT_TRUE(Parser("return -(-4);").parse().has_value());
+	EXPECT_TRUE(TextParser("return - -4;").parse().has_value());
+	EXPECT_TRUE(TextParser("return -(-4);").parse().has_value());
 }
 
 TEST(ParserExpressionTest, UnaryMinus_NeedsAnOperand) {
-	auto result = Parser("return -;").parse();
+	auto result = TextParser("return -;").parse();
 
 	ASSERT_FALSE(result.has_value());
 	EXPECT_EQ(result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
@@ -401,7 +401,7 @@ TEST(ParserExpressionTest, UnaryMinus_NeedsAnOperand) {
 
 TEST(ParserExpressionTest, UnaryMinus_AloneIsNotAStatement) {
 	// A negation does nothing on its own, like any other bare expression.
-	auto result = Parser("let x = 1; -x;").parse();
+	auto result = TextParser("let x = 1; -x;").parse();
 
 	ASSERT_FALSE(result.has_value());
 	EXPECT_EQ(result.error().code, ErrorCode::SYNTAX_ERROR_UNUSED_EXPRESSION);
