@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -63,6 +64,21 @@ struct Position
     uint32_t column;
 };
 
+// A stretch of source text. Half-open: `end` is one column past the last
+// character, so `start == end` is an empty span, a point between characters.
+struct TextSpan
+{
+    Position start;
+    Position end;
+};
+
+// Where a diagnostic points. Only the span for now; an id for the source it
+// belongs to may join later.
+struct Location
+{
+    TextSpan span;
+};
+
 // One problem found in the program being compiled. Every stage reports its
 // errors as these; `code` tells which stage it came from and what went wrong.
 //
@@ -78,5 +94,16 @@ struct Diagnostic {
     // while condition.
     std::vector<Diagnostic> nestedError = {};
 };
+
+// A diagnostic as plain text, for a console or a log:
+//
+//   <sourceName>:<line>:<column>: error: <what>
+//     <additional info>
+//
+// followed by any nested errors, indented. Every line ends with a newline.
+//
+// This is the simplest way to show a diagnostic. `sourceName` is only printed,
+// never opened, so it can be a file path or any other label.
+[[nodiscard]] std::string formatDiagnostic(std::string_view sourceName, const Diagnostic& diagnostic);
 
 } // namespace ciph

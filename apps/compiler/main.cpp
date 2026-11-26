@@ -54,38 +54,15 @@ with_suffix(const std::filesystem::path& path, std::string_view suffix) {
     return result;
 }
 
-// One error as "<source>:<line>:<column>: error: <what>", followed by any
-// extra detail and nested errors, indented.
-void
-format_error(std::string& out, const std::filesystem::path& source, const Diagnostic& error, int depth) {
-    const std::string indent(static_cast<std::size_t>(depth) * 2, ' ');
-
-    std::string what;
-    if (auto it = error_codes_map.find(error.code); it != error_codes_map.end()) {
-        what = it->second;
-    }
-    else {
-        what = fmt::format("error code 0x{:04x}", static_cast<uint16_t>(error.code));
-    }
-
-    out += fmt::format("{}{}:{}:{}: error: {}\n", indent, source.string(), error.position.line,
-                       error.position.column, what);
-    if (!error.additionalInfo.empty()) {
-        out += fmt::format("{}  {}\n", indent, error.additionalInfo);
-    }
-    for (const Diagnostic& nested : error.nestedError) {
-        format_error(out, source, nested, depth + 1);
-    }
-}
-
 // Writes every error to <output>.err and to the console. Returns the exit
 // code for a failed compile.
 int
 report_errors(const std::filesystem::path& source, const std::filesystem::path& error_path,
               std::span<const Diagnostic> errors) {
+    const std::string source_name = source.string();
     std::string message;
     for (const Diagnostic& error : errors) {
-        format_error(message, source, error, 0);
+        message += formatDiagnostic(source_name, error);
     }
 
     std::ofstream error_file(error_path, std::ios::binary);

@@ -2,6 +2,7 @@ ciph_add_library(compiler
   SOURCES
     src/code_generator.cpp
     src/compile_unit.cpp
+    src/diagnostics.cpp
     src/lexer.cpp
     src/parser.cpp
     src/semantic_analyzer.cpp
