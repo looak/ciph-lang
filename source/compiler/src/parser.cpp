@@ -15,7 +15,9 @@ namespace {
 // added to the error code's default text.
 std::unexpected<Diagnostic>
 fail(ErrorCode code, Position position, std::string message) {
-    return std::unexpected(Diagnostic{.code = code, .position = position, .additionalInfo = std::move(message)});
+    return std::unexpected(Diagnostic{.code = code,
+                                      .location = {.span = {.start = position, .end = position}},
+                                      .message = std::move(message)});
 }
 
 } // namespace
@@ -137,8 +139,9 @@ Parser::parseWhileCondition() {
     auto condition = parseComparisonExpression();
     if (!condition) {
         Diagnostic error{   .code = ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION,
-                            .position = expected_token.readPosition(),
-                            .additionalInfo = "Expecting while loop to be defined with a expression.",
+                            .location = {.span = {.start = expected_token.readPosition(),
+                                                  .end = expected_token.readPosition()}},
+                            .message = "Expecting while loop to be defined with a expression.",
                             .nestedError = {condition.error()}};
         return std::unexpected(error);
     }

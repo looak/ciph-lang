@@ -20,10 +20,12 @@ SemanticAnalyzer::analyze() {
     // Function definitions are checked before the statements around them, so
     // the walk does not quite report in source order. Sort to restore it.
     std::stable_sort(m_errors.begin(), m_errors.end(), [](const Diagnostic& a, const Diagnostic& b) {
-        if (a.position.line != b.position.line) {
-            return a.position.line < b.position.line;
+        const Position& pa = a.location.span.start;
+        const Position& pb = b.location.span.start;
+        if (pa.line != pb.line) {
+            return pa.line < pb.line;
         }
-        return a.position.column < b.position.column;
+        return pa.column < pb.column;
     });
 
     return m_errors;
@@ -203,5 +205,7 @@ SemanticAnalyzer::positionOf(const ASTBaseNode* node) const {
 
 void
 SemanticAnalyzer::report(ErrorCode code, Position position, std::string message) {
-    m_errors.push_back(Diagnostic{.code = code, .position = position, .additionalInfo = std::move(message)});
+    m_errors.push_back(Diagnostic{.code = code,
+                                  .location = {.span = {.start = position, .end = position}},
+                                  .message = std::move(message)});
 }

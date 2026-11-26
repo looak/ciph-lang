@@ -505,8 +505,8 @@ TEST_F(CodeGeneratorTestFixture, Function_ReportedAsUnsupportedAtItsName) {
     // consequence of it and is not reported separately.
     ASSERT_EQ(errors.size(), 1u);
     EXPECT_EQ(errors[0].code, ErrorCode::CODEGEN_ERROR_UNSUPPORTED);
-    EXPECT_EQ(errors[0].position.line, 1u);
-    EXPECT_EQ(errors[0].position.column, 4u);
+    EXPECT_EQ(errors[0].location.span.start.line, 1u);
+    EXPECT_EQ(errors[0].location.span.start.column, 4u);
 }
 
 TEST_F(CodeGeneratorTestFixture, NameReusedInSiblingBlocks_ReportedAsUnsupported) {
@@ -523,7 +523,7 @@ TEST_F(CodeGeneratorTestFixture, NameReusedInSiblingBlocks_ReportedAsUnsupported
 
     ASSERT_EQ(errors.size(), 1u);
     EXPECT_EQ(errors[0].code, ErrorCode::CODEGEN_ERROR_UNSUPPORTED);
-    EXPECT_EQ(errors[0].position.line, 3u);
+    EXPECT_EQ(errors[0].location.span.start.line, 3u);
 }
 
 TEST_F(CodeGeneratorTestFixture, HandBuiltTree_ErrorsHaveZeroPosition) {
@@ -536,8 +536,8 @@ TEST_F(CodeGeneratorTestFixture, HandBuiltTree_ErrorsHaveZeroPosition) {
 
     ASSERT_EQ(errors.size(), 1u);
     EXPECT_EQ(errors[0].code, ErrorCode::CODEGEN_ERROR_INTERNAL);
-    EXPECT_EQ(errors[0].position.line, 0u);
-    EXPECT_EQ(errors[0].position.column, 0u);
+    EXPECT_EQ(errors[0].location.span.start.line, 0u);
+    EXPECT_EQ(errors[0].location.span.start.column, 0u);
 }
 
 // DISABLED: placeholder. Function bodies are not generated yet, and the expected

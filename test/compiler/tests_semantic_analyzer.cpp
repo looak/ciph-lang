@@ -136,8 +136,8 @@ TEST(SemanticAnalyzerTest, ErrorPointsAtTheName) {
     auto errors = analyze("let x = 5;\nreturn y;");
 
     ASSERT_EQ(errors.size(), 1);
-    EXPECT_EQ(errors[0].position.line, 2);
-    EXPECT_EQ(errors[0].position.column, 8);
+    EXPECT_EQ(errors[0].location.span.start.line, 2);
+    EXPECT_EQ(errors[0].location.span.start.column, 8);
 }
 
 TEST(SemanticAnalyzerTest, ErrorsAreReportedInSourceOrder) {
@@ -179,16 +179,16 @@ TEST(SemanticAnalyzerTest, RedefinedFunction_PointsAtTheName) {
     auto errors = analyze("fn a() { return 1; }\nfn a() { return 2; } return a();");
 
     ASSERT_EQ(errors.size(), 1);
-    EXPECT_EQ(errors[0].position.line, 2);
-    EXPECT_EQ(errors[0].position.column, 4);
-    EXPECT_NE(errors[0].additionalInfo.find("line 1, column 4"), std::string::npos) << errors[0].additionalInfo;
+    EXPECT_EQ(errors[0].location.span.start.line, 2);
+    EXPECT_EQ(errors[0].location.span.start.column, 4);
+    EXPECT_NE(errors[0].message.find("line 1, column 4"), std::string::npos) << errors[0].message;
 }
 
 TEST(SemanticAnalyzerTest, RedeclaredVariable_PointsAtTheName) {
     auto errors = analyze("let x = 5;\nlet x = 6; return x;");
 
     ASSERT_EQ(errors.size(), 1);
-    EXPECT_EQ(errors[0].position.line, 2);
-    EXPECT_EQ(errors[0].position.column, 5);
-    EXPECT_NE(errors[0].additionalInfo.find("line 1, column 5"), std::string::npos) << errors[0].additionalInfo;
+    EXPECT_EQ(errors[0].location.span.start.line, 2);
+    EXPECT_EQ(errors[0].location.span.start.column, 5);
+    EXPECT_NE(errors[0].message.find("line 1, column 5"), std::string::npos) << errors[0].message;
 }

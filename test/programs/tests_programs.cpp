@@ -24,8 +24,8 @@ run(const std::string& source) {
     if (!unit.parse() || !unit.semanticAnalyze() || !unit.generateCode()) {
         if (unit.hasErrors()) {
             const Diagnostic& diagnostic = unit.readDiagnostics().front();
-            ADD_FAILURE() << "did not compile: line " << diagnostic.position.line << ", column "
-                          << diagnostic.position.column << ": " << diagnostic.additionalInfo << "\n  in: " << source;
+            ADD_FAILURE() << "did not compile: line " << diagnostic.location.span.start.line << ", column "
+                          << diagnostic.location.span.start.column << ": " << diagnostic.message << "\n  in: " << source;
         }
         return std::nullopt;
     }

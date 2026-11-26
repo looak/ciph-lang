@@ -427,5 +427,7 @@ CodeGenerator::positionOf(const ASTBaseNode* node) const {
 
 void
 CodeGenerator::report(ErrorCode code, Position position, std::string message) {
-    m_errors.push_back(Diagnostic{.code = code, .position = position, .additionalInfo = std::move(message)});
+    m_errors.push_back(Diagnostic{.code = code,
+                                  .location = {.span = {.start = position, .end = position}},
+                                  .message = std::move(message)});
 }

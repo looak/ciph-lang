@@ -20,10 +20,10 @@ appendDiagnostic(std::string& out, std::string_view sourceName, const Diagnostic
         what = fmt::format("error code 0x{:04x}", static_cast<uint16_t>(diagnostic.code));
     }
 
-    out += fmt::format("{}{}:{}:{}: error: {}\n", indent, sourceName, diagnostic.position.line,
-                       diagnostic.position.column, what);
-    if (!diagnostic.additionalInfo.empty()) {
-        out += fmt::format("{}  {}\n", indent, diagnostic.additionalInfo);
+    out += fmt::format("{}{}:{}:{}: error: {}\n", indent, sourceName, diagnostic.location.span.start.line,
+                       diagnostic.location.span.start.column, what);
+    if (!diagnostic.message.empty()) {
+        out += fmt::format("{}  {}\n", indent, diagnostic.message);
     }
     for (const Diagnostic& nested : diagnostic.nestedError) {
         appendDiagnostic(out, sourceName, nested, depth + 1);

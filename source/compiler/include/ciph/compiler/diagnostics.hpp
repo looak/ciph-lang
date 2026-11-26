@@ -86,10 +86,10 @@ struct Location
 // unit it came from is gone.
 struct Diagnostic {
     ErrorCode code;
-    Position position;
+    Location location;
     // Populated when the diagnostic is created, if needed. Default messages
     // come with the error code, and this is appended to those.
-    std::string additionalInfo;
+    std::string message;
     // The errors that led to this one, such as the bad expression inside a
     // while condition.
     std::vector<Diagnostic> nestedError = {};

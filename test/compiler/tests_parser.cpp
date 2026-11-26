@@ -212,8 +212,8 @@ TEST(ParserTest, ChainedComparison_PointsAtTheSecondOperator) {
 
 	ASSERT_FALSE(parser_result.has_value());
 	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON);
-	EXPECT_EQ(parser_result.error().position.line, 1u);
-	EXPECT_EQ(parser_result.error().position.column, 15u);
+	EXPECT_EQ(parser_result.error().location.span.start.line, 1u);
+	EXPECT_EQ(parser_result.error().location.span.start.column, 15u);
 }
 
 TEST(ParserTest, SingleComparison_WithArithmeticChainsOnBothSides) {
@@ -261,7 +261,7 @@ TEST(ParserTest, SimpleFunction_ReturnsConstant) {
 	Parser parser(code);
 
 	auto parser_result = parser.parse();
-	ASSERT_TRUE(parser_result.has_value()) << "Parser produced an error: " << parser_result.error().additionalInfo;
+	ASSERT_TRUE(parser_result.has_value()) << "Parser produced an error: " << parser_result.error().message;
 	ASTProgramNode* program_node = static_cast<ASTProgramNode*>(parser_result.value());
 
 	ASTProgramNode* result = static_cast<ASTProgramNode*>(program_node);
@@ -462,8 +462,8 @@ TEST(ParserTest, MissingSemicolon_PointsJustPastTheStatement) {
 	auto parser_result = parser.parse();
 
 	ASSERT_FALSE(parser_result.has_value());
-	EXPECT_EQ(parser_result.error().position.line, 1u);
-	EXPECT_EQ(parser_result.error().position.column, 10u);
+	EXPECT_EQ(parser_result.error().location.span.start.line, 1u);
+	EXPECT_EQ(parser_result.error().location.span.start.column, 10u);
 }
 
 // ---- Missing operands: a token that cannot start an expression is an error ----
@@ -529,8 +529,8 @@ TEST(ParserTest, MissingOperand_PointsAtTheTokenFoundInstead) {
 	auto parser_result = Parser("return 1 + ;").parse();
 
 	ASSERT_FALSE(parser_result.has_value());
-	EXPECT_EQ(parser_result.error().position.line, 1u);
-	EXPECT_EQ(parser_result.error().position.column, 12u);
+	EXPECT_EQ(parser_result.error().location.span.start.line, 1u);
+	EXPECT_EQ(parser_result.error().location.span.start.column, 12u);
 }
 
 TEST(ParserTest, MissingOperand_EmptyWhileConditionKeepsTheCauseAsANestedError) {
