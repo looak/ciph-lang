@@ -129,10 +129,7 @@ private:
     void encodeRegister(registers::def reg);
     void encodeOperator(const ASTBinaryExpressionNode* node);
 
-    // Where `node`'s focus token starts. Nodes without a range (built by hand,
-    // not parsed) give a zero position.
-    [[nodiscard]] Position positionOf(const ASTBaseNode* node) const;
-    void report(ErrorCode code, Position position, std::string message);
+    void report(ErrorCode code, Location location, std::string message);
 
     std::array<RegisterValue, static_cast<int>(registers::def::reg_cnt)> m_registers;
 

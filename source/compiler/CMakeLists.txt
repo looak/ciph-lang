@@ -1,5 +1,6 @@
 ciph_add_library(compiler
   SOURCES
+    src/ast.cpp
     src/code_generator.cpp
     src/compile_unit.cpp
     src/diagnostics.cpp

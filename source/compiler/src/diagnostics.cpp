@@ -14,3 +14,10 @@ ciph::formatDiagnostic(std::string_view sourceName, const Diagnostic& diagnostic
     }
     return out;
 }
+
+Diagnostic
+ciph::diag::undeclaredIdentifier(Location location, std::string_view name) {
+    return Diagnostic{.code = ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER,
+                      .location = location,
+                      .message = fmt::format("'{}' is not declared at this point", name)};
+}

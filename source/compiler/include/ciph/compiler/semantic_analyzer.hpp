@@ -69,12 +69,7 @@ private:
     [[nodiscard]] const ASTLetNode* findVariable(const std::string_view name) const;
     [[nodiscard]] const ASTFunctionNode* findFunction(std::string_view name) const;
 
-    // Where `node`'s focus token starts (SourceRange::focusToken(): a let's or
-    // fn's name, otherwise the first token). Nodes without a range (built by
-    // hand, not parsed) give a zero position.
-    [[nodiscard]] Position positionOf(const ASTBaseNode* node) const;
-
-    void report(ErrorCode code, Position position, std::string message);
+    void report(ErrorCode code, Location location, std::string message);
 
     const ASTProgramNode* m_program;
     const std::vector<Token>& m_tokens;

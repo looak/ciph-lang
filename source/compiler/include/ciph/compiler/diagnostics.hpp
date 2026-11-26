@@ -122,4 +122,11 @@ public:
 // never opened, so it can be a file path or any other label.
 [[nodiscard]] std::string formatDiagnostic(std::string_view sourceName, const Diagnostic& diagnostic);
 
+// One function per error, each making its diagnostic from what went wrong.
+namespace diag {
+
+[[nodiscard]] Diagnostic undeclaredIdentifier(Location location, std::string_view name);
+
+} // namespace diag
+
 } // namespace ciph

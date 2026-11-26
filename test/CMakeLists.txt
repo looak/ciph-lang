@@ -21,7 +21,7 @@ ciph_add_test(compiler_tests
     compiler/tests_bit_field.cpp
     compiler/tests_code_generator.cpp
     compiler/tests_compile_unit.cpp
-    # compiler/tests_diagnostics.cpp  # back in at stage 5 of the diagnostics rework
+    compiler/tests_diagnostics.cpp
     compiler/tests_lexer.cpp
     compiler/tests_parser.cpp
     compiler/tests_parser_expressions.cpp

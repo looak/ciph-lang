@@ -1,15 +1,19 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <stack>
 #include <vector>
 
 #include <ciph/compiler/bit_field.hpp>
+#include <ciph/compiler/diagnostics.hpp>
 #include <ciph/compiler/lexer_defines.hpp>
 
 namespace ciph {
+
+class Token;
 
 enum class ASTNodeType
 {
@@ -60,6 +64,15 @@ struct SourceRange
 	[[nodiscard]] bool hasTokens() const { return first != no_token; }
 	[[nodiscard]] uint32_t focusToken() const { return focus != no_token ? focus : first; }
 };
+
+class ASTBaseNode;
+
+// Where `node` came from in the source, for a diagnostic. A node with a focus
+// token gives that token's span; one without gives its first token's start to
+// its last token's end. A node with no range gives an empty location.
+//
+// `tokens` is the list the node's range indexes into (Parser::readTokens()).
+[[nodiscard]] Location locationOf(const ASTBaseNode& node, std::span<const Token> tokens);
 
 // Where a node came from. `Graph` joins when the graph frontend builds AST.
 enum class Origin : uint8_t

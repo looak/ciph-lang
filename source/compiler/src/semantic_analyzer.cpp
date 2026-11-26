@@ -58,8 +58,8 @@ SemanticAnalyzer::collectFunctions(const ASTScopeNode* scope) {
 
         // A function from an enclosing block counts too: no shadowing.
         if (const ASTFunctionNode* earlier = findFunction(name)) {
-            const Position first = positionOf(earlier);
-            report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, positionOf(function),
+            const Position first = locationOf(*earlier, m_tokens).span.start;
+            report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, locationOf(*function, m_tokens),
                     fmt::format("function '{}' is already defined at line {}, column {}", name, first.line,
                                 first.column));
             continue;
@@ -149,8 +149,8 @@ SemanticAnalyzer::declareVariable(const ASTLetNode* let) {
 
     // Searches every open block, not only the innermost: no shadowing.
     if (const ASTLetNode* earlier = findVariable(name)) {
-        const Position first = positionOf(earlier);
-        report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, positionOf(let),
+        const Position first = locationOf(*earlier, m_tokens).span.start;
+        report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, locationOf(*let, m_tokens),
                 fmt::format("'{}' is already declared at line {}, column {}", name, first.line, first.column));
         return;
     }
@@ -160,15 +160,14 @@ SemanticAnalyzer::declareVariable(const ASTLetNode* let) {
 void
 SemanticAnalyzer::checkVariableUse(const ASTIdentifierNode* identifier) {
     if (findVariable(identifier->readName()) == nullptr) {
-        report(ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER, positionOf(identifier),
-               fmt::format("'{}' is not declared at this point", identifier->readName()));
+        m_errors.push_back(diag::undeclaredIdentifier(locationOf(*identifier, m_tokens), identifier->readName()));
     }
 }
 
 void
 SemanticAnalyzer::checkCall(const ASTCallNode* call) {
     if (findFunction(call->readFunctionName()) == nullptr) {
-        report(ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER, positionOf(call),
+        report(ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER, locationOf(*call, m_tokens),
                fmt::format("there is no function named '{}'", call->readFunctionName()));
     }
 }
@@ -193,19 +192,7 @@ SemanticAnalyzer::findFunction(std::string_view name) const {
     return nullptr;
 }
 
-Position
-SemanticAnalyzer::positionOf(const ASTBaseNode* node) const {
-    const SourceRange range = node->readSourceRange();
-    const uint32_t token = range.focusToken();
-    if (!range.hasTokens() || token >= m_tokens.size()) {
-        return Position{0, 0};
-    }
-    return m_tokens[token].readPosition();
-}
-
 void
-SemanticAnalyzer::report(ErrorCode code, Position position, std::string message) {
-    m_errors.push_back(Diagnostic{.code = code,
-                                  .location = {.span = {.start = position, .end = position}},
-                                  .message = std::move(message)});
+SemanticAnalyzer::report(ErrorCode code, Location location, std::string message) {
+    m_errors.push_back(Diagnostic{.code = code, .location = location, .message = std::move(message)});
 }

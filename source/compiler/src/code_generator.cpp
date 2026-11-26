@@ -61,7 +61,7 @@ void
 CodeGenerator::generateFunction(const ASTFunctionNode* node) {
     // Function bodies are not generated yet. Say so instead of emitting a
     // program whose calls have nowhere to go.
-    report(ErrorCode::CODEGEN_ERROR_UNSUPPORTED, positionOf(node),
+    report(ErrorCode::CODEGEN_ERROR_UNSUPPORTED, locationOf(*node, m_tokens),
            fmt::format("function '{}': functions cannot be compiled yet", node->readName()));
 }
 
@@ -133,7 +133,7 @@ CodeGenerator::generateExpression(const ASTBaseNode* node, registers::def reg) {
             break;
         }
         default: {
-            report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, locationOf(*node, m_tokens),
                     fmt::format("no code generation for node type {}", static_cast<int>(node->readType())));
             break;
         }
@@ -206,7 +206,7 @@ CodeGenerator::generateWhileStatement(const ASTWhileNode* node) {
             jump = instruction::def::JNZ;
             break;
         default:
-            report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node->readCondition()),
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, locationOf(*node->readCondition(), m_tokens),
                     fmt::format("no jump instruction for comparison operator {}",
                                 static_cast<int>(node->readCondition()->readOperator())));
             return;
@@ -224,7 +224,7 @@ void
 CodeGenerator::generateLetStatement(const ASTLetNode* node) {
     if (m_identifiers.find(node->readIdentifier()) == m_identifiers.end()) {
         if (m_stackSize >= UINT8_MAX) {
-            report(ErrorCode::CODEGEN_ERROR_TOO_MANY_VALUES, positionOf(node),
+            report(ErrorCode::CODEGEN_ERROR_TOO_MANY_VALUES, locationOf(*node, m_tokens),
                     fmt::format("no room left for '{}': a variable's stack offset has to fit in one byte",
                                 node->readIdentifier()));
             return;
@@ -236,7 +236,7 @@ CodeGenerator::generateLetStatement(const ASTLetNode* node) {
     else {
         // The analyzer lets sibling blocks reuse a name, but variables here
         // are still kept in one list for the whole program.
-        report(ErrorCode::CODEGEN_ERROR_UNSUPPORTED, positionOf(node),
+        report(ErrorCode::CODEGEN_ERROR_UNSUPPORTED, locationOf(*node, m_tokens),
                 fmt::format("'{}' is declared in more than one block, which cannot be compiled yet",
                             node->readIdentifier()));
     }
@@ -254,7 +254,7 @@ CodeGenerator::generateIdentifier(const ASTIdentifierNode* node, registers::def 
             return;
         }
         else {
-            report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, locationOf(*node, m_tokens),
                     fmt::format("no stack slot for '{}'", node->readName()));
             return;
         }
@@ -264,7 +264,7 @@ CodeGenerator::generateIdentifier(const ASTIdentifierNode* node, registers::def 
             m_registers[+reg].value = std::make_optional(identifier->second);
     }
     else {
-        report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+        report(ErrorCode::CODEGEN_ERROR_INTERNAL, locationOf(*node, m_tokens),
                 fmt::format("no stack slot for '{}'", node->readName()));
     }
 }
@@ -289,7 +289,7 @@ CodeGenerator::encodeOperator(const ASTBinaryExpressionNode* node) {
             break;
         }
         default: {
-            report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, locationOf(*node, m_tokens),
                     fmt::format("no instruction for operator {}", static_cast<int>(node->readOperator())));
             break;
         }
@@ -329,7 +329,7 @@ CodeGenerator::generateCompareOperator(const ASTComparisonExpressionNode* node, 
         encodeRegister(regB.value());
     }
     else if (regA != registers::def::sp) {
-        report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node),
+        report(ErrorCode::CODEGEN_ERROR_INTERNAL, locationOf(*node, m_tokens),
                 "a compare between registers needs two registers, got one");
     }
     else {
@@ -409,25 +409,13 @@ void CodeGenerator::resolveUnresolvedCalls() {
         else if (m_errors.empty()) {
             // With an earlier error, such as the function not being compiled,
             // the missing target is already explained.
-            report(ErrorCode::CODEGEN_ERROR_INTERNAL, Position{0, 0},
+            report(ErrorCode::CODEGEN_ERROR_INTERNAL, Location{},
                     fmt::format("call to '{}' has no address to jump to", functionName));
         }
     }
 }
 
-Position
-CodeGenerator::positionOf(const ASTBaseNode* node) const {
-    const SourceRange range = node->readSourceRange();
-    const uint32_t token = range.focusToken();
-    if (!range.hasTokens() || token >= m_tokens.size()) {
-        return Position{0, 0};
-    }
-    return m_tokens[token].readPosition();
-}
-
 void
-CodeGenerator::report(ErrorCode code, Position position, std::string message) {
-    m_errors.push_back(Diagnostic{.code = code,
-                                  .location = {.span = {.start = position, .end = position}},
-                                  .message = std::move(message)});
+CodeGenerator::report(ErrorCode code, Location location, std::string message) {
+    m_errors.push_back(Diagnostic{.code = code, .location = location, .message = std::move(message)});
 }
