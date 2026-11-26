@@ -120,8 +120,7 @@ template <>
 void instruction::exec<instruction::def::PSH_REG>(ExecutionContext& context) {
     uint16_t& pc = context.reg(registers::def::pc);
     auto reg = static_cast<registers::def>(context.bytecode[++pc]);
-    int16_t value = read_word(context.bytecode, ++pc);
-    context.reg(reg) = value;
+    instruction::push_helper(context, i16(context.reg(reg)));
 }
 
 template <>

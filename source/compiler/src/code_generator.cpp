@@ -207,7 +207,7 @@ CodeGenerator::generateWhileStatement(const ASTWhileNode* node) {
             break;
         default:
             report(ErrorCode::CODEGEN_ERROR_INTERNAL, positionOf(node->readCondition()),
-                   fmt::format("no jump instruction for comparison operator {}",
+                    fmt::format("no jump instruction for comparison operator {}",
                                 static_cast<int>(node->readCondition()->readOperator())));
             return;
     }
@@ -340,18 +340,17 @@ CodeGenerator::generateCompareOperator(const ASTComparisonExpressionNode* node, 
 void
 CodeGenerator::generateNumericLiteral(const ASTNumericLiteralNode* node, registers::def reg) {
     // 2 byte integer
-    int16_t value = node->readValue();        
-    
-    if (reg == registers::def::sp) {
-        emit(instruction::def::PSH_LIT);
-        encode(value);
-        m_stackSize++; // one value pushed
-        
-    }
-    else {
-        emit(instruction::def::PSH_REG);
+    int16_t value = node->readValue();
+
+    emit(instruction::def::PSH_LIT);
+    encode(value);
+    m_stackSize++; // one value pushed
+
+    if (reg != registers::def::sp) {
+        // Wanted in a register: take it back off the stack.
+        emit(instruction::def::POP_REG);
         encodeRegister(reg);
-        encode(value);
+        m_stackSize--; // one value popped
     }
 }
 
