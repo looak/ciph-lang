@@ -108,7 +108,7 @@ compile(const std::filesystem::path& source_path, const std::filesystem::path& o
     CompileUnit unit(source.str());
 
     // Each stage only runs if the one before it passed.
-    if (!unit.parse() || !unit.semanticAnalyze() || !unit.generateCode()) {
+    if (!unit.lex() || !unit.parse() || !unit.semanticAnalyze() || !unit.generateCode()) {
         return report_errors(source_path, error_path, unit.readDiagnostics());
     }
     const std::vector<uint8_t>& bytecode = unit.readBytecode();

@@ -32,8 +32,16 @@ public:
 
     std::string_view readSource() const { return *m_source; }
 
-    // Lexes and parses the source. Returns false if that failed; the reason
-    // is then in readDiagnostics() and astRoot() is null.
+    // Turns the source into tokens. Returns false if the lexer reported
+    // anything; the reason is then in readDiagnostics().
+    bool lex();
+    // lex() has run, whether or not it found errors. The lexer keeps that
+    // state; the unit only asks it.
+    bool hasLexed() const { return m_lexer->hasLexed(); }
+
+    // Builds the AST from the tokens. Returns false, and does nothing, unless
+    // lex() has succeeded. If parsing fails the reason is in readDiagnostics()
+    // and astRoot() is null.
     bool parse();
     bool hasParsed() const { return m_astRoot != nullptr; }
 
@@ -51,9 +59,9 @@ public:
     // The parsed program. Null until parse() has succeeded.
     const ASTBaseNode* astRoot() const { return m_astRoot.get(); }
 
-    // The tokens the program was parsed from. An AST node's SourceRange holds
-    // indices into this list.
-    const std::vector<Token>& readTokens() const { return m_tokens; }
+    // The tokens the program was parsed from, owned by the unit's lexer. An
+    // AST node's SourceRange holds indices into this list. Empty until lex().
+    const std::vector<Token>& readTokens() const { return m_lexer->readTokens(); }
 
     // Everything the stages run so far have reported, in the order found.
     const std::vector<Diagnostic>& readDiagnostics() const { return m_diagnostics; }
@@ -61,7 +69,7 @@ public:
 
 private:
     std::unique_ptr<const std::string> m_source;
-    std::vector<Token> m_tokens;
+    std::unique_ptr<Lexer> m_lexer;
     std::unique_ptr<ASTBaseNode> m_astRoot;
     std::vector<Diagnostic> m_diagnostics;
     bool m_semanticAnalyzed = false;

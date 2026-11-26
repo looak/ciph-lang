@@ -21,7 +21,7 @@ namespace {
 std::optional<int16_t>
 run(const std::string& source) {
     CompileUnit unit(source);
-    if (!unit.parse() || !unit.semanticAnalyze() || !unit.generateCode()) {
+    if (!unit.lex() || !unit.parse() || !unit.semanticAnalyze() || !unit.generateCode()) {
         if (unit.hasErrors()) {
             const Diagnostic& diagnostic = unit.readDiagnostics().front();
             ADD_FAILURE() << "did not compile: line " << diagnostic.location.span.start.line << ", column "

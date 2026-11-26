@@ -226,6 +226,8 @@ Lexer::lex() {
         }
 
         // if we reach this without hitting a continue, we have an unknown character
+        m_performedAnalysis = true;
+        m_hasErrors = true;
         return {false, ErrorCode::LEXER_UNKNOWN_CHARACTER};
     }
 

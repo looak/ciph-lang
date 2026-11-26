@@ -64,6 +64,11 @@ public:
     * second element will hold a error code. */
     std::pair<bool, ErrorCode> lex();
 
+    // lex() has run, whether or not it found errors.
+    bool hasLexed() const { return m_performedAnalysis; }
+    // lex() found something it could not turn into a token.
+    bool hasErrors() const { return m_hasErrors; }
+
     // Every token, in source order, ending with END_OF_FILE. Valid after lex().
     // Walk them with a TokenCursor.
     const std::vector<Token>& readTokens() const { return m_tokens; }
@@ -86,6 +91,7 @@ private:
     std::vector<Token> m_tokens;
 
     bool m_performedAnalysis;
+    bool m_hasErrors = false;
     uint32_t m_index;
 };
 

@@ -12,6 +12,7 @@ using namespace ciph;
 TEST(CompileUnitTest, ValidSource_ParsesWithoutDiagnostics) {
     CompileUnit unit("let x = 5; return x;");
 
+    ASSERT_TRUE(unit.lex());
     EXPECT_TRUE(unit.parse());
 
     EXPECT_FALSE(unit.hasErrors());
@@ -23,6 +24,7 @@ TEST(CompileUnitTest, ValidSource_ParsesWithoutDiagnostics) {
 TEST(CompileUnitTest, SyntaxError_IsReportedAsDiagnostic) {
     CompileUnit unit("let x = 5");
 
+    ASSERT_TRUE(unit.lex());
     EXPECT_FALSE(unit.parse());
 
     EXPECT_EQ(unit.astRoot(), nullptr);
@@ -35,7 +37,9 @@ TEST(CompileUnitTest, SeveralUnits_KeepTheirOwnDiagnostics) {
     units.emplace_back("let x = 5; return x;");
     units.emplace_back("let = 5;");
 
+    ASSERT_TRUE(units[0].lex());
     EXPECT_TRUE(units[0].parse());
+    ASSERT_TRUE(units[1].lex());
     EXPECT_FALSE(units[1].parse());
 
     EXPECT_FALSE(units[0].hasErrors());
@@ -55,6 +59,7 @@ TEST(CompileUnitTest, MovingAUnit_KeepsTheSourceWhereItWas) {
 TEST(CompileUnitTest, ValidSource_GeneratesBytecode) {
     CompileUnit unit("let x = 5; return x;");
 
+    ASSERT_TRUE(unit.lex());
     ASSERT_TRUE(unit.parse());
     ASSERT_TRUE(unit.semanticAnalyze());
     EXPECT_TRUE(unit.generateCode());
@@ -66,6 +71,7 @@ TEST(CompileUnitTest, ValidSource_GeneratesBytecode) {
 TEST(CompileUnitTest, SemanticError_StopsCodeGeneration) {
     CompileUnit unit("return y;");
 
+    ASSERT_TRUE(unit.lex());
     ASSERT_TRUE(unit.parse());
     EXPECT_FALSE(unit.semanticAnalyze());
     EXPECT_FALSE(unit.generateCode());
@@ -80,6 +86,7 @@ TEST(CompileUnitTest, CodeGeneratorError_IsReportedAndLeavesNoBytecode) {
     // Functions pass the analyzer but cannot be compiled yet.
     CompileUnit unit("fn five() { return 5; }");
 
+    ASSERT_TRUE(unit.lex());
     ASSERT_TRUE(unit.parse());
     ASSERT_TRUE(unit.semanticAnalyze());
     EXPECT_FALSE(unit.generateCode());
@@ -93,9 +100,11 @@ TEST(CompileUnitTest, CodeGeneratorError_IsReportedAndLeavesNoBytecode) {
 TEST(CompileUnitTest, StagesOutOfOrder_DoNothing) {
     CompileUnit unit("let x = 5; return x;");
 
+    EXPECT_FALSE(unit.parse());
     EXPECT_FALSE(unit.semanticAnalyze());
     EXPECT_FALSE(unit.generateCode());
 
+    EXPECT_FALSE(unit.hasParsed());
     EXPECT_FALSE(unit.hasAnalyzed());
     EXPECT_FALSE(unit.hasGenerated());
 }

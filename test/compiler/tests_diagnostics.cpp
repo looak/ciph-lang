@@ -37,7 +37,7 @@ namespace {
 std::vector<Diagnostic>
 diagnose(std::string source) {
     CompileUnit unit(std::move(source));
-    if (unit.parse() && unit.semanticAnalyze()) {
+    if (unit.lex() && unit.parse() && unit.semanticAnalyze()) {
         unit.generateCode();
     }
     return unit.readDiagnostics();
@@ -150,6 +150,7 @@ TEST(LocationOfTest, NodeBuiltByHand_HasAnEmptyLocation) {
 // A node with a focus token points at that token: a let at its name.
 TEST(LocationOfTest, NodeWithFocus_CoversTheFocusToken) {
     CompileUnit unit("let total = 1 + 2;");
+    ASSERT_TRUE(unit.lex());
     ASSERT_TRUE(unit.parse());
 
     expectSpan(locationOf(*firstStatement(unit), unit.readTokens()), 1, 5, 1, 10);
@@ -158,6 +159,7 @@ TEST(LocationOfTest, NodeWithFocus_CoversTheFocusToken) {
 // A node without one covers everything it was built from.
 TEST(LocationOfTest, NodeWithoutFocus_CoversFirstTokenToLast) {
     CompileUnit unit("return 1 + 2;");
+    ASSERT_TRUE(unit.lex());
     ASSERT_TRUE(unit.parse());
 
     expectSpan(locationOf(*firstStatement(unit), unit.readTokens()), 1, 1, 1, 13);
