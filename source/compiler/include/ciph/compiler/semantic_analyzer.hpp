@@ -69,8 +69,6 @@ private:
     [[nodiscard]] const ASTLetNode* findVariable(const std::string_view name) const;
     [[nodiscard]] const ASTFunctionNode* findFunction(std::string_view name) const;
 
-    void report(ErrorCode code, Location location, std::string message);
-
     const ASTProgramNode* m_program;
     const std::vector<Token>& m_tokens;
     std::vector<Diagnostic> m_errors;

@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <utility>
 
-#include <fmt/core.h>
-
 #include <ciph/compiler/ast.hpp>
 
 using namespace ciph;
@@ -59,9 +57,7 @@ SemanticAnalyzer::collectFunctions(const ASTScopeNode* scope) {
         // A function from an enclosing block counts too: no shadowing.
         if (const ASTFunctionNode* earlier = findFunction(name)) {
             const Position first = locationOf(*earlier, m_tokens).span.start;
-            report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, locationOf(*function, m_tokens),
-                    fmt::format("function '{}' is already defined at line {}, column {}", name, first.line,
-                                first.column));
+            m_errors.push_back(diag::redeclaredFunction(locationOf(*function, m_tokens), name, first));
             continue;
         }
         functions.emplace(name, function);
@@ -150,8 +146,7 @@ SemanticAnalyzer::declareVariable(const ASTLetNode* let) {
     // Searches every open block, not only the innermost: no shadowing.
     if (const ASTLetNode* earlier = findVariable(name)) {
         const Position first = locationOf(*earlier, m_tokens).span.start;
-        report(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, locationOf(*let, m_tokens),
-                fmt::format("'{}' is already declared at line {}, column {}", name, first.line, first.column));
+        m_errors.push_back(diag::redeclaredVariable(locationOf(*let, m_tokens), name, first));
         return;
     }
     m_variableScopes.back().emplace(name, let);
@@ -167,8 +162,7 @@ SemanticAnalyzer::checkVariableUse(const ASTIdentifierNode* identifier) {
 void
 SemanticAnalyzer::checkCall(const ASTCallNode* call) {
     if (findFunction(call->readFunctionName()) == nullptr) {
-        report(ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER, locationOf(*call, m_tokens),
-               fmt::format("there is no function named '{}'", call->readFunctionName()));
+        m_errors.push_back(diag::undeclaredFunction(locationOf(*call, m_tokens), call->readFunctionName()));
     }
 }
 
@@ -190,9 +184,4 @@ SemanticAnalyzer::findFunction(std::string_view name) const {
         }
     }
     return nullptr;
-}
-
-void
-SemanticAnalyzer::report(ErrorCode code, Location location, std::string message) {
-    m_errors.push_back(Diagnostic{.code = code, .location = location, .message = std::move(message)});
 }

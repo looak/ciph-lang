@@ -141,8 +141,18 @@ namespace diag {
 [[nodiscard]] Diagnostic expectedAssignment(Location location, std::string_view name);
 [[nodiscard]] Diagnostic missingReturn(Location location, std::string_view function);
 
-// Semantic analyzer
+// Semantic analyzer. `first` is where the name was declared before.
 [[nodiscard]] Diagnostic undeclaredIdentifier(Location location, std::string_view name);
+[[nodiscard]] Diagnostic undeclaredFunction(Location location, std::string_view name);
+[[nodiscard]] Diagnostic redeclaredVariable(Location location, std::string_view name, Position first);
+[[nodiscard]] Diagnostic redeclaredFunction(Location location, std::string_view name, Position first);
+
+// Code generator
+[[nodiscard]] Diagnostic functionsUnsupported(Location location, std::string_view function);
+[[nodiscard]] Diagnostic nameInSeveralBlocksUnsupported(Location location, std::string_view name);
+[[nodiscard]] Diagnostic tooManyVariables(Location location, std::string_view name);
+// A bug in the compiler, not in the program; `detail` says what went wrong.
+[[nodiscard]] Diagnostic internalError(Location location, std::string detail);
 
 } // namespace diag
 

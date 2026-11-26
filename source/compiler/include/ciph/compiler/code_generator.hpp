@@ -129,8 +129,6 @@ private:
     void encodeRegister(registers::def reg);
     void encodeOperator(const ASTBinaryExpressionNode* node);
 
-    void report(ErrorCode code, Location location, std::string message);
-
     std::array<RegisterValue, static_cast<int>(registers::def::reg_cnt)> m_registers;
 
     struct IdentifierHash {

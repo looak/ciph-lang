@@ -107,3 +107,47 @@ ciph::diag::undeclaredIdentifier(Location location, std::string_view name) {
     return make(ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER, location,
                 fmt::format("'{}' is not declared at this point", name));
 }
+
+Diagnostic
+ciph::diag::undeclaredFunction(Location location, std::string_view name) {
+    return make(ErrorCode::SEMANTIC_ERROR_UNDECLARED_IDENTIFIER, location,
+                fmt::format("there is no function named '{}'", name));
+}
+
+Diagnostic
+ciph::diag::redeclaredVariable(Location location, std::string_view name, Position first) {
+    return make(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, location,
+                fmt::format("'{}' is already declared at line {}, column {}", name, first.line, first.column));
+}
+
+Diagnostic
+ciph::diag::redeclaredFunction(Location location, std::string_view name, Position first) {
+    return make(ErrorCode::SEMANTIC_ERROR_REDECLARED_IDENTIFIER, location,
+                fmt::format("function '{}' is already defined at line {}, column {}", name, first.line,
+                            first.column));
+}
+
+// ---- Code generator ----
+
+Diagnostic
+ciph::diag::functionsUnsupported(Location location, std::string_view function) {
+    return make(ErrorCode::CODEGEN_ERROR_UNSUPPORTED, location,
+                fmt::format("function '{}' cannot be compiled: functions are not supported yet", function));
+}
+
+Diagnostic
+ciph::diag::nameInSeveralBlocksUnsupported(Location location, std::string_view name) {
+    return make(ErrorCode::CODEGEN_ERROR_UNSUPPORTED, location,
+                fmt::format("'{}' is declared in more than one block, which cannot be compiled yet", name));
+}
+
+Diagnostic
+ciph::diag::tooManyVariables(Location location, std::string_view name) {
+    return make(ErrorCode::CODEGEN_ERROR_TOO_MANY_VALUES, location,
+                fmt::format("no room left for '{}': a variable's stack offset has to fit in one byte", name));
+}
+
+Diagnostic
+ciph::diag::internalError(Location location, std::string detail) {
+    return make(ErrorCode::CODEGEN_ERROR_INTERNAL, location, std::move(detail));
+}
