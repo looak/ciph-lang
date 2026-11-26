@@ -195,15 +195,12 @@ TEST(ParserTest, ChainedComparison_InLet) {
 	expectChainedComparison("let x = 1 == 1 == 1;");
 }
 
-TEST(ParserTest, ChainedComparison_InWhileConditionIsTheNestedError) {
-	// A while condition wraps whatever went wrong inside it, so the chained
-	// comparison is the nested error.
+TEST(ParserTest, ChainedComparison_InWhileConditionIsPassedUpUnchanged) {
+	// A while condition passes up whatever went wrong inside it as it is.
 	auto parser_result = Parser("let i = 0; while (i < 5 < 6) { i++; } return i;").parse();
 
 	ASSERT_FALSE(parser_result.has_value());
-	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
-	ASSERT_EQ(parser_result.error().nestedError.size(), 1u);
-	EXPECT_EQ(parser_result.error().nestedError[0].code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON);
+	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_CHAINED_COMPARISON);
 }
 
 TEST(ParserTest, ChainedComparison_PointsAtTheSecondOperator) {
@@ -533,13 +530,14 @@ TEST(ParserTest, MissingOperand_PointsAtTheTokenFoundInstead) {
 	EXPECT_EQ(parser_result.error().location.span.start.column, 12u);
 }
 
-TEST(ParserTest, MissingOperand_EmptyWhileConditionKeepsTheCauseAsANestedError) {
+TEST(ParserTest, MissingOperand_EmptyWhileConditionPointsAtTheCloseParen) {
+	// The ')' at column 19 is where the condition should have started.
 	auto parser_result = Parser("let i = 0; while () { i++; } return i;").parse();
 
 	ASSERT_FALSE(parser_result.has_value());
 	EXPECT_EQ(parser_result.error().code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
-	ASSERT_EQ(parser_result.error().nestedError.size(), 1u);
-	EXPECT_EQ(parser_result.error().nestedError[0].code, ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION);
+	EXPECT_EQ(parser_result.error().location.span.start.line, 1u);
+	EXPECT_EQ(parser_result.error().location.span.start.column, 19u);
 }
 
 // ---- Source ranges: which tokens each node was built from ----

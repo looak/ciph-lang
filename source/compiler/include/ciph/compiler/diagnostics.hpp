@@ -91,9 +91,6 @@ struct Diagnostic {
     // Populated when the diagnostic is created, if needed. Default messages
     // come with the error code, and this is appended to those.
     std::string message;
-    // The errors that led to this one, such as the bad expression inside a
-    // while condition.
-    std::vector<Diagnostic> nestedError = {};
 };
 
 // The result of anything that can fail with a diagnostic. [[nodiscard]] on the
@@ -112,7 +109,7 @@ public:
 //   <sourceName>:<line>:<column>: error: <what>
 //     <additional info>
 //
-// followed by any nested errors, indented. Every line ends with a newline.
+// Every line ends with a newline.
 //
 // This is the simplest way to show a diagnostic. `sourceName` is only printed,
 // never opened, so it can be a file path or any other label.

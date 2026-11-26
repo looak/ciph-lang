@@ -137,12 +137,7 @@ Parser::parseWhileCondition() {
 
     auto condition = parseComparisonExpression();
     if (!condition) {
-        Diagnostic error{   .code = ErrorCode::SYNTAX_ERROR_EXPECTED_EXPRESSION,
-                            .location = {.span = {.start = expected_token.readPosition(),
-                                                  .end = expected_token.readPosition()}},
-                            .message = "Expecting while loop to be defined with a expression.",
-                            .nestedError = {condition.error()}};
-        return std::unexpected(error);
+        return condition;
     }
 
     auto [success2, expected_token2] = m_lexer.popExpect(TokenType::CLOSE_PAREN);
