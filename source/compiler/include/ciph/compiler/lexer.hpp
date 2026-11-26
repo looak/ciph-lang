@@ -51,23 +51,17 @@ public:
     explicit Lexer(std::string_view input);
     ~Lexer() = default;
 
-    /**
-    * @brief Performs the lexical analysis on the input string.
-    *
-    * This function processes the input string and converts it into a stream of tokens. It checks the input for
-    * lexical errors and returns a `LexerResult` indicating the success or failure of the lexical analysis.
-    * If the analysis is successful, the first element of the `LexerResult` is true and the second element is
-    * an error code indicating no error. If the analysis fails, the first element of the `LexerResult` is false
-    * and the second element is an error code indicating the type of error that occurred.
-    *
-    * @return A pair where the first element is a boolean indicating whether the analysis failed or not, if not the
-    * second element will hold a error code. */
-    std::pair<bool, ErrorCode> lex();
+    // Turns the whole input into tokens. A character that starts no token is
+    // reported in readDiagnostics() and kept as an UNKNOWN token, and lexing
+    // carries on, so the token list is always complete. Runs only once; later
+    // calls do nothing.
+    void lex();
 
     // lex() has run, whether or not it found errors.
-    bool hasLexed() const { return m_performedAnalysis; }
+    bool hasLexed() const { return m_hasLexed; }
     // lex() found something it could not turn into a token.
-    bool hasErrors() const { return m_hasErrors; }
+    bool hasErrors() const { return !m_diagnostics.empty(); }
+    const std::vector<Diagnostic>& readDiagnostics() const { return m_diagnostics; }
 
     // Every token, in source order, ending with END_OF_FILE. Valid after lex().
     // Walk them with a TokenCursor.
@@ -89,9 +83,9 @@ private:
     uint32_t m_position;
 
     std::vector<Token> m_tokens;
+    std::vector<Diagnostic> m_diagnostics;
 
-    bool m_performedAnalysis;
-    bool m_hasErrors = false;
+    bool m_hasLexed;
     uint32_t m_index;
 };
 

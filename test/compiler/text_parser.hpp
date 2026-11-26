@@ -19,16 +19,13 @@ class ASTBaseNode;
 // The text must outlive it too: tokens point into it.
 class TextParser {
 public:
-    explicit TextParser(std::string_view text) : m_lexer(text) {
-        auto [lexed, error] = m_lexer.lex();
-        m_lexed = lexed;
-        m_lexError = error;
-    }
+    explicit TextParser(std::string_view text) : m_lexer(text) { m_lexer.lex(); }
 
-    // The AST, or the error that stopped lexing or parsing.
+    // The AST, or the error that stopped lexing or parsing. For a lexing
+    // error that is the lexer's first diagnostic.
     Expect<ASTBaseNode*> parse() {
-        if (!m_lexed) {
-            return std::unexpected(Diagnostic{.code = m_lexError, .location = {}, .message = "Error while lexing input"});
+        if (m_lexer.hasErrors()) {
+            return std::unexpected(m_lexer.readDiagnostics().front());
         }
         Parser parser{TokenCursor{m_lexer.readTokens()}};
         return parser.parse();
@@ -38,8 +35,6 @@ public:
 
 private:
     Lexer m_lexer;
-    bool m_lexed = false;
-    ErrorCode m_lexError = ErrorCode::NO_ERR;
 };
 
 } // namespace ciph

@@ -49,7 +49,7 @@ Lexer::Lexer(std::string_view input)
     : m_input(input)
     , m_position(0)
     , m_tokens()
-    , m_performedAnalysis(false)
+    , m_hasLexed(false)
     , m_index(0) {
 }
 
@@ -107,10 +107,10 @@ Lexer::skipWhiteSpaces(Position& cursorPos) {
     } while (!done);
 }
 
-std::pair<bool, ErrorCode>
+void
 Lexer::lex() {
-    if (m_performedAnalysis)
-        return {false, ErrorCode::LEXER_PERFORMED_ANALYSIS};
+    if (m_hasLexed)
+        return;
     Position cursorPosition = {1, 1};
 
     while (m_position < m_input.size()) {
@@ -225,15 +225,14 @@ Lexer::lex() {
             continue;
         }
 
-        // if we reach this without hitting a continue, we have an unknown character
-        m_performedAnalysis = true;
-        m_hasErrors = true;
-        return {false, ErrorCode::LEXER_UNKNOWN_CHARACTER};
+        // An unknown character: report it, keep it as an UNKNOWN token so the
+        // token list stays complete, and carry on.
+        push(m_input.substr(m_position - 1, 1), TokenType::UNKNOWN, cursorPosition, 1);
+        m_diagnostics.push_back(diag::unknownCharacter(m_tokens.back().readLocation(), cursor));
     }
 
-    m_performedAnalysis = true;
+    m_hasLexed = true;
     push("eof", TokenType::END_OF_FILE, cursorPosition, 0);
-    return {true, ErrorCode::NO_ERR};
 }
 
 // Returns '\0' once the input is used up, which the lexing loops treat as the

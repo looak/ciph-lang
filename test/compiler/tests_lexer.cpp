@@ -290,11 +290,11 @@ TEST(LexerTest, WindowsLineEndings_AreWhitespace) {
     Lexer lx("let x\r\nreturn");
 
     // do
-    auto [success, error] = lx.lex();
+    lx.lex();
     TokenCursor cursor(lx.readTokens());
 
     // validate
-    ASSERT_TRUE(success);
+    ASSERT_FALSE(lx.hasErrors());
     EXPECT_EQ(cursor.pop().readType(), TokenType::LET);
     EXPECT_EQ(cursor.pop().readType(), TokenType::IDENTIFIER);
     auto token = cursor.pop();
@@ -308,11 +308,11 @@ TEST(LexerTest, Tokens_KnowTheirColumnAndLength) {
     Lexer lx("let count = 123 <= x;");
 
     // do
-    auto [success, error] = lx.lex();
+    lx.lex();
     TokenCursor cursor(lx.readTokens());
 
     // validate
-    ASSERT_TRUE(success);
+    ASSERT_FALSE(lx.hasErrors());
     struct Expected {
         uint32_t column;
         uint32_t length;
@@ -339,11 +339,11 @@ TEST(LexerTest, LineComments_AreSkipped) {
     Lexer lx("let // the rest of this line is ignored: return 5 / 2\nx // comment at end of input");
 
     // do
-    auto [success, error] = lx.lex();
+    lx.lex();
     TokenCursor cursor(lx.readTokens());
 
     // validate
-    ASSERT_TRUE(success);
+    ASSERT_FALSE(lx.hasErrors());
     EXPECT_EQ(cursor.pop().readType(), TokenType::LET);
     auto token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
@@ -357,11 +357,11 @@ TEST(LexerTest, Division_IsNotAComment) {
     Lexer lx("6 / 2");
 
     // do
-    auto [success, error] = lx.lex();
+    lx.lex();
     TokenCursor cursor(lx.readTokens());
 
     // validate
-    ASSERT_TRUE(success);
+    ASSERT_FALSE(lx.hasErrors());
     cursor.pop(); // 6
     EXPECT_TRUE(isOperator(cursor.pop(), OperatorType::DIVISION));
     EXPECT_EQ(cursor.pop().readType(), TokenType::NUMBER);
@@ -372,11 +372,11 @@ TEST(LexerTest, FunctionSignatureTokens) {
     Lexer lx("fn gcd_loop(mut a: i16, b: i16) -> i16");
 
     // do
-    auto [success, error] = lx.lex();
+    lx.lex();
     TokenCursor cursor(lx.readTokens());
 
     // validate
-    ASSERT_TRUE(success);
+    ASSERT_FALSE(lx.hasErrors());
     EXPECT_EQ(cursor.pop().readType(), TokenType::FUNCTION);
 
     auto token = cursor.pop();
@@ -419,11 +419,11 @@ TEST(LexerTest, MinusAndDecrement_AreNotArrows) {
     Lexer lx("a - b a--");
 
     // do
-    auto [success, error] = lx.lex();
+    lx.lex();
     TokenCursor cursor(lx.readTokens());
 
     // validate
-    ASSERT_TRUE(success);
+    ASSERT_FALSE(lx.hasErrors());
     cursor.pop(); // a
     EXPECT_TRUE(isOperator(cursor.pop(), OperatorType::SUBTRACTION));
     cursor.pop(); // b
@@ -436,11 +436,11 @@ TEST(LexerTest, Identifier_MayContainDigitsAndUnderscores) {
     Lexer lx("_tmp x1 9lives");
 
     // do
-    auto [success, error] = lx.lex();
+    lx.lex();
     TokenCursor cursor(lx.readTokens());
 
     // validate
-    ASSERT_TRUE(success);
+    ASSERT_FALSE(lx.hasErrors());
     auto token = cursor.pop();
     EXPECT_EQ(token.readType(), TokenType::IDENTIFIER);
     EXPECT_EQ(token.readStringValue(), "_tmp");

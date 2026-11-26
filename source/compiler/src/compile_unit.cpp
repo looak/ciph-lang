@@ -27,12 +27,10 @@ CompileUnit::lex() {
         return !m_lexer->hasErrors();
     }
 
-    auto [lexed, lexError] = m_lexer->lex();
-    if (m_lexer->hasErrors()) {
-        m_diagnostics.push_back(Diagnostic{.code = lexError, .location = {}, .message = "Error while lexing input"});
-        return false;
-    }
-    return true;
+    m_lexer->lex();
+    const auto& diagnostics = m_lexer->readDiagnostics();
+    m_diagnostics.insert(m_diagnostics.end(), diagnostics.begin(), diagnostics.end());
+    return !m_lexer->hasErrors();
 }
 
 bool

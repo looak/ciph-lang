@@ -21,3 +21,10 @@ ciph::diag::undeclaredIdentifier(Location location, std::string_view name) {
                       .location = location,
                       .message = fmt::format("'{}' is not declared at this point", name)};
 }
+
+Diagnostic
+ciph::diag::unknownCharacter(Location location, char character) {
+    return Diagnostic{.code = ErrorCode::LEXER_UNKNOWN_CHARACTER,
+                      .location = location,
+                      .message = fmt::format("unsupported character '{}'", character)};
+}

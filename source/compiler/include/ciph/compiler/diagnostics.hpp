@@ -14,8 +14,7 @@ namespace ciph {
 // Comments in the list must be /* */: a // comment would swallow the
 // line-continuation backslash.
 #define CIPH_DIAGNOSTICS(X) \
-    X(NO_ERR,                                 0x0,    "no error") /* goes when Lexer::lex returns an Expect */ \
-    X(SYNTAX_ERROR,                           0xEF,   "syntax_error") \
+    X(SYNTAX_ERROR,                          0xEF,   "syntax_error") \
     X(SYNTAX_ERROR_PARENTHESIS_MISSMATCH,     0xE001, "parenthesis missmatch") \
     X(SYNTAX_ERROR_BRACE_MISSMATCH,           0xE002, "brace missmatch") \
     X(SYNTAX_ERROR_EXPECTED_IDENTIFIER,       0xE003, "expected identifier") \
@@ -36,7 +35,6 @@ namespace ciph {
     X(CODEGEN_ERROR_TOO_MANY_VALUES,          0xE302, "too many values on the stack")     /* a limit of the bytecode format was reached */ \
     X(CODEGEN_ERROR_INTERNAL,                 0xE3FF, "internal code generator error")    /* a bug in the compiler, not in the program */ \
     \
-    X(LEXER_PERFORMED_ANALYSIS,               0xA001, "lexer has already performed an analysis") \
     X(LEXER_UNKNOWN_CHARACTER,                0xA002, "unsupported character in input") \
     X(ERROR_UNKNOWN,                          0xFFFF, "unknown_error")
 
@@ -126,6 +124,7 @@ public:
 namespace diag {
 
 [[nodiscard]] Diagnostic undeclaredIdentifier(Location location, std::string_view name);
+[[nodiscard]] Diagnostic unknownCharacter(Location location, char character);
 
 } // namespace diag
 

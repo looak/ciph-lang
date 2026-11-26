@@ -202,7 +202,8 @@ main(int argc, char* argv[]) {
 
     ASTBaseNode* abstract_program = nullptr;
     Lexer lexer(input);
-    if (auto [lexed, lexError] = lexer.lex(); !lexed) {
+    lexer.lex();
+    if (lexer.hasErrors()) {
         return 1;
     }
     Parser parser{TokenCursor{lexer.readTokens()}};
